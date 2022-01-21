@@ -5,6 +5,7 @@ import (
 	"embed"
 
 	"github.com/openshift/library-go/pkg/assets"
+	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -127,4 +128,16 @@ func getValues(cluster *clusterv1.ManagedCluster,
 		},
 	}
 	return helmaddonfactory.StructToValues(userValues), nil
+}
+
+func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {
+	registrationOption := newRegistrationOption(
+		controllerContext.KubeConfig,
+		controllerContext.EventRecorder,
+		"helloworld_helm")
+
+	return helmaddonfactory.NewAgentAddonFactoryWithHelmChartFS(addonName, FS, "manifests/charts/helloworld").
+		WithGetValuesFuncs([]helmaddonfactory.GetValuesFunc{getValues, helmaddonfactory.GetValuesFromAddonAnnotation}).
+		WithAgentRegistrationOption(registrationOption).
+		Build()
 }

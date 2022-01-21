@@ -17,77 +17,60 @@ limitations under the License.
 package main
 
 import (
-	"flag"
+	"context"
 	"os"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/helloworld_helm"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"github.com/openshift/library-go/pkg/controller/controllercmd"
+	"k8s.io/apimachinery/pkg/version"
+	"open-cluster-management.io/addon-framework/pkg/addonmanager"
+
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	//+kubebuilder:scaffold:imports
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	setupLog    = ctrl.Log.WithName("setup")
+	ctrlVersion = version.Info{}
 )
 
-func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	//+kubebuilder:scaffold:scheme
-}
+const (
+	ctrlName = "governance-policy-addon-controller"
+)
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	var probeAddr string
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
-	opts := zap.Options{
-		Development: true,
-	}
-	opts.BindFlags(flag.CommandLine)
-	flag.Parse()
+	controllercmd.
+		NewControllerCommandConfig(ctrlName, ctrlVersion, runController).
+		StartController(context.TODO())
+}
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "e81fb960.open-cluster-management.io",
-	})
+func runController(ctx context.Context, controllerContext *controllercmd.ControllerContext) error {
+	mgr, err := addonmanager.New(controllerContext.KubeConfig)
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "unable to create new addon manager")
 		os.Exit(1)
 	}
 
-	//+kubebuilder:scaffold:builder
-
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
-		os.Exit(1)
-	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+	expAgentAddon, err := helloworld_helm.GetAgentAddon(controllerContext)
+	if err != nil {
+		setupLog.Error(err, "unable to get experiment agent addon")
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+	err = mgr.AddAgent(expAgentAddon)
+	if err != nil {
+		setupLog.Error(err, "unable to add experiment agent addon")
 		os.Exit(1)
 	}
+
+	err = mgr.Start(ctx)
+	if err != nil {
+		setupLog.Error(err, "problem starting manager")
+		os.Exit(1)
+	}
+
+	<-ctx.Done()
+
+	return nil
 }
