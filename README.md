@@ -2,6 +2,23 @@
 
 [![License](https://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
+## From the kubebuilder quickstart:
+
+Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
+```bash
+make run
+```
+
+Build and push your image to the location specified by IMG:
+```bash
+make docker-build docker-push IMG=<some-registry>/<project-name>:tag
+```
+
+Deploy the controller to the cluster with image specified by IMG:
+```bash
+make deploy IMG=<some-registry>/<project-name>:tag
+```
+
 <!--- (Template from https://github.dev/open-cluster-management-io/community)
 ## What is <repo_name>?
 
