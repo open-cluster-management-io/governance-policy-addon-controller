@@ -11,17 +11,16 @@ RUN go mod download
 
 # Copy the go source
 COPY main.go main.go
-COPY api/ api/
-COPY controllers/ controllers/
+COPY pkg/ pkg/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o policy-addon main.go
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+# Stage 2: Copy the binaries from the image builder to the base image
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+
 WORKDIR /
-COPY --from=builder /workspace/manager .
+COPY --from=builder /workspace/policy-addon .
 USER 65532:65532
 
-ENTRYPOINT ["/manager"]
+ENTRYPOINT ["/policy-addon"]

@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= quay.io/justinkuli/policy-addon-controller:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
 
@@ -159,11 +159,19 @@ kind-deploy-registration-operator: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG)
 	sleep 10
 	kubectl wait --for condition=Available deploy/cluster-manager-placement-controller -n open-cluster-management-hub --timeout=60s
 	sleep 10
-	@printf "\n*** Accepting CSR for cluster1 ***\n"
-	$(eval CSR := $(shell kubectl get csr -l open-cluster-management.io/cluster-name=cluster1 -o name))
-	kubectl certificate approve $(CSR)
+
+.PHONY: approve-cluster1
+approve-cluster1:
+	kubectl certificate approve "$(shell kubectl get csr -l open-cluster-management.io/cluster-name=cluster1 -o name)"
 	kubectl patch managedcluster cluster1 -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
 
 .PHONY: run-local
 run-local: manifests generate fmt vet $(KIND_KUBECONFIG)
 	go run ./main.go controller --kubeconfig=$(KIND_KUBECONFIG) --namespace default
+
+kind-deploy-controller: docker-build kustomize $(KIND_KUBECONFIG) kind-deploy-registration-operator approve-cluster1
+	kind load docker-image $(IMG) --name $(KIND_NAME)
+	cp config/default/kustomization.yaml config/default/kustomization.yaml.tmp
+	cd config/default && $(KUSTOMIZE) edit set image policy-addon-image=$(IMG)
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	mv config/default/kustomization.yaml.tmp config/default/kustomization.yaml

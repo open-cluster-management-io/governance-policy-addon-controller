@@ -36,6 +36,8 @@ import (
 	//+kubebuilder:scaffold:imports
 )
 
+//+kubebuilder:rbac:groups=*,resources=*,verbs=*
+
 var (
 	setupLog    = ctrl.Log.WithName("setup")
 	ctrlVersion = version.Info{}
