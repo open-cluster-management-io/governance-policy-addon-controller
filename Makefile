@@ -128,3 +128,42 @@ GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
+
+KIND_NAME = policy-addon-ctrl
+KIND_KUBECONFIG = $(PWD)/$(KIND_NAME).kubeconfig
+
+.PHONY: kind-create-cluster
+kind-create-cluster: $(KIND_KUBECONFIG)
+
+$(KIND_KUBECONFIG):
+	@echo "creating cluster"
+	kind create cluster --name $(KIND_NAME) $(KIND_ARGS)
+	kind get kubeconfig --name $(KIND_NAME) > $(KIND_KUBECONFIG)
+
+.PHONY: kind-delete-cluster
+kind-delete-cluster:
+	kind delete cluster --name $(KIND_NAME) || true
+	rm $(KIND_KUBECONFIG) || true
+
+REGISTRATION_OPERATOR = $(shell pwd)/.go/registration-operator
+$(REGISTRATION_OPERATOR):
+	@mkdir -p .go
+	git clone --depth 1 https://github.com/open-cluster-management-io/registration-operator.git .go/registration-operator
+
+.PHONY: kind-deploy-registration-operator
+kind-deploy-registration-operator: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG)
+	cd $(REGISTRATION_OPERATOR) && make deploy
+	@printf "\n*** Pausing and waiting to let everything deploy ***\n"
+	sleep 10
+	kubectl wait --for condition=Available deploy/cluster-manager -n open-cluster-management --timeout=60s
+	sleep 10
+	kubectl wait --for condition=Available deploy/cluster-manager-placement-controller -n open-cluster-management-hub --timeout=60s
+	sleep 10
+	@printf "\n*** Accepting CSR for cluster1 ***\n"
+	$(eval CSR := $(shell kubectl get csr -l open-cluster-management.io/cluster-name=cluster1 -o name))
+	kubectl certificate approve $(CSR)
+	kubectl patch managedcluster cluster1 -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
+
+.PHONY: run-local
+run-local: manifests generate fmt vet $(KIND_KUBECONFIG)
+	go run ./main.go controller --kubeconfig=$(KIND_KUBECONFIG) --namespace default

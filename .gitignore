@@ -12,3 +12,5 @@
 .go/
 bin/
 vendor/
+
+*.kubeconfig

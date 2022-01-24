@@ -18,12 +18,18 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"os"
 
 	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/helloworld_helm"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	utilflag "k8s.io/component-base/cli/flag"
 
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"k8s.io/apimachinery/pkg/version"
+	"k8s.io/component-base/logs"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,9 +46,35 @@ const (
 )
 
 func main() {
-	controllercmd.
+	pflag.CommandLine.SetNormalizeFunc(utilflag.WordSepNormalizeFunc)
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+
+	logs.InitLogs()
+	defer logs.FlushLogs()
+
+	cmd := &cobra.Command{
+		Use:   "addon",
+		Short: "helloworldhelm example addon",
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := cmd.Help(); err != nil {
+				fmt.Fprintf(os.Stderr, "%v\n", err)
+			}
+			os.Exit(1)
+		},
+	}
+
+	ctrlcmd := controllercmd.
 		NewControllerCommandConfig(ctrlName, ctrlVersion, runController).
-		StartController(context.TODO())
+		NewCommandWithContext(context.TODO())
+	ctrlcmd.Use = "controller"
+	ctrlcmd.Short = "Start the addon controller"
+
+	cmd.AddCommand(ctrlcmd)
+
+	if err := cmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
 }
 
 func runController(ctx context.Context, controllerContext *controllercmd.ControllerContext) error {
