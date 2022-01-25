@@ -1,0 +1,64 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.org }}:{{ template "policy.fullname" . }}-framework
+  labels:
+    app: {{ template "policy.name" . }}-framework
+    chart: {{ template "policy.chart" . }}
+    component: "policy"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resourceNames:
+  - policy-encryption-key
+  resources:
+  - secrets
+  verbs:
+  - delete
+  - get
+  - update
+- apiGroups:
+  - policy.open-cluster-management.io
+  # some template-sync tests currently use policies in this apiGroup: 
+  - policies.ibm.com
+  resources:
+  # template-sync requires ability to deal with all kinds of policies
+  - '*'
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

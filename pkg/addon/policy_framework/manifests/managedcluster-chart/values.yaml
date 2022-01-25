@@ -1,0 +1,45 @@
+# Copyright Contributors to the Open Cluster Management project
+
+org: open-cluster-management
+
+enabled: true
+hubKubeconfigSecret: null
+
+clusterName: null
+clusterNamespace: null
+
+resources:
+  requests:
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+affinity: {}
+
+tolerations:
+- key: "dedicated"
+  operator: "Equal"
+  value: "infra"
+  effect: "NoSchedule"
+- key: node-role.kubernetes.io/infra
+  operator: Exists
+  effect: NoSchedule
+
+logLevel: 5
+
+postDeleteJobServiceAccount: null
+
+global: 
+  imagePullPolicy: IfNotPresent
+  imagePullSecret: null
+  imageOverrides: 
+    governance_policy_spec_sync: quay.io/open-cluster-management/governance-policy-spec-sync:latest-dev
+    governance_policy_status_sync: quay.io/open-cluster-management/governance-policy-status-sync:latest-dev
+    governance_policy_template_sync: quay.io/open-cluster-management/governance-policy-template-sync:latest-dev
+    config_policy_controller: quay.io/open-cluster-management/config-policy-controller:latest-dev
+    klusterlet_addon_lease_controller: quay.io/open-cluster-management/klusterlet-addon-lease-controller:2.2.0
+  nodeSelector: {}
+  proxyConfig:
+    HTTP_PROXY: null
+    HTTPS_PROXY: null
+    NO_PROXY: null

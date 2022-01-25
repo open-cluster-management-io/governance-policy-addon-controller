@@ -1,0 +1,20 @@
+# Copyright Contributors to the Open Cluster Management project
+
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "policy.fullname" . }}-framework-leader
+  labels:
+    app: {{ template "policy.name" . }}-framework
+    chart: {{ template "policy.chart" . }}
+    component: "policy"
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "controller.serviceAccountName" . }}-framework
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "controller.name" . }}-leader
+  apiGroup: rbac.authorization.k8s.io

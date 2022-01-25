@@ -23,6 +23,7 @@ import (
 	"os"
 
 	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/helloworld_helm"
+	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/policy_framework"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	utilflag "k8s.io/component-base/cli/flag"
@@ -95,6 +96,18 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 	err = mgr.AddAgent(expAgentAddon)
 	if err != nil {
 		setupLog.Error(err, "unable to add experiment agent addon")
+		os.Exit(1)
+	}
+
+	frameworkAgentAddon, err := policy_framework.GetAgentAddon(controllerContext)
+	if err != nil {
+		setupLog.Error(err, "unable to get policy framework agent addon")
+		os.Exit(1)
+	}
+
+	err = mgr.AddAgent(frameworkAgentAddon)
+	if err != nil {
+		setupLog.Error(err, "unable to add policy framework agent addon")
 		os.Exit(1)
 	}
 
