@@ -129,11 +129,13 @@ rm -rf $$TMP_DIR ;\
 }
 endef
 
+##@ Kind
+
 KIND_NAME = policy-addon-ctrl
 KIND_KUBECONFIG = $(PWD)/$(KIND_NAME).kubeconfig
 
 .PHONY: kind-create-cluster
-kind-create-cluster: $(KIND_KUBECONFIG)
+kind-create-cluster: $(KIND_KUBECONFIG) ## Create a kind cluster
 
 $(KIND_KUBECONFIG):
 	@echo "creating cluster"
@@ -141,7 +143,7 @@ $(KIND_KUBECONFIG):
 	kind get kubeconfig --name $(KIND_NAME) > $(KIND_KUBECONFIG)
 
 .PHONY: kind-delete-cluster
-kind-delete-cluster:
+kind-delete-cluster: ## Delete the kind cluster
 	kind delete cluster --name $(KIND_NAME) || true
 	rm $(KIND_KUBECONFIG) || true
 
@@ -151,7 +153,7 @@ $(REGISTRATION_OPERATOR):
 	git clone --depth 1 https://github.com/open-cluster-management-io/registration-operator.git .go/registration-operator
 
 .PHONY: kind-deploy-registration-operator
-kind-deploy-registration-operator: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG)
+kind-deploy-registration-operator: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster
 	cd $(REGISTRATION_OPERATOR) && make deploy
 	@printf "\n*** Pausing and waiting to let everything deploy ***\n"
 	sleep 10
@@ -160,16 +162,16 @@ kind-deploy-registration-operator: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG)
 	kubectl wait --for condition=Available deploy/cluster-manager-placement-controller -n open-cluster-management-hub --timeout=60s
 	sleep 10
 
-.PHONY: approve-cluster1
-approve-cluster1:
+.PHONY: kind-approve-cluster1
+kind-approve-cluster1: ## Approve managed cluster cluster1 in the kind cluster
 	kubectl certificate approve "$(shell kubectl get csr -l open-cluster-management.io/cluster-name=cluster1 -o name)"
 	kubectl patch managedcluster cluster1 -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
 
-.PHONY: run-local
-run-local: manifests generate fmt vet $(KIND_KUBECONFIG)
+.PHONY: kind-run-local
+kind-run-local: manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-addon-controller locally against the kind cluster
 	go run ./main.go controller --kubeconfig=$(KIND_KUBECONFIG) --namespace default
 
-kind-deploy-controller: docker-build kustomize $(KIND_KUBECONFIG) kind-deploy-registration-operator approve-cluster1
+kind-deploy-controller: docker-build kustomize $(KIND_KUBECONFIG) kind-deploy-registration-operator kind-approve-cluster1 ## Deploy the policy-addon-controller to the kind cluster
 	kind load docker-image $(IMG) --name $(KIND_NAME)
 	cp config/default/kustomization.yaml config/default/kustomization.yaml.tmp
 	cd config/default && $(KUSTOMIZE) edit set image policy-addon-image=$(IMG)
