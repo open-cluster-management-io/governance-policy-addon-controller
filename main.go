@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/helloworld_helm"
 	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/policy_framework"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -84,18 +83,6 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 	mgr, err := addonmanager.New(controllerContext.KubeConfig)
 	if err != nil {
 		setupLog.Error(err, "unable to create new addon manager")
-		os.Exit(1)
-	}
-
-	expAgentAddon, err := helloworld_helm.GetAgentAddon(controllerContext)
-	if err != nil {
-		setupLog.Error(err, "unable to get experiment agent addon")
-		os.Exit(1)
-	}
-
-	err = mgr.AddAgent(expAgentAddon)
-	if err != nil {
-		setupLog.Error(err, "unable to add experiment agent addon")
 		os.Exit(1)
 	}
 
