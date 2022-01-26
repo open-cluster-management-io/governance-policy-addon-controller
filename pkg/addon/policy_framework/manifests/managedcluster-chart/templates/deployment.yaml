@@ -5,6 +5,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: {{ template "policy.fullname" . }}-framework
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "policy.name" . }}-framework
     chart: {{ template "policy.chart" . }}

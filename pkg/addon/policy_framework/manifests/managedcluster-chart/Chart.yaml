@@ -1,7 +1,7 @@
 # Copyright Contributors to the Open Cluster Management project
 
 apiVersion: v1
-description: A Helm chart for Policy feature in Multicloud-Manager Klusterlet
-name: policy
+description: A Helm chart for the Policy Framework feature in open-cluster-management
+name: policy-framework
 version: 2.2.0
 appVersion: "2.2.0"

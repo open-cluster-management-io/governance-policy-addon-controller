@@ -1,9 +1,12 @@
 # Copyright Contributors to the Open Cluster Management project
 
+fullnameOverride: null
+nameOverride: null
+
 org: open-cluster-management
 
 enabled: true
-hubKubeconfigSecret: null
+hubKubeconfigSecret: policy-framework-hub-kubeconfig
 
 clusterName: null
 clusterNamespace: null
