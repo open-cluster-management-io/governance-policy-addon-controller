@@ -64,6 +64,7 @@ jobs:
     - name: E2E Tests
       run: |
         export GOPATH=$(go env GOPATH)
+        make wait-for-work-agent
         # make e2e-dependencies
         make e2e-test
 

@@ -17,14 +17,14 @@ import (
 )
 
 const (
-	case1ManagedClusterAddOnCR   string = "../resources/policy_framework_addon_cr.yaml"
+	case1ManagedClusterAddOnCR   string = "../resources/framework_addon_cr.yaml"
 	case1FrameworkDeploymentName string = "governance-policy-framework"
 )
 
 var _ = Describe("Test framework deployment", func() {
 	It("should create the framework deployment on the managed cluster", func() {
 		Kubectl("apply", "-f", case1ManagedClusterAddOnCR)
-		deploy := GetWithTimeout(clientDynamic, gvrDeployment, case1FrameworkDeploymentName, "cluster1", true, 30)
+		deploy := GetWithTimeout(clientDynamic, gvrDeployment, case1FrameworkDeploymentName, "open-cluster-management-agent-addon", true, 30)
 		Expect(deploy).NotTo(BeNil())
 	})
 })

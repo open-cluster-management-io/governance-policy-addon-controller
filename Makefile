@@ -155,7 +155,7 @@ $(REGISTRATION_OPERATOR):
 .PHONY: kind-deploy-registration-operator
 kind-deploy-registration-operator: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster
 	cd $(REGISTRATION_OPERATOR) && make deploy
-	@printf "\n*** Pausing and waiting to let everything deploy ***\n"
+	@printf "\n*** Pausing and waiting to let everything deploy ***\n\n"
 	sleep 10
 	kubectl wait --for condition=Available deploy/cluster-manager -n open-cluster-management --timeout=60s
 	sleep 10
@@ -167,6 +167,22 @@ kind-approve-cluster1: ## Approve managed cluster cluster1 in the kind cluster
 	kubectl certificate approve "$(shell kubectl get csr -l open-cluster-management.io/cluster-name=cluster1 -o name)"
 	sleep 10
 	kubectl patch managedcluster cluster1 -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
+
+.PHONY: wait-for-work-agent
+wait-for-work-agent: ## Wait for the klusterlet work agent to start
+	@printf "\n*** Waiting up to 6 minutes for klusterlet work agent to start ***\n\n"
+	@WORK_AGENT_POD=`kubectl get pod -n open-cluster-management-agent -l=app=klusterlet-manifestwork-agent -o name`; \
+	TIME_WAITING=0; \
+	until [[ -n $$WORK_AGENT_POD ]] ; do \
+		if [[ $$TIME_WAITING -gt 360 ]]; then \
+			printf "\n*** Klusterlet work agent took too long to start ***\n\n" ; \
+			exit 1; \
+		fi; \
+		echo $$TIME_WAITING seconds waited...; \
+		sleep 20; \
+		(( TIME_WAITING += 20 )); \
+		WORK_AGENT_POD=`kubectl get pod -n open-cluster-management-agent -l=app=klusterlet-manifestwork-agent -o name`; \
+	done
 
 .PHONY: kind-run-local
 kind-run-local: # manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-addon-controller locally against the kind cluster
