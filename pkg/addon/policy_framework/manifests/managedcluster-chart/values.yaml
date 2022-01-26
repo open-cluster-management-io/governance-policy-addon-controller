@@ -6,7 +6,7 @@ nameOverride: null
 org: open-cluster-management
 
 enabled: true
-hubKubeconfigSecret: policy-framework-hub-kubeconfig
+hubKubeconfigSecret: governance-policy-framework-hub-kubeconfig
 
 clusterName: null
 clusterNamespace: null

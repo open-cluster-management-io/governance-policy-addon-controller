@@ -169,7 +169,7 @@ kind-approve-cluster1: ## Approve managed cluster cluster1 in the kind cluster
 	kubectl patch managedcluster cluster1 -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
 
 .PHONY: kind-run-local
-kind-run-local: manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-addon-controller locally against the kind cluster
+kind-run-local: # manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-addon-controller locally against the kind cluster
 	go run ./main.go controller --kubeconfig=$(KIND_KUBECONFIG) --namespace governance-policy-addon-controller-system
 
 kind-deploy-controller: docker-build kustomize $(KIND_KUBECONFIG) kind-deploy-registration-operator kind-approve-cluster1 ## Deploy the policy-addon-controller to the kind cluster
@@ -178,3 +178,16 @@ kind-deploy-controller: docker-build kustomize $(KIND_KUBECONFIG) kind-deploy-re
 	cd config/default && $(KUSTOMIZE) edit set image policy-addon-image=$(IMG)
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 	mv config/default/kustomization.yaml.tmp config/default/kustomization.yaml
+
+.PHONY: lint
+lint: 
+	@echo "no linters configured"
+
+GINKGO = $(shell pwd)/bin/ginkgo
+.PHONY: e2e-dependencies
+e2e-dependencies: ## Download ginkgo locally if necessary.
+	$(call go-get-tool,$(GINKGO),github.com/onsi/ginkgo/ginkgo@v1.16.4)
+
+.PHONY: e2e-test
+e2e-test: e2e-dependencies
+	$(GINKGO) -v --failFast --slowSpecThreshold=10 test/e2e

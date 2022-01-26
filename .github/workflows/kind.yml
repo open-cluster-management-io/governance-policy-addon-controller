@@ -1,0 +1,78 @@
+name: KinD tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash
+    working-directory: governance-policy-addon-controller
+
+jobs:
+  kind-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go:
+          - '1.17'
+        # Run tests on oldest and newest supported OCP Kubernetes
+        # - OCP 4.5 runs Kubernetes v1.18
+        # KinD tags: https://hub.docker.com/r/kindest/node/tags
+        kind:
+          - 'v1.18.15'
+          - 'latest'
+    name: KinD tests
+    steps:
+    - name: Checkout 
+      uses: actions/checkout@v2
+      with:
+        path: governance-policy-addon-controller
+        fetch-depth: 0 # Fetch all history for all tags and branches
+
+    - name: Set up Go - ${{ matrix.go }}
+      uses: actions/setup-go@v2
+      id: go
+      with:
+        go-version: ${{ matrix.go }}
+
+    - name: Verify modules
+      run: |
+        go mod verify
+
+    - name: Verify format
+      run: |
+        make fmt
+        git diff --exit-code
+        make lint
+
+    - name: Create KinD Cluster (${{ matrix.kind }}) and deploy components
+      env:
+        KIND_VERSION: ${{ matrix.kind }}
+      run: |
+        make kind-deploy-controller
+
+    - name: Unit and Integration Tests
+      run: |
+        # make test-dependencies
+        make test
+
+    - name: E2E Tests
+      run: |
+        export GOPATH=$(go env GOPATH)
+        # make e2e-dependencies
+        make e2e-test
+
+    - name: SonarCloud Analysis
+      if: ${{ github.event_name == 'push' }}
+      run: |
+        echo "SonarCloud not implemented."
+
+    - name: Clean up cluster
+      if: ${{ always() }}
+      run: |
+        make kind-delete-cluster

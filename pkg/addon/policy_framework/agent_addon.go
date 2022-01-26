@@ -30,7 +30,7 @@ const (
 	// addOnAgentInstallationNamespace is the namespace on the managed cluster to install the helloworldhelm addon agent.
 	addOnAgentInstallationNamespace = "open-cluster-management-agent-addon"
 	defaultExampleImage             = "quay.io/open-cluster-management/helloworld-addon:latest"
-	addonName                       = "policy-framework"
+	addonName                       = "governance-policy-framework"
 )
 
 func init() {

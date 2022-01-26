@@ -4,10 +4,10 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ template "policy.fullname" . }}-framework
+  name: {{ template "policy.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ template "policy.name" . }}-framework
+    app: {{ template "policy.name" . }}
     chart: {{ template "policy.chart" . }}
     component: "governance"
     release: {{ .Release.Name }}
@@ -18,7 +18,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ template "policy.name" . }}-framework
+      app: {{ template "policy.name" . }}
       component: "governance"
       release: {{ .Release.Name }}
   template:
@@ -26,14 +26,14 @@ spec:
       annotations:
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
-        app: {{ template "policy.name" . }}-framework
+        app: {{ template "policy.name" . }}
         component: "governance"
         controller: "operator"
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
         chart: {{ template "policy.chart" . }}
     spec:
-      serviceAccountName: {{ template "policy.fullname" . }}-framework
+      serviceAccountName: {{ template "policy.fullname" . }}
       containers:
       {{- if not (or (.Capabilities.APIVersions.Has "operator.open-cluster-management.io/v1/MultiClusterHub") (.Capabilities.APIVersions.Has "operator.open-cluster-management.io/v1beta1/MultiClusterHub")) }}
       - name: spec-sync

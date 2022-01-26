@@ -3,17 +3,17 @@
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "policy.fullname" . }}-framework-leader
+  name: {{ template "policy.fullname" . }}-leader
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ template "policy.name" . }}-framework
+    app: {{ template "policy.name" . }}
     chart: {{ template "policy.chart" . }}
     component: "policy"
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 subjects:
 - kind: ServiceAccount
-  name: {{ template "policy.fullname" . }}-framework
+  name: {{ template "policy.fullname" . }}
   namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
