@@ -4,12 +4,11 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ template "policy.fullname" . }}
+  name: {{ template "framework.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ template "policy.name" . }}
-    chart: {{ template "policy.chart" . }}
-    component: "governance"
+    app: {{ template "framework.name" . }}
+    chart: {{ template "framework.chart" . }}
     release: {{ .Release.Name }}
     controller: "operator"
     heritage: {{ .Release.Service }}
@@ -18,22 +17,20 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ template "policy.name" . }}
-      component: "governance"
+      app: {{ template "framework.name" . }}
       release: {{ .Release.Name }}
   template:
     metadata:
       annotations:
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
-        app: {{ template "policy.name" . }}
-        component: "governance"
+        app: {{ template "framework.name" . }}
         controller: "operator"
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
-        chart: {{ template "policy.chart" . }}
+        chart: {{ template "framework.chart" . }}
     spec:
-      serviceAccountName: {{ template "policy.fullname" . }}
+      serviceAccountName: {{ template "framework.fullname" . }}
       containers:
       {{- if not (or (.Capabilities.APIVersions.Has "operator.open-cluster-management.io/v1/MultiClusterHub") (.Capabilities.APIVersions.Has "operator.open-cluster-management.io/v1beta1/MultiClusterHub")) }}
       - name: spec-sync
@@ -175,16 +172,7 @@ spec:
       imagePullSecrets:
       - name: "{{ .Values.global.imagePullSecret }}"
       {{- end }}
-      {{- with .Values.global.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-{{ toYaml . | indent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-{{ toYaml . | indent 8 }}
-      {{- end }}
+      nodeSelector: {{ toYaml .Values.global.nodeSelector | nindent 8 }}
+      affinity: {{ toYaml .Values.affinity | nindent 8 }}
+      tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
 {{- end }}
