@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"open-cluster-management.io/addon-framework/pkg/addonfactory/helmaddonfactory"
+	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/addon-framework/pkg/utils"
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
@@ -118,7 +118,7 @@ type userValues struct {
 }
 
 func getValues(cluster *clusterv1.ManagedCluster,
-	addon *addonapiv1alpha1.ManagedClusterAddOn) (helmaddonfactory.Values, error) {
+	addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
 	userValues := userValues{
 		ClusterNamespace: cluster.GetName(),
 		Global: global{
@@ -128,7 +128,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			},
 		},
 	}
-	return helmaddonfactory.StructToValues(userValues), nil
+	return addonfactory.StructToValues(userValues), nil
 }
 
 func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {
@@ -137,8 +137,8 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 		controllerContext.EventRecorder,
 		addonName)
 
-	return helmaddonfactory.NewAgentAddonFactoryWithHelmChartFS(addonName, FS, "manifests/managedcluster-chart").
-		WithGetValuesFuncs([]helmaddonfactory.GetValuesFunc{getValues, helmaddonfactory.GetValuesFromAddonAnnotation}).
+	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedcluster-chart").
+		WithGetValuesFuncs(getValues, addonfactory.GetValuesFromAddonAnnotation).
 		WithAgentRegistrationOption(registrationOption).
-		Build()
+		BuildHelmAgentAddon()
 }
