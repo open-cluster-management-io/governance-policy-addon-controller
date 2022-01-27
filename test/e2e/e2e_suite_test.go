@@ -17,6 +17,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+const (
+	addonNamespace string = "open-cluster-management-agent-addon"
+)
+
 var (
 	gvrDeployment schema.GroupVersionResource
 	clientDynamic dynamic.Interface

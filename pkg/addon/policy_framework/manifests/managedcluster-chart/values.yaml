@@ -3,6 +3,8 @@
 fullnameOverride: null
 nameOverride: null
 
+onMulticlusterHub: false
+
 org: open-cluster-management
 
 enabled: true

@@ -186,6 +186,7 @@ wait-for-work-agent: ## Wait for the klusterlet work agent to start
 
 .PHONY: kind-run-local
 kind-run-local: # manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-addon-controller locally against the kind cluster
+	kubectl get ns governance-policy-addon-controller-system; if [ $$? -ne 0 ] ; then kubectl create ns governance-policy-addon-controller-system; fi 
 	go run ./main.go controller --kubeconfig=$(KIND_KUBECONFIG) --namespace governance-policy-addon-controller-system
 
 kind-deploy-controller: docker-build kustomize $(KIND_KUBECONFIG) kind-deploy-registration-operator kind-approve-cluster1 ## Deploy the policy-addon-controller to the kind cluster

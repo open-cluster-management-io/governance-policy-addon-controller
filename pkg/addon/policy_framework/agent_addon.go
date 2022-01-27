@@ -104,17 +104,18 @@ func applyManifestFromFile(file, clusterName, addonName string, kubeclient *kube
 }
 
 type global struct {
-	ImagePullPolicy string
-	ImagePullSecret string
-	ImageOverrides  map[string]string
-	NodeSelector    map[string]string
-	ProxyConfig     map[string]string
+	ImagePullPolicy string            `json:"imagePullPolicy"`
+	ImagePullSecret string            `json:"imagePullSecret"`
+	ImageOverrides  map[string]string `json:"imageOverrides"`
+	NodeSelector    map[string]string `json:"nodeSelector"`
+	ProxyConfig     map[string]string `json:"proxyConfig"`
 }
 
 type userValues struct {
-	ClusterNamespace string
-	LogLevel         int32
-	Global           global
+	ClusterNamespace  string `json:"clusterNamespace"`
+	LogLevel          int32  `json:"logLevel"`
+	Global            global `json:"global"`
+	OnMulticlusterHub bool   `json:"onMulticlusterHub"`
 }
 
 func getValues(cluster *clusterv1.ManagedCluster,
@@ -126,9 +127,16 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			ImageOverrides: map[string]string{
 				"helloWorldHelm": defaultExampleImage,
 			},
+			NodeSelector: map[string]string{},
+			ProxyConfig: map[string]string{
+				"HTTP_PROXY":  "",
+				"HTTPS_PROXY": "",
+				"NO_PROXY":    "",
+			},
 		},
+		OnMulticlusterHub: false,
 	}
-	return addonfactory.StructToValues(userValues), nil
+	return addonfactory.JsonStructToValues(userValues)
 }
 
 func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {

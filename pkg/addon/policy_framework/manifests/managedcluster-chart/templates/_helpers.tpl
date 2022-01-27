@@ -44,4 +44,3 @@ Create role name used in role and binding for leader election
 {{- define "framework.leaderrolename" -}}
     {{ template "framework.fullname" . }}-leader
 {{- end -}}
-

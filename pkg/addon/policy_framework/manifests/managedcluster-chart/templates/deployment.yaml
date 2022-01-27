@@ -32,7 +32,7 @@ spec:
     spec:
       serviceAccountName: {{ template "framework.fullname" . }}
       containers:
-      {{- if not (or (.Capabilities.APIVersions.Has "operator.open-cluster-management.io/v1/MultiClusterHub") (.Capabilities.APIVersions.Has "operator.open-cluster-management.io/v1beta1/MultiClusterHub")) }}
+      {{- if not .Values.onMulticlusterHub }}
       - name: spec-sync
         image: "{{ .Values.global.imageOverrides.governance_policy_spec_sync }}"
         imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
@@ -104,7 +104,7 @@ spec:
                 fieldPath: metadata.name
           - name: OPERATOR_NAME
             value: "governance-policy-status-sync"
-          {{- if (or (.Capabilities.APIVersions.Has "operator.open-cluster-management.io/v1/MultiClusterHub") (.Capabilities.APIVersions.Has "operator.open-cluster-management.io/v1beta1/MultiClusterHub")) }}
+          {{- if .Values.onMulticlusterHub }}
           - name: ON_MULTICLUSTERHUB
             value: "true"
           {{- end }}
