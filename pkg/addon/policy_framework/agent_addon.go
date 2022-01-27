@@ -3,6 +3,7 @@ package policy_framework
 import (
 	"context"
 	"embed"
+	"strings"
 
 	"github.com/openshift/library-go/pkg/assets"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
@@ -135,6 +136,20 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			},
 		},
 		OnMulticlusterHub: false,
+	}
+	// special case for local-cluster
+	if cluster.Name == "local-cluster" {
+		userValues.OnMulticlusterHub = true
+	}
+	if val, ok := addon.GetAnnotations()["addon.open-cluster-management.io/on-multicluster-hub"]; ok {
+		if strings.EqualFold(val, "true") {
+			userValues.OnMulticlusterHub = true
+		} else if strings.EqualFold(val, "false") {
+			// the special case can still be overridden by this annotation
+			userValues.OnMulticlusterHub = false
+		} else {
+			// TODO: should this log or return an error? The annotation should be true or false
+		}
 	}
 	return addonfactory.JsonStructToValues(userValues)
 }
