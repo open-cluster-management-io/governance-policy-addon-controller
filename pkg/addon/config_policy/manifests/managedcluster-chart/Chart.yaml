@@ -1,0 +1,7 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+description: A Helm chart for the Config Policy Controller feature in open-cluster-management
+name: config-policy-controller
+version: 2.2.0
+appVersion: "2.2.0"

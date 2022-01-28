@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/config_policy"
 	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/policy_framework"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -95,6 +96,18 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 	err = mgr.AddAgent(frameworkAgentAddon)
 	if err != nil {
 		setupLog.Error(err, "unable to add policy framework agent addon")
+		os.Exit(1)
+	}
+
+	configAgentAddon, err := config_policy.GetAgentAddon(controllerContext)
+	if err != nil {
+		setupLog.Error(err, "unable to get config policy agent addon")
+		os.Exit(1)
+	}
+
+	err = mgr.AddAgent(configAgentAddon)
+	if err != nil {
+		setupLog.Error(err, "unable to add config policy agent addon")
 		os.Exit(1)
 	}
 
