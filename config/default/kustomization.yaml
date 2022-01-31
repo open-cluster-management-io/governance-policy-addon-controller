@@ -9,8 +9,8 @@ namespace: governance-policy-addon-controller-system
 namePrefix: policy-addon-ctrl-
 
 # Labels to add to all resources and selectors.
-#commonLabels:
-#  someName: someValue
+commonLabels:
+  app: governance-policy-addon-controller
 
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
 # crd/kustomization.yaml

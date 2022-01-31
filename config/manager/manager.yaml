@@ -33,6 +33,11 @@ spec:
         - controller
         image: policy-addon-image
         imagePullPolicy: IfNotPresent
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

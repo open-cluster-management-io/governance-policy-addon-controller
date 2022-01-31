@@ -37,7 +37,15 @@ import (
 	//+kubebuilder:scaffold:imports
 )
 
-//+kubebuilder:rbac:groups=*,resources=*,verbs=*
+//+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=get;create
+//+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests;certificatesigningrequests/approval,verbs=get;list;watch;create;update
+//+kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=approve
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
+//+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=create;update;get;list;watch;delete;deletecollection;patch
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons,verbs=get;list;watch
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons,verbs=get;list;watch;create;update
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/finalizers,verbs=update
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/status,verbs=update;patch
 
 var (
 	setupLog    = ctrl.Log.WithName("setup")
@@ -66,9 +74,10 @@ func main() {
 		},
 	}
 
-	ctrlcmd := controllercmd.
-		NewControllerCommandConfig(ctrlName, ctrlVersion, runController).
-		NewCommandWithContext(context.TODO())
+	ctrlconfig := controllercmd.NewControllerCommandConfig(ctrlName, ctrlVersion, runController)
+	ctrlconfig.DisableServing = true
+
+	ctrlcmd := ctrlconfig.NewCommandWithContext(context.TODO())
 	ctrlcmd.Use = "controller"
 	ctrlcmd.Short = "Start the addon controller"
 

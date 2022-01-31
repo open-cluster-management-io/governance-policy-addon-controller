@@ -70,7 +70,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: ## Build docker image with the manager.
+docker-build: test ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 .PHONY: docker-push
@@ -185,11 +185,11 @@ wait-for-work-agent: ## Wait for the klusterlet work agent to start
 	done
 
 .PHONY: kind-run-local
-kind-run-local: # manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-addon-controller locally against the kind cluster
+kind-run-local: manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-addon-controller locally against the kind cluster
 	kubectl get ns governance-policy-addon-controller-system; if [ $$? -ne 0 ] ; then kubectl create ns governance-policy-addon-controller-system; fi 
 	go run ./main.go controller --kubeconfig=$(KIND_KUBECONFIG) --namespace governance-policy-addon-controller-system
 
-kind-deploy-controller: docker-build kustomize $(KIND_KUBECONFIG) kind-deploy-registration-operator kind-approve-cluster1 ## Deploy the policy-addon-controller to the kind cluster
+kind-deploy-controller: docker-build manifests generate kustomize $(KIND_KUBECONFIG) kind-deploy-registration-operator kind-approve-cluster1 ## Deploy the policy-addon-controller to the kind cluster
 	kind load docker-image $(IMG) --name $(KIND_NAME)
 	cp config/default/kustomization.yaml config/default/kustomization.yaml.tmp
 	cd config/default && $(KUSTOMIZE) edit set image policy-addon-image=$(IMG)
