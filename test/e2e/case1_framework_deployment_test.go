@@ -19,6 +19,7 @@ import (
 const (
 	case1ManagedClusterAddOnCR   string = "../resources/framework_addon_cr.yaml"
 	case1FrameworkDeploymentName string = "governance-policy-framework"
+	case1FrameworkPodSelector    string = "app=governance-policy-framework"
 )
 
 var _ = Describe("Test framework deployment", func() {
@@ -34,6 +35,17 @@ var _ = Describe("Test framework deployment", func() {
 			containers := template["spec"].(map[string]interface{})["containers"].([]interface{})
 			return len(containers)
 		}, 60, 1).Should(Equal(3))
+	})
+	It("should have a framework pod that is running", func() {
+		Eventually(func() bool {
+			opts := metav1.ListOptions{
+				LabelSelector: case1FrameworkPodSelector,
+			}
+			pods := ListWithTimeoutByNamespace(clientDynamic, gvrPod, opts, addonNamespace, 1, true, 30)
+			status := pods.Items[0].Object["status"].(map[string]interface{})
+			phase := status["phase"].(string)
+			return phase == "Running"
+		}, 60, 1).Should(Equal(true))
 	})
 	It("should remove the framework deployment when the ManagedClusterAddOn CR is removed", func() {
 		Kubectl("delete", "-f", case1ManagedClusterAddOnCR)
@@ -130,6 +142,45 @@ func GetWithTimeout(
 
 	if wantFound {
 		return obj
+	}
+
+	return nil
+}
+
+// ListWithTimeoutByNamespace keeps polling to list the object for timeout seconds until wantFound is met
+// (true for found, false for not found)
+func ListWithTimeoutByNamespace(
+	clientHubDynamic dynamic.Interface,
+	gvr schema.GroupVersionResource,
+	opts metav1.ListOptions,
+	ns string,
+	size int,
+	wantFound bool,
+	timeout int,
+) *unstructured.UnstructuredList {
+	if timeout < 1 {
+		timeout = 1
+	}
+
+	var list *unstructured.UnstructuredList
+
+	Eventually(func() error {
+		var err error
+		list, err = clientHubDynamic.Resource(gvr).Namespace(ns).List(context.TODO(), opts)
+
+		if err != nil {
+			return err
+		}
+
+		if len(list.Items) != size {
+			return fmt.Errorf("list size doesn't match, expected %d actual %d", size, len(list.Items))
+		}
+
+		return nil
+	}, timeout, 1).Should(BeNil())
+
+	if wantFound {
+		return list
 	}
 
 	return nil
