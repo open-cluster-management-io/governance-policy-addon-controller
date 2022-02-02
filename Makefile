@@ -131,8 +131,8 @@ endef
 
 ##@ Kind
 
-KIND_NAME = policy-addon-ctrl
-KIND_KUBECONFIG = $(PWD)/$(KIND_NAME).kubeconfig
+KIND_NAME ?= policy-addon-ctrl
+KIND_KUBECONFIG ?= $(PWD)/$(KIND_NAME).kubeconfig
 
 .PHONY: kind-create-cluster
 kind-create-cluster: $(KIND_KUBECONFIG) ## Create a kind cluster
@@ -163,7 +163,7 @@ kind-deploy-registration-operator: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG) #
 	sleep 10
 
 .PHONY: kind-approve-cluster1
-kind-approve-cluster1: ## Approve managed cluster cluster1 in the kind cluster
+kind-approve-cluster1: $(KIND_KUBECONFIG) ## Approve managed cluster cluster1 in the kind cluster
 	kubectl certificate approve "$(shell kubectl get csr -l open-cluster-management.io/cluster-name=cluster1 -o name)"
 	sleep 10
 	kubectl patch managedcluster cluster1 -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
@@ -184,17 +184,29 @@ wait-for-work-agent: ## Wait for the klusterlet work agent to start
 		WORK_AGENT_POD=`kubectl get pod -n open-cluster-management-agent -l=app=klusterlet-manifestwork-agent -o name`; \
 	done
 
+CONTROLLER_NAMESPACE ?= governance-policy-addon-controller-system
+
 .PHONY: kind-run-local
 kind-run-local: manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-addon-controller locally against the kind cluster
-	kubectl get ns governance-policy-addon-controller-system; if [ $$? -ne 0 ] ; then kubectl create ns governance-policy-addon-controller-system; fi 
-	go run ./main.go controller --kubeconfig=$(KIND_KUBECONFIG) --namespace governance-policy-addon-controller-system
+	kubectl get ns $(CONTROLLER_NAMESPACE); if [ $$? -ne 0 ] ; then kubectl create ns $(CONTROLLER_NAMESPACE); fi 
+	go run ./main.go controller --kubeconfig=$(KIND_KUBECONFIG) --namespace $(CONTROLLER_NAMESPACE)
 
-kind-deploy-controller: docker-build manifests generate kustomize $(KIND_KUBECONFIG) kind-deploy-registration-operator kind-approve-cluster1 ## Deploy the policy-addon-controller to the kind cluster
+.PHONY: kind-load-image
+kind-load-image: docker-build $(KIND_KUBECONFIG) ## Build and load the docker image into kind
 	kind load docker-image $(IMG) --name $(KIND_NAME)
+
+.PHONY: regenerate-controller
+kind-regenerate-controller: manifests generate kustomize $(KIND_KUBECONFIG) ## Refresh (or initially deploy) the policy-addon-controller
 	cp config/default/kustomization.yaml config/default/kustomization.yaml.tmp
 	cd config/default && $(KUSTOMIZE) edit set image policy-addon-image=$(IMG)
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 	mv config/default/kustomization.yaml.tmp config/default/kustomization.yaml
+	kubectl delete -n $(CONTROLLER_NAMESPACE) pods -l=app=governance-policy-addon-controller
+
+.PHONY: kind-deploy-controller
+kind-deploy-controller: kind-deploy-registration-operator kind-approve-cluster1 kind-load-image kind-regenerate-controller ## Deploy the policy-addon-controller to the kind cluster
+	
+##@ Quality Control
 
 .PHONY: lint
 lint: 
