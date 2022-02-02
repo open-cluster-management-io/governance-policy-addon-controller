@@ -25,12 +25,18 @@ rules:
   - watch
 - apiGroups:
   - addon.open-cluster-management.io
+  resourceNames:
+  - config-policy-controller
+  - governance-policy-framework
   resources:
   - managedclusteraddons/finalizers
   verbs:
   - update
 - apiGroups:
   - addon.open-cluster-management.io
+  resourceNames:
+  - config-policy-controller
+  - governance-policy-framework
   resources:
   - managedclusteraddons/status
   verbs:
@@ -69,15 +75,58 @@ rules:
   - list
   - watch
 - apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  verbs:
+  - create
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - config-policy-controller
+  - policy-framework
+  resources:
+  - clusterroles
+  verbs:
+  - delete
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - open-cluster-management:config-policy-controller
+  - open-cluster-management:policy-framework
+  resources:
+  - rolebindings
+  verbs:
+  - delete
+  - get
+  - patch
+  - update
+- apiGroups:
   - work.open-cluster-management.io
   resources:
   - manifestworks
   verbs:
   - create
-  - delete
-  - deletecollection
   - get
   - list
+  - watch
+- apiGroups:
+  - work.open-cluster-management.io
+  resourceNames:
+  - addon-config-policy-controller-deploy
+  - addon-governance-policy-framework-deploy
+  resources:
+  - manifestworks
+  verbs:
+  - delete
   - patch
   - update
-  - watch
