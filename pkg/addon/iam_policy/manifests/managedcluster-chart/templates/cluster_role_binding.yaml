@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.org }}:{{ template "iamPolicyController.clusterRoleBinding" . }}
+  labels:
+    app: {{ template "iamPolicyController.fullname" . }}
+    chart: {{ template "iamPolicyController.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Values.org }}:{{ template "iamPolicyController.clusterRole" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "iamPolicyController.serviceAccount" . }}
+  namespace: {{ .Release.Namespace }}
