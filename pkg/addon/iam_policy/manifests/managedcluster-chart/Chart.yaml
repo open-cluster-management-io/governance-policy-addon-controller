@@ -1,0 +1,19 @@
+# Copyright Contributors to the Open Cluster Management project
+
+name: iam-policy-controller
+description: A Helm chart for deploying the IAM Policy Controller
+keywords:
+  - "grc"
+  - "policy"
+  - "mcm"
+  - "tls"
+  - "amd64"
+  - "Commercial"
+  - "Limited"
+  - "OpenSource"
+  - "Tech"
+  - "Development"
+tillerVersion: ">=2.9.1"
+kubeVersion: ">=1.11.0-0"
+version: 2.2.0
+appVersion: "2.2.0"
