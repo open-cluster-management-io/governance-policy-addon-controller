@@ -26,6 +26,7 @@ rules:
 - apiGroups:
   - addon.open-cluster-management.io
   resourceNames:
+  - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
   - iam-policy-controller
@@ -36,6 +37,7 @@ rules:
 - apiGroups:
   - addon.open-cluster-management.io
   resourceNames:
+  - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
   - iam-policy-controller
@@ -85,6 +87,7 @@ rules:
 - apiGroups:
   - coordination.k8s.io
   resourceNames:
+  - cert-policy-controller
   - config-policy-controller
   - iam-policy-controller
   - policy-framework
@@ -131,6 +134,7 @@ rules:
 - apiGroups:
   - rbac.authorization.k8s.io
   resourceNames:
+  - cert-policy-controller
   - config-policy-controller
   - iam-policy-controller
   - policy-framework
@@ -150,6 +154,7 @@ rules:
 - apiGroups:
   - rbac.authorization.k8s.io
   resourceNames:
+  - open-cluster-management:cert-policy-controller
   - open-cluster-management:config-policy-controller
   - open-cluster-management:iam-policy-controller
   - open-cluster-management:policy-framework
@@ -172,6 +177,7 @@ rules:
 - apiGroups:
   - work.open-cluster-management.io
   resourceNames:
+  - addon-cert-policy-controller-deploy
   - addon-config-policy-controller-deploy
   - addon-governance-policy-framework-deploy
   - addon-iam-policy-controller-deploy

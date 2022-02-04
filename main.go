@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 
+	certpolicy "github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/cert_policy"
 	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/config_policy"
 	iampolicy "github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/iam_policy"
 	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/policy_framework"
@@ -47,21 +48,21 @@ import (
 // RBAC below will need to be updated if/when new policy controllers are added.
 
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create
-//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;patch;update,resourceNames=policy-framework;config-policy-controller;iam-policy-controller
+//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;patch;update,resourceNames=policy-framework;config-policy-controller;iam-policy-controller;cert-policy-controller
 
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=create
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;update;patch;delete,resourceNames=policy-framework;config-policy-controller;iam-policy-controller
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;update;patch;delete,resourceNames=policy-framework;config-policy-controller;iam-policy-controller;cert-policy-controller
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=create
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework";"open-cluster-management:config-policy-controller";"open-cluster-management:iam-policy-controller"
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework";"open-cluster-management:config-policy-controller";"open-cluster-management:iam-policy-controller";"open-cluster-management:cert-policy-controller"
 
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=create
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=get;list;watch
-//+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=update;patch;delete,resourceNames=addon-config-policy-controller-deploy;addon-governance-policy-framework-deploy;addon-iam-policy-controller-deploy
+//+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=update;patch;delete,resourceNames=addon-config-policy-controller-deploy;addon-governance-policy-framework-deploy;addon-iam-policy-controller-deploy;addon-cert-policy-controller-deploy
 
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons,verbs=create
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons,verbs=get;list;watch;update
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/finalizers,verbs=update,resourceNames=config-policy-controller;governance-policy-framework;iam-policy-controller
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/status,verbs=update;patch,resourceNames=config-policy-controller;governance-policy-framework;iam-policy-controller
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/finalizers,verbs=update,resourceNames=config-policy-controller;governance-policy-framework;iam-policy-controller;cert-policy-controller
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/status,verbs=update;patch,resourceNames=config-policy-controller;governance-policy-framework;iam-policy-controller;cert-policy-controller
 
 // Permissions required for policy-framework
 // (see https://kubernetes.io/docs/reference/access-authn-authz/rbac/#privilege-escalation-prevention-and-bootstrapping)
@@ -145,13 +146,25 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 
 	iamAgentAddon, err := iampolicy.GetAgentAddon(controllerContext)
 	if err != nil {
-		setupLog.Error(err, "unable to get config policy agent addon")
+		setupLog.Error(err, "unable to get iam policy agent addon")
 		os.Exit(1)
 	}
 
 	err = mgr.AddAgent(iamAgentAddon)
 	if err != nil {
 		setupLog.Error(err, "unable to add iam policy agent addon")
+		os.Exit(1)
+	}
+
+	certAgentAddon, err := certpolicy.GetAgentAddon(controllerContext)
+	if err != nil {
+		setupLog.Error(err, "unable to get cert policy agent addon")
+		os.Exit(1)
+	}
+
+	err = mgr.AddAgent(certAgentAddon)
+	if err != nil {
+		setupLog.Error(err, "unable to add cert policy agent addon")
 		os.Exit(1)
 	}
 
