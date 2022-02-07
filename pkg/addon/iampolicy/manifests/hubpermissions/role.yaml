@@ -3,7 +3,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: iam-policy-controller
+  name: open-cluster-management:iam-policy-controller-hub
 rules:
 - apiGroups:
   - coordination.k8s.io

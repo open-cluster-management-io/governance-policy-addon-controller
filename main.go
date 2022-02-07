@@ -51,9 +51,9 @@ import (
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;patch;update,resourceNames=policy-framework;config-policy-controller;iam-policy-controller;cert-policy-controller
 
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=create
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;update;patch;delete,resourceNames=policy-framework;config-policy-controller;iam-policy-controller;cert-policy-controller
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework-hub";"open-cluster-management:config-policy-controller-hub";"open-cluster-management:iam-policy-controller-hub";"open-cluster-management:cert-policy-controller-hub"
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=create
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework";"open-cluster-management:config-policy-controller";"open-cluster-management:iam-policy-controller";"open-cluster-management:cert-policy-controller"
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework-hub";"open-cluster-management:config-policy-controller-hub";"open-cluster-management:iam-policy-controller-hub";"open-cluster-management:cert-policy-controller-hub"
 
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=create
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=get;list;watch
