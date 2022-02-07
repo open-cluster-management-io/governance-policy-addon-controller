@@ -22,10 +22,10 @@ import (
 	"fmt"
 	"os"
 
-	certpolicy "github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/cert_policy"
-	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/config_policy"
-	iampolicy "github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/iam_policy"
-	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/policy_framework"
+	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/certpolicy"
+	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/configpolicy"
+	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/iampolicy"
+	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/policyframework"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	utilflag "k8s.io/component-base/cli/flag"
@@ -120,7 +120,7 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 		os.Exit(1)
 	}
 
-	frameworkAgentAddon, err := policy_framework.GetAgentAddon(controllerContext)
+	frameworkAgentAddon, err := policyframework.GetAgentAddon(controllerContext)
 	if err != nil {
 		setupLog.Error(err, "unable to get policy framework agent addon")
 		os.Exit(1)
@@ -132,7 +132,7 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 		os.Exit(1)
 	}
 
-	configAgentAddon, err := config_policy.GetAgentAddon(controllerContext)
+	configAgentAddon, err := configpolicy.GetAgentAddon(controllerContext)
 	if err != nil {
 		setupLog.Error(err, "unable to get config policy agent addon")
 		os.Exit(1)

@@ -1,8 +1,9 @@
-package config_policy
+package policyframework
 
 import (
 	"context"
 	"embed"
+	"strings"
 
 	"github.com/openshift/library-go/pkg/assets"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
@@ -27,7 +28,10 @@ var (
 )
 
 const (
-	addonName = "iam-policy-controller"
+	// addOnAgentInstallationNamespace is the namespace on the managed cluster to install the helloworldhelm addon agent.
+	addOnAgentInstallationNamespace = "open-cluster-management-agent-addon"
+	defaultExampleImage             = "quay.io/open-cluster-management/helloworld-addon:latest"
+	addonName                       = "governance-policy-framework"
 )
 
 func init() {
@@ -35,15 +39,15 @@ func init() {
 }
 
 //go:embed manifests
-//go:embed manifests/managedcluster-chart
-//go:embed manifests/managedcluster-chart/templates/_helpers.tpl
+//go:embed manifests/managedclusterchart
+//go:embed manifests/managedclusterchart/templates/_helpers.tpl
 var FS embed.FS
 
 var agentPermissionFiles = []string{
 	// role with RBAC rules to access resources on hub
-	"manifests/hub-permissions/role.yaml",
+	"manifests/hubpermissions/role.yaml",
 	// rolebinding to bind the above role to a certain user group
-	"manifests/hub-permissions/rolebinding.yaml",
+	"manifests/hubpermissions/rolebinding.yaml",
 }
 
 func newRegistrationOption(kubeConfig *rest.Config, recorder events.Recorder, agentName string) *agent.RegistrationOption {
@@ -100,14 +104,52 @@ func applyManifestFromFile(file, clusterName, addonName string, kubeclient *kube
 	return nil
 }
 
+type global struct {
+	ImagePullPolicy string            `json:"imagePullPolicy"`
+	ImagePullSecret string            `json:"imagePullSecret"`
+	ImageOverrides  map[string]string `json:"imageOverrides"`
+	NodeSelector    map[string]string `json:"nodeSelector"`
+	ProxyConfig     map[string]string `json:"proxyConfig"`
+}
+
 type userValues struct {
-	ClusterNamespace string `json:"clusterNamespace"`
+	ClusterNamespace  string `json:"clusterNamespace"`
+	LogLevel          int32  `json:"logLevel"`
+	Global            global `json:"global"`
+	OnMulticlusterHub bool   `json:"onMulticlusterHub"`
 }
 
 func getValues(cluster *clusterv1.ManagedCluster,
 	addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
 	userValues := userValues{
 		ClusterNamespace: cluster.GetName(),
+		Global: global{
+			ImagePullPolicy: "IfNotPresent",
+			ImageOverrides: map[string]string{
+				"helloWorldHelm": defaultExampleImage,
+			},
+			NodeSelector: map[string]string{},
+			ProxyConfig: map[string]string{
+				"HTTP_PROXY":  "",
+				"HTTPS_PROXY": "",
+				"NO_PROXY":    "",
+			},
+		},
+		OnMulticlusterHub: false,
+	}
+	// special case for local-cluster
+	if cluster.Name == "local-cluster" {
+		userValues.OnMulticlusterHub = true
+	}
+	if val, ok := addon.GetAnnotations()["addon.open-cluster-management.io/on-multicluster-hub"]; ok {
+		if strings.EqualFold(val, "true") {
+			userValues.OnMulticlusterHub = true
+		} else if strings.EqualFold(val, "false") {
+			// the special case can still be overridden by this annotation
+			userValues.OnMulticlusterHub = false
+		} else {
+			// TODO: should this log or return an error? The annotation should be true or false
+		}
 	}
 	return addonfactory.JsonStructToValues(userValues)
 }
@@ -118,7 +160,7 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 		controllerContext.EventRecorder,
 		addonName)
 
-	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedcluster-chart").
+	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
 		WithGetValuesFuncs(getValues, addonfactory.GetValuesFromAddonAnnotation).
 		WithAgentRegistrationOption(registrationOption).
 		BuildHelmAgentAddon()

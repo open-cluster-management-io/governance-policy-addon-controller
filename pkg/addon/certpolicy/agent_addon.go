@@ -1,4 +1,4 @@
-package config_policy
+package certpolicy
 
 import (
 	"context"
@@ -35,15 +35,15 @@ func init() {
 }
 
 //go:embed manifests
-//go:embed manifests/managedcluster-chart
-//go:embed manifests/managedcluster-chart/templates/_helpers.tpl
+//go:embed manifests/managedclusterchart
+//go:embed manifests/managedclusterchart/templates/_helpers.tpl
 var FS embed.FS
 
 var agentPermissionFiles = []string{
 	// role with RBAC rules to access resources on hub
-	"manifests/hub-permissions/role.yaml",
+	"manifests/hubpermissions/role.yaml",
 	// rolebinding to bind the above role to a certain user group
-	"manifests/hub-permissions/rolebinding.yaml",
+	"manifests/hubpermissions/rolebinding.yaml",
 }
 
 func newRegistrationOption(kubeConfig *rest.Config, recorder events.Recorder, agentName string) *agent.RegistrationOption {
@@ -100,8 +100,7 @@ func applyManifestFromFile(file, clusterName, addonName string, kubeclient *kube
 	return nil
 }
 
-type userValues struct {
-}
+type userValues struct{}
 
 func getValues(cluster *clusterv1.ManagedCluster,
 	addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
@@ -115,7 +114,7 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 		controllerContext.EventRecorder,
 		addonName)
 
-	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedcluster-chart").
+	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
 		WithGetValuesFuncs(getValues, addonfactory.GetValuesFromAddonAnnotation).
 		WithAgentRegistrationOption(registrationOption).
 		BuildHelmAgentAddon()
