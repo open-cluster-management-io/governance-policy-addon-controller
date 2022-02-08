@@ -26,7 +26,6 @@ tolerations:
   effect: NoSchedule
 
 clusterName: null
-clusterNamespace: null
 
 global: 
   imagePullPolicy: Always 

@@ -9,7 +9,6 @@ import (
 	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -20,17 +19,10 @@ import (
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 )
 
-var (
-	genericScheme = runtime.NewScheme()
-	genericCodecs = serializer.NewCodecFactory(genericScheme)
-	genericCodec  = genericCodecs.UniversalDeserializer()
-)
+var genericScheme = runtime.NewScheme()
 
 const (
-	// addOnAgentInstallationNamespace is the namespace on the managed cluster to install the helloworldhelm addon agent.
-	addOnAgentInstallationNamespace = "open-cluster-management-agent-addon"
-	defaultExampleImage             = "quay.io/open-cluster-management/helloworld-addon:latest"
-	addonName                       = "config-policy-controller"
+	addonName = "config-policy-controller"
 )
 
 func init() {
@@ -103,37 +95,11 @@ func applyManifestFromFile(file, clusterName, addonName string, kubeclient *kube
 	return nil
 }
 
-type global struct {
-	ImagePullPolicy string            `json:"imagePullPolicy"`
-	ImagePullSecret string            `json:"imagePullSecret"`
-	ImageOverrides  map[string]string `json:"imageOverrides"`
-	NodeSelector    map[string]string `json:"nodeSelector"`
-	ProxyConfig     map[string]string `json:"proxyConfig"`
-}
-
-type userValues struct {
-	ClusterNamespace string `json:"clusterNamespace"`
-	LogLevel         int32  `json:"logLevel"`
-	Global           global `json:"global"`
-}
+type userValues struct{}
 
 func getValues(cluster *clusterv1.ManagedCluster,
 	addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
-	userValues := userValues{
-		ClusterNamespace: cluster.GetName(),
-		Global: global{
-			ImagePullPolicy: "IfNotPresent",
-			ImageOverrides: map[string]string{
-				"helloWorldHelm": defaultExampleImage,
-			},
-			NodeSelector: map[string]string{},
-			ProxyConfig: map[string]string{
-				"HTTP_PROXY":  "",
-				"HTTPS_PROXY": "",
-				"NO_PROXY":    "",
-			},
-		},
-	}
+	userValues := userValues{}
 	return addonfactory.JsonStructToValues(userValues)
 }
 

@@ -41,7 +41,7 @@ spec:
           {{- end }}
         env:
           - name: WATCH_NAMESPACE
-            value: "{{ .Values.clusterNamespace }}"
+            value: "{{ .Values.clusterName }}"
           - name: POD_NAME
             valueFrom:
               fieldRef:
@@ -93,7 +93,7 @@ spec:
           {{- end }}
         env:
           - name: WATCH_NAMESPACE
-            value: "{{ .Values.clusterNamespace }}"
+            value: "{{ .Values.clusterName }}"
           - name: POD_NAME
             valueFrom:
               fieldRef:
@@ -141,7 +141,7 @@ spec:
         command: ["governance-policy-template-sync"]
         env:
           - name: WATCH_NAMESPACE
-            value: "{{ .Values.clusterNamespace }}"
+            value: "{{ .Values.clusterName }}"
           - name: POD_NAME
             valueFrom:
               fieldRef:

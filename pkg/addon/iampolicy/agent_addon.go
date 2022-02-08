@@ -9,7 +9,6 @@ import (
 	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -20,11 +19,7 @@ import (
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 )
 
-var (
-	genericScheme = runtime.NewScheme()
-	genericCodecs = serializer.NewCodecFactory(genericScheme)
-	genericCodec  = genericCodecs.UniversalDeserializer()
-)
+var genericScheme = runtime.NewScheme()
 
 const (
 	addonName = "iam-policy-controller"
@@ -100,15 +95,11 @@ func applyManifestFromFile(file, clusterName, addonName string, kubeclient *kube
 	return nil
 }
 
-type userValues struct {
-	ClusterNamespace string `json:"clusterNamespace"`
-}
+type userValues struct{}
 
 func getValues(cluster *clusterv1.ManagedCluster,
 	addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
-	userValues := userValues{
-		ClusterNamespace: cluster.GetName(),
-	}
+	userValues := userValues{}
 	return addonfactory.JsonStructToValues(userValues)
 }
 
