@@ -7,16 +7,15 @@ org: open-cluster-management
 replicas: 1
 args:
   frequency: 30
-  verbosity: 0
   defaultDuration: null
-securityContext:
-  pod:
-    runAsNonRoot: true
-  container:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: false
-    runAsNonRoot: true
-    privileged: false
+
+resources:
+  requests:
+    memory: "150Mi"
+  limits:
+    memory: "300Mi"
+
+affinity: {}
 
 tolerations:
 - effect: NoSchedule
@@ -32,14 +31,12 @@ tolerations:
   effect: NoSchedule
 
 clusterName: null
+clusterNamespace: null
 
 global:
-  imagePullPolicy: IfNotPresent
+  imagePullPolicy: Always
   imagePullSecret: null
   imageOverrides:
     cert_policy_controller: quay.io/open-cluster-management/cert-policy-controller:latest-2.5
   nodeSelector: {}
-  proxyConfig:
-    HTTP_PROXY: null
-    HTTPS_PROXY: null
-    NO_PROXY: null
+  proxyConfig: {}

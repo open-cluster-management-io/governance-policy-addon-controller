@@ -3,11 +3,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ .Values.org }}:{{ template "iamPolicyController.leaderElectionRole" . }}
+  creationTimestamp: null
+  name: {{ include "controller.leaderrolename" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ template "iamPolicyController.fullname" . }}
-    chart: {{ template "iamPolicyController.chart" . }}
+    app: {{ include "controller.fullname" . }}
+    chart: {{ include "controller.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 rules:

@@ -3,18 +3,18 @@
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "framework.leaderrolename" . }}
+  name: {{ include "controller.leaderrolename" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ template "framework.name" . }}
-    chart: {{ template "framework.chart" . }}
+    app: {{ include "controller.fullname" . }}
+    chart: {{ include "controller.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 subjects:
 - kind: ServiceAccount
-  name: {{ template "framework.fullname" . }}
+  name: {{ include "controller.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
-  name: {{ template "framework.leaderrolename" . }}
+  name: {{ include "controller.leaderrolename" . }}
   apiGroup: rbac.authorization.k8s.io

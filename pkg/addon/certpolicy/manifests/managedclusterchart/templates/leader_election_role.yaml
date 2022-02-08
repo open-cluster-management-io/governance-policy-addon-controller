@@ -4,7 +4,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   creationTimestamp: null
-  name: {{ include "controller.name" . }}
+  name: {{ include "controller.leaderrolename" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ include "controller.fullname" . }}

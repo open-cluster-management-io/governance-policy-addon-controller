@@ -4,7 +4,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: {{ .Values.org }}:{{ include "controller.name" . }}
+  name: {{ include "controller.rolename" . }}
   labels:
     app: {{ include "controller.fullname" . }}
     chart: {{ include "controller.chart" . }}

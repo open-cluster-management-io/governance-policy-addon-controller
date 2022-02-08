@@ -3,11 +3,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ template "framework.leaderrolename" . }}
+  creationTimestamp: null
+  name: {{ include "controller.leaderrolename" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ template "framework.name" . }}
-    chart: {{ template "framework.chart" . }}
+    app: {{ include "controller.fullname" . }}
+    chart: {{ include "controller.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 rules:

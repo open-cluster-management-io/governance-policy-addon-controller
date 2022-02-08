@@ -7,10 +7,6 @@ kind: CustomResourceDefinition
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-    app: {{ template "iamPolicyController.fullname" . }}
-    chart: {{ template "iamPolicyController.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
   name: iampolicies.policy.open-cluster-management.io
 spec:
   group: policy.open-cluster-management.io

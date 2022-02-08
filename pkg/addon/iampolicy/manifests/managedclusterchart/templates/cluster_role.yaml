@@ -3,10 +3,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Values.org }}:{{ template "iamPolicyController.clusterRole" . }}
+  creationTimestamp: null
+  name: {{ include "controller.rolename" . }}
   labels:
-    app: {{ template "iamPolicyController.fullname" . }}
-    chart: {{ template "iamPolicyController.chart" . }}
+    app: {{ include "controller.fullname" . }}
+    chart: {{ include "controller.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 rules:

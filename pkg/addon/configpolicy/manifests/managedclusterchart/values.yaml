@@ -4,12 +4,9 @@ fullnameOverride: null
 nameOverride: null
 
 org: open-cluster-management
+replicas: 1
 
-enabled: true
 hubKubeconfigSecret: config-policy-controller-hub-kubeconfig
-
-clusterName: null
-clusterNamespace: null
 
 resources:
   requests:
@@ -28,13 +25,13 @@ tolerations:
   operator: Exists
   effect: NoSchedule
 
+clusterName: null
+clusterNamespace: null
+
 global: 
   imagePullPolicy: Always 
   imagePullSecret: null
   imageOverrides: 
     config_policy_controller: quay.io/open-cluster-management/config-policy-controller:edge
   nodeSelector: {}
-  proxyConfig:
-    HTTP_PROXY: null
-    HTTPS_PROXY: null
-    NO_PROXY: null
+  proxyConfig: {}

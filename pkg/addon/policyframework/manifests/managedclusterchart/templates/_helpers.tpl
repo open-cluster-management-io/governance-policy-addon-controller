@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "framework.name" -}}
+{{- define "controller.name" -}}
     {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -11,7 +11,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "framework.fullname" -}}
+{{- define "controller.fullname" -}}
     {{- if .Values.fullnameOverride -}}
         {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
     {{- else -}}
@@ -27,20 +27,27 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "framework.chart" -}}
+{{- define "controller.chart" -}}
     {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
 Create role name used in cluster role and binding
 */}}
-{{- define "framework.rolename" -}}
-    {{- .Values.org }}:{{ template "framework.fullname" . -}}
+{{- define "controller.rolename" -}}
+    {{- .Values.org }}:{{ template "controller.fullname" . -}}
 {{- end -}}
 
 {{/*
 Create role name used in role and binding for leader election
 */}}
-{{- define "framework.leaderrolename" -}}
-    {{ template "framework.fullname" . }}-leader
+{{- define "controller.leaderrolename" -}}
+    {{ template "controller.fullname" . }}-leader
+{{- end -}}
+
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "controller.serviceAccountName" -}}
+    {{- template "controller.fullname" . -}}-sa
 {{- end -}}

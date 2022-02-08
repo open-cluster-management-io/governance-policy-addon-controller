@@ -6,12 +6,8 @@ nameOverride: null
 onMulticlusterHub: false
 
 org: open-cluster-management
-
-enabled: true
+replicas: 1
 hubKubeconfigSecret: governance-policy-framework-hub-kubeconfig
-
-clusterName: null
-clusterNamespace: null
 
 resources:
   requests:
@@ -30,19 +26,15 @@ tolerations:
   operator: Exists
   effect: NoSchedule
 
-logLevel: 5
-
-postDeleteJobServiceAccount: null
+clusterName: null
+clusterNamespace: null
 
 global: 
-  imagePullPolicy: IfNotPresent
+  imagePullPolicy: Always
   imagePullSecret: null
   imageOverrides: 
     governance_policy_spec_sync: quay.io/open-cluster-management/governance-policy-spec-sync:edge
     governance_policy_status_sync: quay.io/open-cluster-management/governance-policy-status-sync:edge
     governance_policy_template_sync: quay.io/open-cluster-management/governance-policy-template-sync:edge
   nodeSelector: {}
-  proxyConfig:
-    HTTP_PROXY: null
-    HTTPS_PROXY: null
-    NO_PROXY: null
+  proxyConfig: {}

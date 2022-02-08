@@ -1,49 +1,42 @@
 # Copyright Contributors to the Open Cluster Management project
 
-{{- if .Values.enabled }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ template "configpolicyctrl.fullname" . }}
+  name: {{ include "controller.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ template "configpolicyctrl.name" . }}
-    chart: {{ template "configpolicyctrl.chart" . }}
-    component: "governance"
+    app: {{ include "controller.fullname" . }}
+    chart: {{ include "controller.chart" . }}
     release: {{ .Release.Name }}
-    controller: "operator"
     heritage: {{ .Release.Service }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      app: {{ template "configpolicyctrl.name" . }}
-      component: "governance"
+      app: {{ include "controller.name" . }}
       release: {{ .Release.Name }}
   template:
     metadata:
       annotations:
         target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
       labels:
-        app: {{ template "configpolicyctrl.name" . }}
-        component: "governance"
-        controller: "operator"
-        name: config-policy-ctrl
+        app: {{ include "controller.fullname" . }}
+        chart: {{ include "controller.chart" . }}
         release: {{ .Release.Name }}
         heritage: {{ .Release.Service }}
-        chart: {{ template "configpolicyctrl.chart" . }}
     spec:
-      serviceAccountName: {{ template "configpolicyctrl.fullname" . }}
       containers:
-      - name: config-policy-controller
+      - name: {{ .Chart.Name }}
         image: "{{ .Values.global.imageOverrides.config_policy_controller }}"
         imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
-        resources:
-          {{- toYaml .Values.resources | nindent 10 }}
         command: ["config-policy-controller"]
         args:
           - "--enable-lease=true"
           - "--cluster-name={{ .Values.clusterName }}"
+          {{- if semverCompare "< 1.14.0" .Capabilities.KubeVersion.Version }}
+          - --legacy-leader-elect=true
+          {{- end }}
         env:
           - name: WATCH_NAMESPACE
             value: "{{ .Values.clusterNamespace }}"
@@ -52,21 +45,25 @@ spec:
               fieldRef:
                 fieldPath: metadata.name
           - name: OPERATOR_NAME
-            value: "config-policy-ctrl"
-          {{- if .Values.global.proxyConfig.HTTP_PROXY }}
+            value: {{ include "controller.fullname" . }}
+          {{- if .Values.global.proxyConfig }}
           - name: HTTP_PROXY
             value: {{ .Values.global.proxyConfig.HTTP_PROXY }}
-          {{- end }}
-          {{- if .Values.global.proxyConfig.HTTPS_PROXY }}
           - name: HTTPS_PROXY
             value: {{ .Values.global.proxyConfig.HTTPS_PROXY }}
-          {{- end }}
-          {{- if .Values.global.proxyConfig.NO_PROXY }}
           - name: NO_PROXY
             value: {{ .Values.global.proxyConfig.NO_PROXY }}
           {{- end }}
         livenessProbe: null
         readinessProbe: null
+        resources: {{- toYaml .Values.resources | nindent 10 }}
+        securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
       volumes:
         - name: klusterlet-config
           secret:
@@ -75,7 +72,12 @@ spec:
       imagePullSecrets:
       - name: "{{ .Values.global.imagePullSecret }}"
       {{- end }}
-      nodeSelector: {{ toYaml .Values.global.nodeSelector | nindent 8 }}
       affinity: {{ toYaml .Values.affinity | nindent 8 }}
       tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
-{{- end }}
+      nodeSelector: {{ toYaml .Values.global.nodeSelector | nindent 8 }}
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      serviceAccount: {{ include "controller.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: true
