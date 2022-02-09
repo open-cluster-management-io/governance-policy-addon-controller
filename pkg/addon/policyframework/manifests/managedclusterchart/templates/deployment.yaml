@@ -1,0 +1,185 @@
+# Copyright Contributors to the Open Cluster Management project
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "controller.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "controller.fullname" . }}
+    chart: {{ include "controller.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    hubKubeconfigSecret: {{ .Values.hubKubeconfigSecret }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "controller.fullname" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+      labels:
+        app: {{ include "controller.fullname" . }}
+        chart: {{ include "controller.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+    spec:
+      containers:
+      {{- if not .Values.onMulticlusterHub }}
+      - name: spec-sync
+        image: "{{ .Values.global.imageOverrides.governance_policy_spec_sync }}"
+        imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
+        command: ["governance-policy-spec-sync"]
+        args:
+          - '--hub-cluster-configfile=/var/run/klusterlet/kubeconfig'
+          - '--health-probe-bind-address=:8081'
+          {{- if semverCompare "< 1.14.0" .Capabilities.KubeVersion.Version }}
+          - --legacy-leader-elect=true
+          {{- end }}
+        env:
+          - name: WATCH_NAMESPACE
+            value: "{{ .Values.clusterName }}"
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: OPERATOR_NAME
+            value: "governance-policy-spec-sync"
+          {{- if .Values.global.proxyConfig }}
+          - name: HTTP_PROXY
+            value: {{ .Values.global.proxyConfig.HTTP_PROXY }}
+          - name: HTTPS_PROXY
+            value: {{ .Values.global.proxyConfig.HTTPS_PROXY }}
+          - name: NO_PROXY
+            value: {{ .Values.global.proxyConfig.NO_PROXY }}
+          {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          failureThreshold: 3
+          periodSeconds: 10
+        resources: {{- toYaml .Values.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        volumeMounts:
+          - name: klusterlet-config
+            mountPath: /var/run/klusterlet
+      {{- end }}
+      - name: status-sync
+        image: "{{ .Values.global.imageOverrides.governance_policy_status_sync }}"
+        imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
+        command: ["governance-policy-status-sync"]
+        args:
+          - '--enable-lease=true'
+          - '--hub-cluster-configfile=/var/run/klusterlet/kubeconfig'
+          - '--health-probe-bind-address=:8082'
+          {{- if semverCompare "< 1.14.0" .Capabilities.KubeVersion.Version }}
+          - --legacy-leader-elect=true
+          {{- end }}
+        env:
+          - name: WATCH_NAMESPACE
+            value: "{{ .Values.clusterName }}"
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: OPERATOR_NAME
+            value: "governance-policy-status-sync"
+          {{- if .Values.onMulticlusterHub }}
+          - name: ON_MULTICLUSTERHUB
+            value: "true"
+          {{- end }}
+          {{- if .Values.global.proxyConfig }}
+          - name: HTTP_PROXY
+            value: {{ .Values.global.proxyConfig.HTTP_PROXY }}
+          - name: HTTPS_PROXY
+            value: {{ .Values.global.proxyConfig.HTTPS_PROXY }}
+          - name: NO_PROXY
+            value: {{ .Values.global.proxyConfig.NO_PROXY }}
+          {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8082
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8082
+          failureThreshold: 3
+          periodSeconds: 10
+        resources: {{- toYaml .Values.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+        volumeMounts:
+          - name: klusterlet-config
+            mountPath: /var/run/klusterlet
+      - name: template-sync
+        image: "{{ .Values.global.imageOverrides.governance_policy_template_sync }}"
+        imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
+        command: ["governance-policy-template-sync"]
+        env:
+          - name: WATCH_NAMESPACE
+            value: "{{ .Values.clusterName }}"
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: OPERATOR_NAME
+            value: "governance-policy-template-sync"
+          {{- if .Values.global.proxyConfig }}
+          - name: HTTP_PROXY
+            value: {{ .Values.global.proxyConfig.HTTP_PROXY }}
+          - name: HTTPS_PROXY
+            value: {{ .Values.global.proxyConfig.HTTPS_PROXY }}
+          - name: NO_PROXY
+            value: {{ .Values.global.proxyConfig.NO_PROXY }}
+          {{- end }}
+        livenessProbe: null
+        readinessProbe: null
+        resources: {{- toYaml .Values.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+      volumes:
+        - name: klusterlet-config
+          secret:
+            secretName: {{ .Values.hubKubeconfigSecret }}
+      {{- if .Values.global.imagePullSecret }}
+      imagePullSecrets:
+      - name: "{{ .Values.global.imagePullSecret }}"
+      {{- end }}
+      affinity: {{ toYaml .Values.affinity | nindent 8 }}
+      tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
+      nodeSelector: {{ toYaml .Values.global.nodeSelector | nindent 8 }}
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      serviceAccountName: {{ include "controller.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: true

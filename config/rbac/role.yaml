@@ -134,10 +134,10 @@ rules:
 - apiGroups:
   - rbac.authorization.k8s.io
   resourceNames:
-  - cert-policy-controller
-  - config-policy-controller
-  - iam-policy-controller
-  - policy-framework
+  - open-cluster-management:cert-policy-controller-hub
+  - open-cluster-management:config-policy-controller-hub
+  - open-cluster-management:iam-policy-controller-hub
+  - open-cluster-management:policy-framework-hub
   resources:
   - clusterroles
   verbs:
@@ -154,10 +154,10 @@ rules:
 - apiGroups:
   - rbac.authorization.k8s.io
   resourceNames:
-  - open-cluster-management:cert-policy-controller
-  - open-cluster-management:config-policy-controller
-  - open-cluster-management:iam-policy-controller
-  - open-cluster-management:policy-framework
+  - open-cluster-management:cert-policy-controller-hub
+  - open-cluster-management:config-policy-controller-hub
+  - open-cluster-management:iam-policy-controller-hub
+  - open-cluster-management:policy-framework-hub
   resources:
   - rolebindings
   verbs:

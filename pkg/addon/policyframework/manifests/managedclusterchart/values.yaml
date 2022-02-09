@@ -1,0 +1,39 @@
+# Copyright Contributors to the Open Cluster Management project
+
+fullnameOverride: null
+nameOverride: null
+
+onMulticlusterHub: false
+
+org: open-cluster-management
+replicas: 1
+hubKubeconfigSecret: governance-policy-framework-hub-kubeconfig
+
+resources:
+  requests:
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+affinity: {}
+
+tolerations:
+- key: "dedicated"
+  operator: "Equal"
+  value: "infra"
+  effect: "NoSchedule"
+- key: node-role.kubernetes.io/infra
+  operator: Exists
+  effect: NoSchedule
+
+clusterName: null
+
+global: 
+  imagePullPolicy: Always
+  imagePullSecret: null
+  imageOverrides: 
+    governance_policy_spec_sync: quay.io/open-cluster-management/governance-policy-spec-sync:edge
+    governance_policy_status_sync: quay.io/open-cluster-management/governance-policy-status-sync:edge
+    governance_policy_template_sync: quay.io/open-cluster-management/governance-policy-template-sync:edge
+  nodeSelector: {}
+  proxyConfig: {}
