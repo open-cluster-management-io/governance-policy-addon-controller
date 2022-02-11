@@ -22,12 +22,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/certpolicy"
-	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/configpolicy"
-	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/iampolicy"
-	"github.com/JustinKuli/governance-policy-addon-controller/pkg/addon/policyframework"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/stolostron/governance-policy-addon-controller/pkg/addon/certpolicy"
+	"github.com/stolostron/governance-policy-addon-controller/pkg/addon/configpolicy"
+	"github.com/stolostron/governance-policy-addon-controller/pkg/addon/iampolicy"
+	"github.com/stolostron/governance-policy-addon-controller/pkg/addon/policyframework"
 	utilflag "k8s.io/component-base/cli/flag"
 
 	"github.com/openshift/library-go/pkg/controller/controllercmd"

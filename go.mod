@@ -1,4 +1,4 @@
-module github.com/JustinKuli/governance-policy-addon-controller
+module github.com/stolostron/governance-policy-addon-controller
 
 go 1.17
 

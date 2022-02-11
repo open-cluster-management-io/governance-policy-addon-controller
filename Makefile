@@ -1,6 +1,12 @@
 
-# Image URL to use all building/pushing image targets
-IMG ?= quay.io/justinkuli/policy-addon-controller:latest
+# Image URL to use all building/pushing image targets;
+# Use your own docker registry and image name for dev/test by overridding the IMG and REGISTRY environment variable.
+IMG ?= $(shell cat COMPONENT_NAME 2> /dev/null)
+REGISTRY ?= quay.io/stolostron
+TAG ?= latest
+VERSION ?= $(shell cat COMPONENT_VERSION 2> /dev/null)
+IMAGE_NAME_AND_VERSION ?= $(REGISTRY)/$(IMG):$(VERSION)
+
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
 
@@ -62,20 +68,16 @@ test: manifests generate fmt vet envtest ## Run tests.
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+build: ## Build manager binary.
+	@build/common/scripts/gobuild.sh build/_output/bin/$(IMG) main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
-.PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
-
-.PHONY: docker-push
-docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+.PHONY: build-images
+build-images: generate fmt vet
+	@docker build -t ${IMAGE_NAME_AND_VERSION} -f build/Dockerfile .
 
 ##@ Deployment
 
@@ -93,7 +95,7 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMAGE_NAME_AND_VERSION}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
@@ -192,13 +194,13 @@ kind-run-local: manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-
 	go run ./main.go controller --kubeconfig=$(KIND_KUBECONFIG) --namespace $(CONTROLLER_NAMESPACE)
 
 .PHONY: kind-load-image
-kind-load-image: docker-build $(KIND_KUBECONFIG) ## Build and load the docker image into kind
-	kind load docker-image $(IMG) --name $(KIND_NAME)
+kind-load-image: build-images $(KIND_KUBECONFIG) ## Build and load the docker image into kind
+	kind load docker-image $(IMAGE_NAME_AND_VERSION) --name $(KIND_NAME)
 
 .PHONY: regenerate-controller
 kind-regenerate-controller: manifests generate kustomize $(KIND_KUBECONFIG) ## Refresh (or initially deploy) the policy-addon-controller
 	cp config/default/kustomization.yaml config/default/kustomization.yaml.tmp
-	cd config/default && $(KUSTOMIZE) edit set image policy-addon-image=$(IMG)
+	cd config/default && $(KUSTOMIZE) edit set image policy-addon-image=$(IMAGE_NAME_AND_VERSION)
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 	mv config/default/kustomization.yaml.tmp config/default/kustomization.yaml
 	kubectl delete -n $(CONTROLLER_NAMESPACE) pods -l=app=governance-policy-addon-controller

@@ -28,7 +28,7 @@ spec:
         runAsNonRoot: true
       containers:
       - command:
-        - /policy-addon
+        - governance-policy-addon-controller
         args:
         - controller
         image: policy-addon-image
