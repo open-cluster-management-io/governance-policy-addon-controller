@@ -120,52 +120,19 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 		os.Exit(1)
 	}
 
-	frameworkAgentAddon, err := policyframework.GetAgentAddon(controllerContext)
-	if err != nil {
-		setupLog.Error(err, "unable to get policy framework agent addon")
-		os.Exit(1)
+	agentFuncs := []func(addonmanager.AddonManager, *controllercmd.ControllerContext) error{
+		policyframework.GetAndAddAgent,
+		configpolicy.GetAndAddAgent,
+		iampolicy.GetAndAddAgent,
+		certpolicy.GetAndAddAgent,
 	}
 
-	err = mgr.AddAgent(frameworkAgentAddon)
-	if err != nil {
-		setupLog.Error(err, "unable to add policy framework agent addon")
-		os.Exit(1)
-	}
-
-	configAgentAddon, err := configpolicy.GetAgentAddon(controllerContext)
-	if err != nil {
-		setupLog.Error(err, "unable to get config policy agent addon")
-		os.Exit(1)
-	}
-
-	err = mgr.AddAgent(configAgentAddon)
-	if err != nil {
-		setupLog.Error(err, "unable to add config policy agent addon")
-		os.Exit(1)
-	}
-
-	iamAgentAddon, err := iampolicy.GetAgentAddon(controllerContext)
-	if err != nil {
-		setupLog.Error(err, "unable to get iam policy agent addon")
-		os.Exit(1)
-	}
-
-	err = mgr.AddAgent(iamAgentAddon)
-	if err != nil {
-		setupLog.Error(err, "unable to add iam policy agent addon")
-		os.Exit(1)
-	}
-
-	certAgentAddon, err := certpolicy.GetAgentAddon(controllerContext)
-	if err != nil {
-		setupLog.Error(err, "unable to get cert policy agent addon")
-		os.Exit(1)
-	}
-
-	err = mgr.AddAgent(certAgentAddon)
-	if err != nil {
-		setupLog.Error(err, "unable to add cert policy agent addon")
-		os.Exit(1)
+	for _, f := range agentFuncs {
+		err := f(mgr, controllerContext)
+		if err != nil {
+			setupLog.Error(err, "unable to get or add agent addon")
+			os.Exit(1)
+		}
 	}
 
 	err = mgr.Start(ctx)
