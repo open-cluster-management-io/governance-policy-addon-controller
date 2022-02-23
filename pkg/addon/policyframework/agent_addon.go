@@ -2,6 +2,7 @@ package policyframework
 
 import (
 	"embed"
+	"os"
 	"strings"
 
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
@@ -31,13 +32,29 @@ var agentPermissionFiles = []string{
 }
 
 type userValues struct {
-	OnMulticlusterHub bool `json:"onMulticlusterHub"`
+	OnMulticlusterHub bool                     `json:"onMulticlusterHub"`
+	GlobalValues      policyaddon.GlobalValues `json:"global"`
 }
 
 func getValues(cluster *clusterv1.ManagedCluster,
 	addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
 	userValues := userValues{
 		OnMulticlusterHub: false,
+		GlobalValues: policyaddon.GlobalValues{
+			ImagePullPolicy: "IfNotPresent",
+			ImagePullSecret: "open-cluster-management-image-pull-credentials",
+			ImageOverrides: map[string]string{
+				"governance_policy_spec_sync":     os.Getenv("GOVERNANCE_POLICY_SPEC_SYNC_IMAGE"),
+				"governance_policy_status_sync":   os.Getenv("GOVERNANCE_POLICY_STATUS_SYNC_IMAGE"),
+				"governance_policy_template_sync": os.Getenv("GOVERNANCE_POLICY_TEMPLATE_SYNC_IMAGE"),
+			},
+			NodeSelector: map[string]string{},
+			ProxyConfig: map[string]string{
+				"HTTP_PROXY":  "",
+				"HTTPS_PROXY": "",
+				"NO_PROXY":    "",
+			},
+		},
 	}
 	// special case for local-cluster
 	if cluster.Name == "local-cluster" {

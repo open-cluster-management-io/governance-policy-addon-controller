@@ -2,6 +2,7 @@ package iampolicy
 
 import (
 	"embed"
+	"os"
 
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
@@ -33,7 +34,21 @@ type userValues struct{}
 
 func getValues(cluster *clusterv1.ManagedCluster,
 	addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
-	userValues := userValues{}
+	userValues := policyaddon.UserValues{
+		GlobalValues: policyaddon.GlobalValues{
+			ImagePullPolicy: "IfNotPresent",
+			ImagePullSecret: "open-cluster-management-image-pull-credentials",
+			ImageOverrides: map[string]string{
+				"iam_policy_controller": os.Getenv("IAM_POLICY_CONTROLLER_IMAGE"),
+			},
+			NodeSelector: map[string]string{},
+			ProxyConfig: map[string]string{
+				"HTTP_PROXY":  "",
+				"HTTPS_PROXY": "",
+				"NO_PROXY":    "",
+			},
+		},
+	}
 	return addonfactory.JsonStructToValues(userValues)
 }
 

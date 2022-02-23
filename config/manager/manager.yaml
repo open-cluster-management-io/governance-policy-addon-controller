@@ -38,6 +38,18 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: CERT_POLICY_CONTROLLER_IMAGE
+          value: quay.io/stolostron/cert-policy-controller:2.5.0-SNAPSHOT-2022-02-22-05-18-45
+        - name: IAM_POLICY_CONTROLLER_IMAGE
+          value: quay.io/stolostron/iam-policy-controller:2.5.0-SNAPSHOT-2022-02-22-05-18-45
+        - name: CONFIG_POLICY_CONTROLLER_IMAGE
+          value: quay.io/stolostron/config-policy-controller:2.5.0-SNAPSHOT-2022-02-22-05-18-45
+        - name: GOVERNANCE_POLICY_SPEC_SYNC_IMAGE
+          value: quay.io/stolostron/governance-policy-spec-sync:2.5.0-SNAPSHOT-2022-02-22-05-18-45
+        - name: GOVERNANCE_POLICY_STATUS_SYNC_IMAGE
+          value: quay.io/stolostron/governance-policy-status-sync:2.5.0-SNAPSHOT-2022-02-22-05-18-45
+        - name: GOVERNANCE_POLICY_TEMPLATE_SYNC_IMAGE
+          value: quay.io/stolostron/governance-policy-template-sync:2.5.0-SNAPSHOT-2022-02-22-05-18-45
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

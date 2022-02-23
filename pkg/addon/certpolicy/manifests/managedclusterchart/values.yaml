@@ -33,9 +33,12 @@ tolerations:
 clusterName: null
 
 global:
-  imagePullPolicy: Always
-  imagePullSecret: null
+  imagePullPolicy: IfNotPresent
+  imagePullSecret: open-cluster-management-image-pull-credentials
   imageOverrides:
     cert_policy_controller: quay.io/open-cluster-management/cert-policy-controller:latest-2.5
   nodeSelector: {}
-  proxyConfig: {}
+  proxyConfig:
+    HTTP_PROXY: null
+    HTTPS_PROXY: null
+    NO_PROXY: null

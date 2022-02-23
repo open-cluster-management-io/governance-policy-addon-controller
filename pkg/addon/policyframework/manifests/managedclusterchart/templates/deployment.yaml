@@ -10,7 +10,6 @@ metadata:
     chart: {{ include "controller.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    hubKubeconfigSecret: {{ .Values.hubKubeconfigSecret }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
@@ -169,7 +168,7 @@ spec:
       volumes:
         - name: klusterlet-config
           secret:
-            secretName: {{ .Values.hubKubeconfigSecret }}
+            secretName: {{ .Values.hubKubeConfigSecret }}
       {{- if .Values.global.imagePullSecret }}
       imagePullSecrets:
       - name: "{{ .Values.global.imagePullSecret }}"

@@ -21,6 +21,18 @@ import (
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 )
 
+type GlobalValues struct {
+	ImagePullPolicy string            `json:"imagePullPolicy,"`
+	ImagePullSecret string            `json:"imagePullSecret"`
+	ImageOverrides  map[string]string `json:"imageOverrides,"`
+	NodeSelector    map[string]string `json:"nodeSelector,"`
+	ProxyConfig     map[string]string `json:"proxyConfig,"`
+}
+
+type UserValues struct {
+	GlobalValues GlobalValues `json:"global,"`
+}
+
 var genericScheme = runtime.NewScheme()
 
 func init() {
