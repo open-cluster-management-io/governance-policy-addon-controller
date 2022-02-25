@@ -48,7 +48,7 @@ import (
 // RBAC below will need to be updated if/when new policy controllers are added.
 
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create
-//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;patch;update,resourceNames=policy-framework;config-policy-controller;iam-policy-controller;cert-policy-controller
+//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;patch;update,resourceNames=governance-policy-framework;config-policy-controller;iam-policy-controller;cert-policy-controller
 
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=create
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework-hub";"open-cluster-management:config-policy-controller-hub";"open-cluster-management:iam-policy-controller-hub";"open-cluster-management:cert-policy-controller-hub"
@@ -73,6 +73,7 @@ import (
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policies,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policies/finalizers,verbs=update
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policies/status,verbs=get;patch;update
+//+kubebuilder:rbac:groups=core,resources=secrets,resourceNames=policy-encryption-key,verbs=get;list;watch
 
 var (
 	setupLog    = ctrl.Log.WithName("setup")
