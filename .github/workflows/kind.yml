@@ -69,9 +69,18 @@ jobs:
         make e2e-test
 
     - name: SonarCloud Analysis
-      if: ${{ github.event_name == 'push' }}
-      run: |
-        echo "SonarCloud not implemented."
+      if: |
+        github.event_name == 'push' &&
+        github.repository_owner == 'stolostron'  &&
+        matrix.kind == 'latest'
+      uses: sonarsource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        projectBaseDir: governance-policy-addon-controller
+        args: >
+          --debug
 
     - name: Clean up cluster
       if: ${{ always() }}
