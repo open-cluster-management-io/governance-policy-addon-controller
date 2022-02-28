@@ -22,21 +22,19 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"k8s.io/apimachinery/pkg/version"
+	utilflag "k8s.io/component-base/cli/flag"
+	"k8s.io/component-base/logs"
+	"open-cluster-management.io/addon-framework/pkg/addonmanager"
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	"github.com/stolostron/governance-policy-addon-controller/pkg/addon/certpolicy"
 	"github.com/stolostron/governance-policy-addon-controller/pkg/addon/configpolicy"
 	"github.com/stolostron/governance-policy-addon-controller/pkg/addon/iampolicy"
 	"github.com/stolostron/governance-policy-addon-controller/pkg/addon/policyframework"
-	utilflag "k8s.io/component-base/cli/flag"
-
-	"github.com/openshift/library-go/pkg/controller/controllercmd"
-	"k8s.io/apimachinery/pkg/version"
-	"k8s.io/component-base/logs"
-	"open-cluster-management.io/addon-framework/pkg/addonmanager"
-
-	ctrl "sigs.k8s.io/controller-runtime"
-	//+kubebuilder:scaffold:imports
 )
 
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=get;create

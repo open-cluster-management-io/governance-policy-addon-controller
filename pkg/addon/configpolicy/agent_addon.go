@@ -18,6 +18,7 @@ const (
 	addonName = "config-policy-controller"
 )
 
+//FS go:embed
 //go:embed manifests
 //go:embed manifests/managedclusterchart
 //go:embed manifests/managedclusterchart/templates/_helpers.tpl
@@ -47,6 +48,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			},
 		},
 	}
+
 	return addonfactory.JsonStructToValues(userValues)
 }
 

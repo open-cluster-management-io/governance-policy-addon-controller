@@ -17,15 +17,15 @@ var _ = Describe("Test iam policy controller deployment", func() {
 		Kubectl("apply", "-f", case3ManagedClusterAddOnCR)
 		deploy := GetWithTimeout(clientDynamic, gvrDeployment, case3DeploymentName, addonNamespace, true, 30)
 		Expect(deploy).NotTo(BeNil())
-
 	})
 	It("should have all replicas in iam-policy-controller deployment available", func() {
 		Eventually(func() bool {
 			deploy := GetWithTimeout(clientDynamic, gvrDeployment, case3DeploymentName, addonNamespace, true, 30)
-			status := deploy.Object["status"].(map[string]interface{})
+			status := deploy.Object["status"]
+			replicas := status.(map[string]interface{})["replicas"]
+			availableReplicas := status.(map[string]interface{})["availableReplicas"]
 
-			return (status["availableReplicas"] != nil) && status["replicas"].(int64) == status["availableReplicas"].(int64)
-
+			return (availableReplicas != nil) && replicas.(int64) == availableReplicas.(int64)
 		}, 240, 1).Should(Equal(true))
 	})
 	It("should delete the iam-policy-controller deployment when the ManagedClusterAddOn CR is removed", func() {

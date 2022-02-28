@@ -19,6 +19,7 @@ const (
 	addonName = "governance-policy-framework"
 )
 
+//FS go:embed
 //go:embed manifests
 //go:embed manifests/managedclusterchart
 //go:embed manifests/managedclusterchart/templates/_helpers.tpl
@@ -60,16 +61,16 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	if cluster.Name == "local-cluster" {
 		userValues.OnMulticlusterHub = true
 	}
+
 	if val, ok := addon.GetAnnotations()["addon.open-cluster-management.io/on-multicluster-hub"]; ok {
 		if strings.EqualFold(val, "true") {
 			userValues.OnMulticlusterHub = true
 		} else if strings.EqualFold(val, "false") {
 			// the special case can still be overridden by this annotation
 			userValues.OnMulticlusterHub = false
-		} else {
-			// TODO: should this log or return an error? The annotation should be true or false
 		}
 	}
+
 	return addonfactory.JsonStructToValues(userValues)
 }
 

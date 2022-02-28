@@ -23,9 +23,10 @@ var _ = Describe("Test config policy controller deployment", func() {
 		By("checking the number of containers in the deployment")
 		Eventually(func() int {
 			deploy := GetWithTimeout(clientDynamic, gvrDeployment, case2ConfigDeploymentName, addonNamespace, true, 30)
-			template := deploy.Object["spec"].(map[string]interface{})["template"].(map[string]interface{})
-			containers := template["spec"].(map[string]interface{})["containers"].([]interface{})
-			return len(containers)
+			spec := deploy.Object["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"]
+			containers := spec.(map[string]interface{})["containers"]
+
+			return len(containers.([]interface{}))
 		}, 60, 1).Should(Equal(1))
 	})
 	It("should have a running config policy controller pod", func() {
@@ -34,9 +35,9 @@ var _ = Describe("Test config policy controller deployment", func() {
 				LabelSelector: case2ConfigPodSelector,
 			}
 			pods := ListWithTimeoutByNamespace(clientDynamic, gvrPod, opts, addonNamespace, 1, true, 30)
-			status := pods.Items[0].Object["status"].(map[string]interface{})
-			phase := status["phase"].(string)
-			return phase == "Running"
+			phase := pods.Items[0].Object["status"].(map[string]interface{})["phase"]
+
+			return phase.(string) == "Running"
 		}, 60, 1).Should(Equal(true))
 	})
 	It("should remove the config policy controller deployment when the ManagedClusterAddOn CR is removed", func() {

@@ -18,6 +18,7 @@ const (
 	addonName = "cert-policy-controller"
 )
 
+//FS go:embed
 //go:embed manifests
 //go:embed manifests/managedclusterchart
 //go:embed manifests/managedclusterchart/templates/_helpers.tpl
@@ -29,8 +30,6 @@ var agentPermissionFiles = []string{
 	// rolebinding to bind the above role to a certain user group
 	"manifests/hubpermissions/rolebinding.yaml",
 }
-
-type userValues struct{}
 
 func getValues(cluster *clusterv1.ManagedCluster,
 	addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
@@ -49,6 +48,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			},
 		},
 	}
+
 	return addonfactory.JsonStructToValues(userValues)
 }
 

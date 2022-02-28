@@ -30,10 +30,12 @@ var _ = Describe("Test framework deployment", func() {
 
 		By("checking the number of containers in the deployment")
 		Eventually(func() int {
-			deploy := GetWithTimeout(clientDynamic, gvrDeployment, case1FrameworkDeploymentName, addonNamespace, true, 30)
-			template := deploy.Object["spec"].(map[string]interface{})["template"].(map[string]interface{})
-			containers := template["spec"].(map[string]interface{})["containers"].([]interface{})
-			return len(containers)
+			deploy := GetWithTimeout(clientDynamic, gvrDeployment,
+				case1FrameworkDeploymentName, addonNamespace, true, 30)
+			spec := deploy.Object["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"]
+			containers := spec.(map[string]interface{})["containers"]
+
+			return len(containers.([]interface{}))
 		}, 60, 1).Should(Equal(3))
 	})
 	It("should have a framework pod that is running", func() {
@@ -42,9 +44,9 @@ var _ = Describe("Test framework deployment", func() {
 				LabelSelector: case1FrameworkPodSelector,
 			}
 			pods := ListWithTimeoutByNamespace(clientDynamic, gvrPod, opts, addonNamespace, 1, true, 30)
-			status := pods.Items[0].Object["status"].(map[string]interface{})
-			phase := status["phase"].(string)
-			return phase == "Running"
+			phase := pods.Items[0].Object["status"].(map[string]interface{})["phase"]
+
+			return phase.(string) == "Running"
 		}, 60, 1).Should(Equal(true))
 	})
 	It("should remove the framework deployment when the ManagedClusterAddOn CR is removed", func() {
@@ -59,13 +61,16 @@ var _ = Describe("Test framework deployment", func() {
 		Expect(deploy).NotTo(BeNil())
 
 		By("annotating the framework managedclusteraddon with helm values")
-		Kubectl("annotate", "-f", case1ManagedClusterAddOnCR, "addon.open-cluster-management.io/values={\"onMulticlusterHub\":true}")
+		Kubectl("annotate", "-f", case1ManagedClusterAddOnCR,
+			"addon.open-cluster-management.io/values={\"onMulticlusterHub\":true}")
 
 		Eventually(func() int {
-			deploy := GetWithTimeout(clientDynamic, gvrDeployment, case1FrameworkDeploymentName, addonNamespace, true, 30)
-			template := deploy.Object["spec"].(map[string]interface{})["template"].(map[string]interface{})
-			containers := template["spec"].(map[string]interface{})["containers"].([]interface{})
-			return len(containers)
+			deploy := GetWithTimeout(clientDynamic, gvrDeployment,
+				case1FrameworkDeploymentName, addonNamespace, true, 30)
+			spec := deploy.Object["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"]
+			containers := spec.(map[string]interface{})["containers"]
+
+			return len(containers.([]interface{}))
 		}, 60, 1).Should(Equal(2))
 
 		By("deleting the managedclusteraddon")
@@ -80,13 +85,16 @@ var _ = Describe("Test framework deployment", func() {
 		Expect(deploy).NotTo(BeNil())
 
 		By("annotating the framework managedclusteraddon with helm values")
-		Kubectl("annotate", "-f", case1ManagedClusterAddOnCR, "addon.open-cluster-management.io/on-multicluster-hub=true")
+		Kubectl("annotate", "-f", case1ManagedClusterAddOnCR,
+			"addon.open-cluster-management.io/on-multicluster-hub=true")
 
 		Eventually(func() int {
-			deploy := GetWithTimeout(clientDynamic, gvrDeployment, case1FrameworkDeploymentName, addonNamespace, true, 30)
-			template := deploy.Object["spec"].(map[string]interface{})["template"].(map[string]interface{})
-			containers := template["spec"].(map[string]interface{})["containers"].([]interface{})
-			return len(containers)
+			deploy := GetWithTimeout(clientDynamic, gvrDeployment,
+				case1FrameworkDeploymentName, addonNamespace, true, 30)
+			spec := deploy.Object["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"]
+			containers := spec.(map[string]interface{})["containers"]
+
+			return len(containers.([]interface{}))
 		}, 60, 1).Should(Equal(2))
 
 		By("deleting the managedclusteraddon")

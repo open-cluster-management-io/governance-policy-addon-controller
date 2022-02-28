@@ -19,7 +19,10 @@ import (
 	"open-cluster-management.io/addon-framework/pkg/utils"
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
+
+var log = ctrl.Log.WithName("common")
 
 type GlobalValues struct {
 	ImagePullPolicy string            `json:"imagePullPolicy,"`
@@ -36,7 +39,11 @@ type UserValues struct {
 var genericScheme = runtime.NewScheme()
 
 func init() {
-	scheme.AddToScheme(genericScheme)
+	err := scheme.AddToScheme(genericScheme)
+	if err != nil {
+		log.Error(err, "Failed to add to scheme")
+		os.Exit(1)
+	}
 }
 
 func NewRegistrationOption(
@@ -45,7 +52,8 @@ func NewRegistrationOption(
 	agentPermissionFiles []string,
 	filesystem embed.FS,
 ) *agent.RegistrationOption {
-	applyManifestFromFile := func(file, clusterName string, kubeclient *kubernetes.Clientset, recorder events.Recorder) error {
+	applyManifestFromFile := func(file, clusterName string,
+		kubeclient *kubernetes.Clientset, recorder events.Recorder) error {
 		groups := agent.DefaultGroups(clusterName, addonName)
 		config := struct {
 			ClusterName string
@@ -64,6 +72,7 @@ func NewRegistrationOption(
 				if err != nil {
 					return nil, err
 				}
+
 				return assets.MustCreateAssetFromTemplate(name, template, config).Data, nil
 			},
 			file,
@@ -128,16 +137,19 @@ type SimulationAgent struct {
 	a agent.AgentAddon
 }
 
-func (sim *SimulationAgent) Manifests(cluster *clusterv1.ManagedCluster, addon *addonapiv1alpha1.ManagedClusterAddOn) ([]runtime.Object, error) {
+func (sim *SimulationAgent) Manifests(cluster *clusterv1.ManagedCluster,
+	addon *addonapiv1alpha1.ManagedClusterAddOn) ([]runtime.Object, error) {
 	realObjs, err := sim.a.Manifests(cluster, addon)
 
-	fmt.Println("Simulation Agent Manifests:")
+	log.Info("Simulation Agent Manifests:")
+
 	for _, obj := range realObjs {
 		b, err := json.Marshal(obj)
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err, "Failed to marshal object")
 		}
-		fmt.Println(string(b))
+
+		log.Info("Mashalling was successful", string(b))
 	}
 
 	return []runtime.Object{}, err
@@ -146,8 +158,10 @@ func (sim *SimulationAgent) Manifests(cluster *clusterv1.ManagedCluster, addon *
 func (sim *SimulationAgent) GetAgentAddonOptions() agent.AgentAddonOptions {
 	opts := sim.a.GetAgentAddonOptions()
 
-	opts.Registration.PermissionConfig = func(cluster *clusterv1.ManagedCluster, addon *addonapiv1alpha1.ManagedClusterAddOn) error {
-		fmt.Println("Simulation Agent permission config skipped")
+	opts.Registration.PermissionConfig = func(cluster *clusterv1.ManagedCluster,
+		addon *addonapiv1alpha1.ManagedClusterAddOn) error {
+		log.Info("Simulation Agent permission config skipped")
+
 		return nil
 	}
 
