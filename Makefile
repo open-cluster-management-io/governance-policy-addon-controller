@@ -131,6 +131,8 @@ rm -rf $$TMP_DIR ;\
 }
 endef
 
+KUBEWAIT ?= $(PWD)/build/common/scripts/kubewait.sh
+
 ##@ Kind
 
 KIND_NAME ?= policy-addon-ctrl
@@ -158,39 +160,25 @@ $(REGISTRATION_OPERATOR):
 kind-deploy-registration-operator: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster
 	cd $(REGISTRATION_OPERATOR) && make deploy
 	@printf "\n*** Pausing and waiting to let everything deploy ***\n\n"
-	sleep 10
-	kubectl wait --for condition=Available deploy/cluster-manager -n open-cluster-management --timeout=60s
-	sleep 10
-	kubectl wait --for condition=Available deploy/cluster-manager-placement-controller -n open-cluster-management-hub --timeout=60s
-	sleep 10
+	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r deploy/cluster-manager -n open-cluster-management -c condition=Available -m 90
+	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r deploy/cluster-manager-placement-controller -n open-cluster-management-hub -c condition=Available -m 90
 
 .PHONY: kind-approve-cluster1
 kind-approve-cluster1: $(KIND_KUBECONFIG) ## Approve managed cluster cluster1 in the kind cluster
-	kubectl certificate approve "$(shell kubectl get csr -l open-cluster-management.io/cluster-name=cluster1 -o name)"
-	sleep 10
-	kubectl patch managedcluster cluster1 -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
+	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r "csr -l open-cluster-management.io/cluster-name=cluster1" -m 60
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl certificate approve "$(shell kubectl get csr -l open-cluster-management.io/cluster-name=cluster1 -o name)"
+	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r managedcluster/cluster1 -n open-cluster-management -m 60
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl patch managedcluster cluster1 -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
 
 .PHONY: wait-for-work-agent
-wait-for-work-agent: ## Wait for the klusterlet work agent to start
-	@printf "\n*** Waiting up to 6 minutes for klusterlet work agent to start ***\n\n"
-	@WORK_AGENT_POD=`kubectl get pod -n open-cluster-management-agent -l=app=klusterlet-manifestwork-agent -o name`; \
-	TIME_WAITING=0; \
-	until [[ -n $$WORK_AGENT_POD ]] ; do \
-		if [[ $$TIME_WAITING -gt 360 ]]; then \
-			printf "\n*** Klusterlet work agent took too long to start ***\n\n" ; \
-			exit 1; \
-		fi; \
-		echo $$TIME_WAITING seconds waited...; \
-		sleep 20; \
-		(( TIME_WAITING += 20 )); \
-		WORK_AGENT_POD=`kubectl get pod -n open-cluster-management-agent -l=app=klusterlet-manifestwork-agent -o name`; \
-	done
+wait-for-work-agent: $(KIND_KUBECONFIG) ## Wait for the klusterlet work agent to start
+	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r "pod -l=app=klusterlet-manifestwork-agent" -n open-cluster-management-agent -c condition=Ready -m 360
 
 CONTROLLER_NAMESPACE ?= governance-policy-addon-controller-system
 
 .PHONY: kind-run-local
 kind-run-local: manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-addon-controller locally against the kind cluster
-	kubectl get ns $(CONTROLLER_NAMESPACE); if [ $$? -ne 0 ] ; then kubectl create ns $(CONTROLLER_NAMESPACE); fi 
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl get ns $(CONTROLLER_NAMESPACE); if [ $$? -ne 0 ] ; then kubectl create ns $(CONTROLLER_NAMESPACE); fi 
 	go run ./main.go controller --kubeconfig=$(KIND_KUBECONFIG) --namespace $(CONTROLLER_NAMESPACE)
 
 .PHONY: kind-load-image
@@ -201,9 +189,9 @@ kind-load-image: build-images $(KIND_KUBECONFIG) ## Build and load the docker im
 kind-regenerate-controller: manifests generate kustomize $(KIND_KUBECONFIG) ## Refresh (or initially deploy) the policy-addon-controller
 	cp config/default/kustomization.yaml config/default/kustomization.yaml.tmp
 	cd config/default && $(KUSTOMIZE) edit set image policy-addon-image=$(IMAGE_NAME_AND_VERSION)
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	KUBECONFIG=$(KIND_KUBECONFIG) $(KUSTOMIZE) build config/default | kubectl apply -f -
 	mv config/default/kustomization.yaml.tmp config/default/kustomization.yaml
-	kubectl delete -n $(CONTROLLER_NAMESPACE) pods -l=app=governance-policy-addon-controller
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl delete -n $(CONTROLLER_NAMESPACE) pods -l=app=governance-policy-addon-controller
 
 .PHONY: kind-deploy-controller
 kind-deploy-controller: kind-deploy-registration-operator kind-approve-cluster1 kind-load-image kind-regenerate-controller ## Deploy the policy-addon-controller to the kind cluster
