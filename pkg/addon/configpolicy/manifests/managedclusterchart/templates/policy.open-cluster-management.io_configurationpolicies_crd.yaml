@@ -4,6 +4,9 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.1
+  creationTimestamp: null
   name: configurationpolicies.policy.open-cluster-management.io
 spec:
   group: policy.open-cluster-management.io
@@ -35,6 +38,23 @@ spec:
         spec:
           description: ConfigurationPolicySpec defines the desired state of ConfigurationPolicy
           properties:
+            evaluationInterval:
+              description: Configures the minimum elapsed time before a ConfigurationPolicy
+                is reevaluated
+              properties:
+                compliant:
+                  description: The minimum elapsed time before a ConfigurationPolicy
+                    is reevaluated when in the compliant state. Set this to "never"
+                    to disable reevaluation when in the compliant state.
+                  pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never)+$
+                  type: string
+                noncompliant:
+                  description: The minimum elapsed time before a ConfigurationPolicy
+                    is reevaluated when in the noncompliant state. Set this to "never"
+                    to disable reevaluation when in the noncompliant state.
+                  pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never)+$
+                  type: string
+              type: object
             labelSelector:
               additionalProperties:
                 type: string
@@ -71,6 +91,17 @@ spec:
                     - Mustnothave
                     - mustnothave
                     type: string
+                  metadataComplianceType:
+                    description: MetadataComplianceType describes how to check compliance
+                      for the labels/annotations of a given object
+                    enum:
+                    - MustHave
+                    - Musthave
+                    - musthave
+                    - MustOnlyHave
+                    - Mustonlyhave
+                    - mustonlyhave
+                    type: string
                   objectDefinition:
                     description: ObjectDefinition defines required fields for the
                       object
@@ -92,9 +123,13 @@ spec:
               description: 'Severity : low, medium, high, or critical'
               enum:
               - low
+              - Low
               - medium
+              - Medium
               - high
+              - High
               - critical
+              - Critical
               type: string
           type: object
         status:
@@ -117,12 +152,12 @@ spec:
                     type: object
                   conditions:
                     items:
-                      description: Condition is the base struct for representing
-                        resource conditions
+                      description: Condition is the base struct for representing resource
+                        conditions
                       properties:
                         lastTransitionTime:
-                          description: The last time the condition transitioned
-                            from one status to another.
+                          description: The last time the condition transitioned from
+                            one status to another.
                           format: date-time
                           type: string
                         message:
@@ -148,7 +183,16 @@ spec:
             compliant:
               description: ComplianceState shows the state of enforcement
               type: string
+            lastEvaluated:
+              description: An ISO-8601 timestamp of the last time the policy was evaluated
+              type: string
+            lastEvaluatedGeneration:
+              description: The generation of the ConfigurationPolicy object when it
+                was last evaluated
+              format: int64
+              type: integer
             relatedObjects:
+              description: List of resources processed by the policy
               items:
                 description: RelatedObject is the list of objects matched by this
                   Policy resource.
@@ -172,8 +216,7 @@ spec:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                             type: string
                           namespace:
-                            description: 'Namespace of the referent. More info:
-                              https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                            description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
                             type: string
                         type: object
                     type: object
@@ -195,7 +238,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.5.0
+    controller-gen.kubebuilder.io/version: v0.6.1
   creationTimestamp: null
   name: configurationpolicies.policy.open-cluster-management.io
 spec:
@@ -228,6 +271,23 @@ spec:
           spec:
             description: ConfigurationPolicySpec defines the desired state of ConfigurationPolicy
             properties:
+              evaluationInterval:
+                description: Configures the minimum elapsed time before a ConfigurationPolicy
+                  is reevaluated
+                properties:
+                  compliant:
+                    description: The minimum elapsed time before a ConfigurationPolicy
+                      is reevaluated when in the compliant state. Set this to "never"
+                      to disable reevaluation when in the compliant state.
+                    pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never)+$
+                    type: string
+                  noncompliant:
+                    description: The minimum elapsed time before a ConfigurationPolicy
+                      is reevaluated when in the noncompliant state. Set this to "never"
+                      to disable reevaluation when in the noncompliant state.
+                    pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never)+$
+                    type: string
+                type: object
               labelSelector:
                 additionalProperties:
                   type: string
@@ -264,6 +324,17 @@ spec:
                       - Mustnothave
                       - mustnothave
                       type: string
+                    metadataComplianceType:
+                      description: MetadataComplianceType describes how to check compliance
+                        for the labels/annotations of a given object
+                      enum:
+                      - MustHave
+                      - Musthave
+                      - musthave
+                      - MustOnlyHave
+                      - Mustonlyhave
+                      - mustonlyhave
+                      type: string
                     objectDefinition:
                       description: ObjectDefinition defines required fields for the
                         object
@@ -285,9 +356,13 @@ spec:
                 description: 'Severity : low, medium, high, or critical'
                 enum:
                 - low
+                - Low
                 - medium
+                - Medium
                 - high
+                - High
                 - critical
+                - Critical
                 type: string
             type: object
           status:
@@ -341,7 +416,17 @@ spec:
               compliant:
                 description: ComplianceState shows the state of enforcement
                 type: string
+              lastEvaluated:
+                description: An ISO-8601 timestamp of the last time the policy was
+                  evaluated
+                type: string
+              lastEvaluatedGeneration:
+                description: The generation of the ConfigurationPolicy object when
+                  it was last evaluated
+                format: int64
+                type: integer
               relatedObjects:
+                description: List of resources processed by the policy
                 items:
                   description: RelatedObject is the list of objects matched by this
                     Policy resource.
