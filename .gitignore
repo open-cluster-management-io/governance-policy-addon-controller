@@ -14,5 +14,5 @@ bin/
 vendor/
 
 *.kubeconfig
-cover.out
+coverage.out
 gosec.json
