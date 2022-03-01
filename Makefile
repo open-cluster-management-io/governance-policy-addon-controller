@@ -9,6 +9,9 @@ TAG ?= latest
 VERSION ?= $(shell cat COMPONENT_VERSION 2> /dev/null)
 IMAGE_NAME_AND_VERSION ?= $(REGISTRY)/$(IMG):$(VERSION)
 
+GOARCH = $(shell go env GOARCH)
+GOOS = $(shell go env GOOS)
+
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
 
@@ -66,6 +69,17 @@ vet: ## Run go vet against code.
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test `go list ./... | grep -v test/e2e` -coverprofile cover.out
+
+GOSEC = $(PWD)/bin/gosec
+GOSEC_VERSION = 2.9.6
+
+$(GOSEC):
+	mkdir -p $(PWD)/bin
+	curl -L https://github.com/securego/gosec/releases/download/v$(GOSEC_VERSION)/gosec_$(GOSEC_VERSION)_$(GOOS)_$(GOARCH).tar.gz | tar -xz -C $(PWD)/bin gosec
+
+.PHONY: gosec-scan
+gosec-scan: $(GOSEC) ## Run a gosec scan against the code.
+	$(GOSEC) -fmt sonarqube -out gosec.json -no-fail -exclude-dir=.go ./...
 
 ##@ Build
 

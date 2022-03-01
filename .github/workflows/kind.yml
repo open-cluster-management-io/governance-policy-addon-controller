@@ -68,6 +68,14 @@ jobs:
         # make e2e-dependencies
         make e2e-test
 
+    - name: Gosec
+      if: |
+        github.event_name == 'push' &&
+        github.repository_owner == 'stolostron'  &&
+        matrix.kind == 'latest'
+      run: |
+        make gosec-scan
+
     - name: SonarCloud Analysis
       if: |
         github.event_name == 'push' &&
