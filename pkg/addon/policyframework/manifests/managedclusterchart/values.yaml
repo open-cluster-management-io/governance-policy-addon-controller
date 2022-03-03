@@ -32,9 +32,9 @@ global:
   imagePullPolicy: IfNotPresent
   imagePullSecret: open-cluster-management-image-pull-credentials
   imageOverrides: 
-    governance_policy_spec_sync: quay.io/open-cluster-management/governance-policy-spec-sync:edge
-    governance_policy_status_sync: quay.io/open-cluster-management/governance-policy-status-sync:edge
-    governance_policy_template_sync: quay.io/open-cluster-management/governance-policy-template-sync:edge
+    governance_policy_spec_sync: quay.io/open-cluster-management/governance-policy-spec-sync:latest
+    governance_policy_status_sync: quay.io/open-cluster-management/governance-policy-status-sync:latest
+    governance_policy_template_sync: quay.io/open-cluster-management/governance-policy-template-sync:latest
   nodeSelector: {}
   proxyConfig:
     HTTP_PROXY: null

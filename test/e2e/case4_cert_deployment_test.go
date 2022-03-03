@@ -3,7 +3,7 @@
 package e2e
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -26,6 +26,13 @@ var _ = Describe("Test cert policy controller deployment", func() {
 			availableReplicas := status.(map[string]interface{})["availableReplicas"]
 
 			return (availableReplicas != nil) && replicas.(int64) == availableReplicas.(int64)
+		}, 240, 1).Should(Equal(true))
+	})
+	It("should show the cert-policy-controller managedclusteraddon as available", func() {
+		Eventually(func() bool {
+			addon := GetWithTimeout(clientDynamic, gvrManagedClusterAddOn, case4DeploymentName, "cluster1", true, 30)
+
+			return getAddonStatus(addon)
 		}, 240, 1).Should(Equal(true))
 	})
 	It("should delete the cert-policy-controller deployment when the ManagedClusterAddOn CR is removed", func() {

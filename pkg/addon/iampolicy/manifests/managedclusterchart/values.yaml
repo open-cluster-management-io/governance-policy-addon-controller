@@ -42,7 +42,7 @@ global:
   imagePullPolicy: IfNotPresent
   imagePullSecret: open-cluster-management-image-pull-credentials
   imageOverrides:
-    iam_policy_controller: quay.io/open-cluster-management/iam-policy-controller:latest-2.5
+    iam_policy_controller: quay.io/open-cluster-management/iam-policy-controller:latest
   nodeSelector: {}
   proxyConfig:
     HTTP_PROXY: null

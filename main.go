@@ -90,8 +90,8 @@ func main() {
 	defer logs.FlushLogs()
 
 	cmd := &cobra.Command{
-		Use:   "addon",
-		Short: "helloworldhelm example addon",
+		Use:   ctrlName,
+		Short: "Governance policy addon controller for Open Cluster Management",
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := cmd.Help(); err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)

@@ -214,11 +214,11 @@ kind-deploy-controller: kind-deploy-registration-operator kind-approve-cluster1 
 GINKGO = $(PWD)/bin/ginkgo
 .PHONY: e2e-dependencies
 e2e-dependencies: ## Download ginkgo locally if necessary.
-	$(call go-get-tool,$(GINKGO),github.com/onsi/ginkgo/ginkgo@v1.16.4)
+	$(call go-get-tool,$(GINKGO),github.com/onsi/ginkgo/v2/ginkgo@v2.1.3)
 
 .PHONY: e2e-test
 e2e-test: e2e-dependencies
-	$(GINKGO) -v --failFast --slowSpecThreshold=10 test/e2e
+	$(GINKGO) -v --fail-fast --slow-spec-threshold=10s test/e2e
 
 .PHONY: fmt-dependencies
 fmt-dependencies:
@@ -242,4 +242,4 @@ lint-dependencies:
 # Default value will run all linters, override these make target with your requirements:
 #    eg: lint: lint-go lint-yaml
 .PHONY: lint
-lint: lint-dependencies lint-all
+lint: lint-dependencies lint-all ## Run linting against the code.

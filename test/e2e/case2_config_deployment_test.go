@@ -3,7 +3,7 @@
 package e2e
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -39,6 +39,15 @@ var _ = Describe("Test config policy controller deployment", func() {
 
 			return phase.(string) == "Running"
 		}, 60, 1).Should(Equal(true))
+	})
+	It("should show the config-policy-controller managedclusteraddon as available", func() {
+		Eventually(func() bool {
+			addon := GetWithTimeout(
+				clientDynamic, gvrManagedClusterAddOn, case2ConfigDeploymentName, "cluster1", true, 30,
+			)
+
+			return getAddonStatus(addon)
+		}, 240, 1).Should(Equal(true))
 	})
 	It("should remove the config policy controller deployment when the ManagedClusterAddOn CR is removed", func() {
 		Kubectl("delete", "-f", case2ManagedClusterAddOnCR)
