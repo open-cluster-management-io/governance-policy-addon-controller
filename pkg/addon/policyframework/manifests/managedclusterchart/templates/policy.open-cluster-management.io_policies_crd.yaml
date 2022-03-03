@@ -1,12 +1,26 @@
 # Copyright Contributors to the Open Cluster Management project
 
-{{- if not .Values.onMulticlusterHub }}
 {{- if semverCompare "< 1.16.0" .Capabilities.KubeVersion.Version }}
+
+---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.1
+  creationTimestamp: null
   name: policies.policy.open-cluster-management.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.remediationAction
+    name: Remediation action
+    type: string
+  - JSONPath: .status.compliant
+    name: Compliance state
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: policy.open-cluster-management.io
   names:
     kind: Policy
@@ -45,17 +59,18 @@ spec:
                 properties:
                   objectDefinition:
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                 required:
-                  - objectDefinition
+                - objectDefinition
                 type: object
               type: array
             remediationAction:
               description: RemediationAction describes weather to enforce or inform
               enum:
-                - Inform
-                - inform
-                - Enforce
-                - enforce
+              - Inform
+              - inform
+              - Enforce
+              - enforce
               type: string
           required:
           - disabled
@@ -92,6 +107,7 @@ spec:
                     type: array
                   templateMeta:
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                 type: object
               type: array
             placement:
@@ -109,9 +125,13 @@ spec:
                           type: string
                       type: object
                     type: array
+                  placement:
+                    type: string
                   placementBinding:
                     type: string
                   placementRule:
+                    type: string
+                  policySet:
                     type: string
                 type: object
               type: array
@@ -131,14 +151,23 @@ spec:
               type: array
           type: object
       required:
-        - metadata
-        - spec
+      - metadata
+      - spec
+      type: object
   version: v1
   versions:
   - name: v1
     served: true
     storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
 {{ else }}
+
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -268,6 +297,8 @@ spec:
                       type: string
                     placementRule:
                       type: string
+                    policySet:
+                      type: string
                   type: object
                 type: array
               status:
@@ -299,5 +330,4 @@ status:
     plural: ""
   conditions: []
   storedVersions: []
-{{- end }}
 {{- end }}
