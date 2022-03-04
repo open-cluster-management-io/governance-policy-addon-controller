@@ -79,3 +79,6 @@ The `kind-regenerate-controller` target will update the deployment manifests wit
 
 The e2e tests are intended to be run against a `kind` cluster.
 After setting one up with the steps above (and waiting for the work-agent), the tests can be run with the `e2e-test` make target.
+<!---
+Date: 03/04/2022
+-->
