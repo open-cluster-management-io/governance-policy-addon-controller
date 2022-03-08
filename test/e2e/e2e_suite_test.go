@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/user"
@@ -11,6 +12,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
@@ -18,15 +21,24 @@ import (
 )
 
 const (
-	addonNamespace string = "open-cluster-management-agent-addon"
+	addonNamespace     string = "open-cluster-management-agent-addon"
+	kubeconfigFilename string = "../../policy-addon-ctrl"
 )
 
 var (
 	gvrDeployment          schema.GroupVersionResource
 	gvrPod                 schema.GroupVersionResource
 	gvrManagedClusterAddOn schema.GroupVersionResource
+	gvrManagedCluster      schema.GroupVersionResource
+	managedClusterList     []managedClusterConfig
 	clientDynamic          dynamic.Interface
 )
+
+type managedClusterConfig struct {
+	clusterName   string
+	clusterClient dynamic.Interface
+	clusterType   string
+}
 
 func TestE2e(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -39,8 +51,46 @@ var _ = BeforeSuite(func() {
 	gvrManagedClusterAddOn = schema.GroupVersionResource{
 		Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "managedclusteraddons",
 	}
-	clientDynamic = NewKubeClientDynamic("", "../../policy-addon-ctrl.kubeconfig", "")
+	gvrManagedCluster = schema.GroupVersionResource{
+		Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters",
+	}
+	clientDynamic = NewKubeClientDynamic("", kubeconfigFilename+"1.kubeconfig", "")
+	managedClusterList = getManagedClusters(clientDynamic)
 })
+
+func getManagedClusters(client dynamic.Interface) []managedClusterConfig {
+	clusterObjs, err := client.Resource(gvrManagedCluster).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	var clusters []managedClusterConfig
+
+	for i, cluster := range clusterObjs.Items {
+		clusterName, _, err := unstructured.NestedString(cluster.Object, "metadata", "name")
+		if err != nil {
+			panic(err)
+		}
+
+		clusterClient := NewKubeClientDynamic("", fmt.Sprintf("%s%d.kubeconfig", kubeconfigFilename, i+1), "")
+
+		var clusterType string
+		if i == 0 {
+			clusterType = "hub"
+		} else {
+			clusterType = "managed"
+		}
+
+		newCluster := managedClusterConfig{
+			clusterName,
+			clusterClient,
+			clusterType,
+		}
+		clusters = append(clusters, newCluster)
+	}
+
+	return clusters
+}
 
 func NewKubeClientDynamic(url, kubeconfig, context string) dynamic.Interface {
 	config, err := LoadConfig(url, kubeconfig, context)

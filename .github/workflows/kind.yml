@@ -54,7 +54,7 @@ jobs:
       env:
         KIND_VERSION: ${{ matrix.kind }}
       run: |
-        make kind-deploy-controller
+        ./build/manage-clusters.sh
 
     - name: Unit and Integration Tests
       run: |
@@ -93,4 +93,4 @@ jobs:
     - name: Clean up cluster
       if: ${{ always() }}
       run: |
-        make kind-delete-cluster
+        DELETE_CLUSTERS="true" ./build/manage-clusters.sh

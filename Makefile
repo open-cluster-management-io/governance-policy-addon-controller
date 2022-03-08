@@ -150,67 +150,80 @@ KUBEWAIT ?= $(PWD)/build/common/scripts/kubewait.sh
 
 ##@ Kind
 
-KIND_NAME ?= policy-addon-ctrl
+KIND_NAME ?= policy-addon-ctrl1
 KIND_KUBECONFIG ?= $(PWD)/$(KIND_NAME).kubeconfig
+HUB_KUBECONFIG ?= $(PWD)/$(KIND_NAME).kubeconfig-internal
+MANAGED_CLUSTER_NAME ?= cluster1
 
 .PHONY: kind-create-cluster
-kind-create-cluster: $(KIND_KUBECONFIG) ## Create a kind cluster
+kind-create-cluster: $(KIND_KUBECONFIG) ## Create a kind cluster.
 
 $(KIND_KUBECONFIG):
 	@echo "creating cluster"
 	kind create cluster --name $(KIND_NAME) $(KIND_ARGS)
 	kind get kubeconfig --name $(KIND_NAME) > $(KIND_KUBECONFIG)
 
+$(HUB_KUBECONFIG):
+	@echo "fetching internal kubeconfig"
+	kind get kubeconfig --name $(KIND_NAME) --internal > $(HUB_KUBECONFIG)
+
 .PHONY: kind-delete-cluster
-kind-delete-cluster: ## Delete the kind cluster
+kind-delete-cluster: ## Delete a kind cluster.
 	kind delete cluster --name $(KIND_NAME) || true
 	rm $(KIND_KUBECONFIG) || true
+	rm $(HUB_KUBECONFIG) || true
 
 REGISTRATION_OPERATOR = $(PWD)/.go/registration-operator
 $(REGISTRATION_OPERATOR):
 	@mkdir -p .go
 	git clone --depth 1 https://github.com/open-cluster-management-io/registration-operator.git .go/registration-operator
 
-.PHONY: kind-deploy-registration-operator
-kind-deploy-registration-operator: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster
-	cd $(REGISTRATION_OPERATOR) && make deploy
+.PHONY: kind-deploy-registration-operator-hub
+kind-deploy-registration-operator-hub: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG) $(HUB_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster.
+	cd $(REGISTRATION_OPERATOR) && KUBECONFIG=$(KIND_KUBECONFIG) make deploy-hub
 	@printf "\n*** Pausing and waiting to let everything deploy ***\n\n"
 	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r deploy/cluster-manager -n open-cluster-management -c condition=Available -m 90
 	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r deploy/cluster-manager-placement-controller -n open-cluster-management-hub -c condition=Available -m 90
 
-.PHONY: kind-approve-cluster1
-kind-approve-cluster1: $(KIND_KUBECONFIG) ## Approve managed cluster cluster1 in the kind cluster
-	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r "csr -l open-cluster-management.io/cluster-name=cluster1" -m 60
-	KUBECONFIG=$(KIND_KUBECONFIG) kubectl certificate approve "$(shell kubectl get csr -l open-cluster-management.io/cluster-name=cluster1 -o name)"
-	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r managedcluster/cluster1 -n open-cluster-management -m 60
-	KUBECONFIG=$(KIND_KUBECONFIG) kubectl patch managedcluster cluster1 -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
+.PHONY: kind-deploy-registration-operator-managed
+kind-deploy-registration-operator-managed: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster.
+	cd $(REGISTRATION_OPERATOR) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(MANAGED_CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG) make deploy-spoke
+
+.PHONY: kind-approve-cluster
+kind-approve-cluster: $(KIND_KUBECONFIG) ## Approve managed cluster in the kind cluster.
+	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r "csr -l open-cluster-management.io/cluster-name=$(MANAGED_CLUSTER_NAME)" -m 60
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl certificate approve "$$(KUBECONFIG=$(KIND_KUBECONFIG) kubectl get csr -l open-cluster-management.io/cluster-name=$(MANAGED_CLUSTER_NAME) -o name)"
+	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r managedcluster/$(MANAGED_CLUSTER_NAME) -n open-cluster-management -m 60
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl patch managedcluster $(MANAGED_CLUSTER_NAME) -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
 
 .PHONY: wait-for-work-agent
-wait-for-work-agent: $(KIND_KUBECONFIG) ## Wait for the klusterlet work agent to start
+wait-for-work-agent: $(KIND_KUBECONFIG) ## Wait for the klusterlet work agent to start.
 	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r "pod -l=app=klusterlet-manifestwork-agent" -n open-cluster-management-agent -c condition=Ready -m 360
 
 CONTROLLER_NAMESPACE ?= governance-policy-addon-controller-system
 
 .PHONY: kind-run-local
-kind-run-local: manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-addon-controller locally against the kind cluster
+kind-run-local: manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-addon-controller locally against the kind cluster.
 	KUBECONFIG=$(KIND_KUBECONFIG) kubectl get ns $(CONTROLLER_NAMESPACE); if [ $$? -ne 0 ] ; then kubectl create ns $(CONTROLLER_NAMESPACE); fi 
 	go run ./main.go controller --kubeconfig=$(KIND_KUBECONFIG) --namespace $(CONTROLLER_NAMESPACE)
 
 .PHONY: kind-load-image
-kind-load-image: build-images $(KIND_KUBECONFIG) ## Build and load the docker image into kind
+kind-load-image: build-images $(KIND_KUBECONFIG) ## Build and load the docker image into kind.
 	kind load docker-image $(IMAGE_NAME_AND_VERSION) --name $(KIND_NAME)
 
 .PHONY: regenerate-controller
-kind-regenerate-controller: manifests generate kustomize $(KIND_KUBECONFIG) ## Refresh (or initially deploy) the policy-addon-controller
+kind-regenerate-controller: manifests generate kustomize $(KIND_KUBECONFIG) ## Refresh (or initially deploy) the policy-addon-controller.
 	cp config/default/kustomization.yaml config/default/kustomization.yaml.tmp
 	cd config/default && $(KUSTOMIZE) edit set image policy-addon-image=$(IMAGE_NAME_AND_VERSION)
 	KUBECONFIG=$(KIND_KUBECONFIG) $(KUSTOMIZE) build config/default | kubectl apply -f -
 	mv config/default/kustomization.yaml.tmp config/default/kustomization.yaml
 	KUBECONFIG=$(KIND_KUBECONFIG) kubectl delete -n $(CONTROLLER_NAMESPACE) pods -l=app=governance-policy-addon-controller
 
+DEPLOYMENT_TARGETS := kind-deploy-registration-operator-hub kind-deploy-registration-operator-managed \
+											kind-approve-cluster kind-load-image kind-regenerate-controller
 .PHONY: kind-deploy-controller
-kind-deploy-controller: kind-deploy-registration-operator kind-approve-cluster1 kind-load-image kind-regenerate-controller ## Deploy the policy-addon-controller to the kind cluster
-	
+kind-deploy-controller: $(DEPLOYMENT_TARGETS) ## Deploy the policy-addon-controller to the kind cluster.
+
 GINKGO = $(PWD)/bin/ginkgo
 .PHONY: e2e-dependencies
 e2e-dependencies: ## Download ginkgo locally if necessary.

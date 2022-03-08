@@ -18,6 +18,8 @@ import (
 
 // Kubectl executes kubectl commands
 func Kubectl(args ...string) {
+	// Inject the kubeconfig to ensure we're pointing to the hub
+	args = append(args, "--kubeconfig="+kubeconfigFilename+"1.kubeconfig")
 	cmd := exec.Command("kubectl", args...)
 
 	output, err := cmd.CombinedOutput()
