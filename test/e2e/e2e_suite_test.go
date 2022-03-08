@@ -30,6 +30,7 @@ var (
 	gvrPod                 schema.GroupVersionResource
 	gvrManagedClusterAddOn schema.GroupVersionResource
 	gvrManagedCluster      schema.GroupVersionResource
+	gvrManifestWork        schema.GroupVersionResource
 	managedClusterList     []managedClusterConfig
 	clientDynamic          dynamic.Interface
 )
@@ -53,6 +54,9 @@ var _ = BeforeSuite(func() {
 	}
 	gvrManagedCluster = schema.GroupVersionResource{
 		Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters",
+	}
+	gvrManifestWork = schema.GroupVersionResource{
+		Group: "work.open-cluster-management.io", Version: "v1", Resource: "manifestworks",
 	}
 	clientDynamic = NewKubeClientDynamic("", kubeconfigFilename+"1.kubeconfig", "")
 	managedClusterList = getManagedClusters(clientDynamic)

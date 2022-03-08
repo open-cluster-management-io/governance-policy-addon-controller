@@ -1,0 +1,17 @@
+[
+  {
+    "op": "add",
+    "path": "/spec/workload/manifests/-",
+    "value": {
+      "apiVersion": "v1",
+      "kind": "ConfigMap",
+      "metadata": {
+        "name": "mw-patch-test",
+        "namespace": "open-cluster-management-agent-addon"
+      },
+      "data": {
+        "foo": "bar"
+      }
+    }
+  }
+]

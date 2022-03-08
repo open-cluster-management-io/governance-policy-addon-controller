@@ -6,12 +6,15 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 const (
 	case1ManagedClusterAddOnCR   string = "../resources/framework_addon_cr.yaml"
 	case1FrameworkDeploymentName string = "governance-policy-framework"
 	case1FrameworkPodSelector    string = "app=governance-policy-framework"
+	case1MWName                  string = "addon-governance-policy-framework-deploy"
+	case1MWPatch                 string = "../resources/manifestwork_add_patch.json"
 )
 
 var _ = Describe("Test framework deployment", func() {
@@ -208,6 +211,93 @@ var _ = Describe("Test framework deployment", func() {
 
 				return getAddonStatus(addon)
 			}, 240, 1).Should(Equal(true))
+
+			By(cluster.clusterType + " " + cluster.clusterName + ": deleting the managedclusteraddon")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			deploy = GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1FrameworkDeploymentName, addonNamespace, false, 30,
+			)
+			Expect(deploy).To(BeNil())
+		}
+	})
+
+	It("should revert edits to the ManifestWork by default", func() {
+		for _, cluster := range managedClusterList {
+			By(cluster.clusterType + " " + cluster.clusterName +
+				": deploying the default framework managedclusteraddon")
+			Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			deploy := GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1FrameworkDeploymentName, addonNamespace, true, 30,
+			)
+			Expect(deploy).NotTo(BeNil())
+
+			By(cluster.clusterType + " " + cluster.clusterName +
+				": getting the default number of items in the ManifestWork")
+			defaultLength := 0
+			Eventually(func() int {
+				mw := GetWithTimeout(clientDynamic, gvrManifestWork, case1MWName, cluster.clusterName, true, 15)
+				manifests, _, _ := unstructured.NestedSlice(mw.Object, "spec", "workload", "manifests")
+				defaultLength = len(manifests)
+
+				return defaultLength
+			}, 60, 5).ShouldNot(Equal(0))
+
+			By(cluster.clusterType + " " + cluster.clusterName + ": patching the ManifestWork to add an item")
+			Kubectl("patch", "-n", cluster.clusterName, "manifestwork", case1MWName, "--type=json",
+				"--patch-file="+case1MWPatch)
+
+			By(cluster.clusterType + " " + cluster.clusterName + ": verifying the edit is reverted")
+			Eventually(func() int {
+				mw := GetWithTimeout(clientDynamic, gvrManifestWork, case1MWName, cluster.clusterName, true, 15)
+				manifests, _, _ := unstructured.NestedSlice(mw.Object, "spec", "workload", "manifests")
+
+				return len(manifests)
+			}, 60, 5).Should(Equal(defaultLength))
+
+			By(cluster.clusterType + " " + cluster.clusterName + ": deleting the managedclusteraddon")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			deploy = GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1FrameworkDeploymentName, addonNamespace, false, 30,
+			)
+			Expect(deploy).To(BeNil())
+		}
+	})
+	It("should preserve edits to the ManifestWork if paused by annotation", func() {
+		for _, cluster := range managedClusterList {
+			By(cluster.clusterType + " " + cluster.clusterName +
+				": deploying the default framework managedclusteraddon")
+			Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			deploy := GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1FrameworkDeploymentName, addonNamespace, true, 30,
+			)
+			Expect(deploy).NotTo(BeNil())
+
+			By(cluster.clusterType + " " + cluster.clusterName +
+				": annotating the managedclusteraddon with the pause annotation")
+			Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "policy-addon-pause=true")
+
+			By(cluster.clusterType + " " + cluster.clusterName +
+				": getting the default number of items in the ManifestWork")
+			defaultLength := 0
+			Eventually(func() int {
+				mw := GetWithTimeout(clientDynamic, gvrManifestWork, case1MWName, cluster.clusterName, true, 15)
+				manifests, _, _ := unstructured.NestedSlice(mw.Object, "spec", "workload", "manifests")
+				defaultLength = len(manifests)
+
+				return defaultLength
+			}, 60, 5).ShouldNot(Equal(0))
+
+			By(cluster.clusterType + " " + cluster.clusterName + ": patching the ManifestWork to add an item")
+			Kubectl("patch", "-n", cluster.clusterName, "manifestwork", case1MWName, "--type=json",
+				"--patch-file="+case1MWPatch)
+
+			By(cluster.clusterType + " " + cluster.clusterName + ": verifying the edit is not reverted")
+			Consistently(func() int {
+				mw := GetWithTimeout(clientDynamic, gvrManifestWork, case1MWName, cluster.clusterName, true, 15)
+				manifests, _, _ := unstructured.NestedSlice(mw.Object, "spec", "workload", "manifests")
+
+				return len(manifests)
+			}, 30, 5).Should(Equal(defaultLength + 1))
 
 			By(cluster.clusterType + " " + cluster.clusterName + ": deleting the managedclusteraddon")
 			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)

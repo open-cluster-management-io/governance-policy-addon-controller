@@ -17,7 +17,7 @@ ENVTEST_K8S_VERSION = 1.23
 
 PWD := $(shell pwd)
 BASE_DIR := $(shell basename $(PWD))
-export PATH=$(shell echo $$PATH):$(PWD)/bin
+export PATH=$(PWD)/bin:$(shell echo $$PATH)
 # Keep an existing GOPATH, make a private one if it is undefined
 GOPATH_DEFAULT := $(PWD)/.go
 export GOPATH ?= $(GOPATH_DEFAULT)
