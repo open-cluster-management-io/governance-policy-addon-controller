@@ -7,7 +7,6 @@ org: open-cluster-management
 replicas: 1
 args:
   frequency: 30
-  verbosity: 0
 
 securityContext:
   privileged: false
