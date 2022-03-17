@@ -47,6 +47,17 @@ func getValues(cluster *clusterv1.ManagedCluster,
 				"NO_PROXY":    "",
 			},
 		},
+		UserArgs: policyaddon.UserArgs{
+			LogEncoder:  "console",
+			LogLevel:    0,
+			PkgLogLevel: -1,
+		},
+	}
+
+	if val, ok := addon.GetAnnotations()[policyaddon.PolicyLogLevelAnnotation]; ok {
+		logLevel := policyaddon.GetLogLevel(addonName, val)
+		userValues.UserArgs.LogLevel = logLevel
+		userValues.UserArgs.PkgLogLevel = logLevel - 2
 	}
 
 	return addonfactory.JsonStructToValues(userValues)

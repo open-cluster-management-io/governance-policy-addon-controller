@@ -7,7 +7,9 @@ org: open-cluster-management
 replicas: 1
 args:
   frequency: 30
-
+  logLevel: 0
+  pkgLogLevel: -1
+  logEncoding: console
 securityContext:
   privileged: false
   allowPrivilegeEscalation: false

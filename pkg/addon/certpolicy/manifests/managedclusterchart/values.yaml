@@ -8,6 +8,9 @@ replicas: 1
 args:
   frequency: 30
   defaultDuration: null
+  logLevel: 0
+  pkgLogLevel: -1
+  logEncoder: console
 
 resources:
   requests:

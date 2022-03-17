@@ -7,6 +7,10 @@ onMulticlusterHub: false
 
 org: open-cluster-management
 replicas: 1
+args:
+  logLevel: 0
+  pkgLogLevel: -1
+  logEncoder: console
 hubKubeConfigSecret: governance-policy-framework-hub-kubeconfig
 
 resources:

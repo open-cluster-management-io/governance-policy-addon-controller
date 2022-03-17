@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/openshift/library-go/pkg/assets"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
@@ -23,7 +24,10 @@ import (
 
 var log = ctrl.Log.WithName("common")
 
-const PolicyAddonPauseAnnotation = "policy-addon-pause"
+const (
+	PolicyAddonPauseAnnotation = "policy-addon-pause"
+	PolicyLogLevelAnnotation   = "log-level"
+)
 
 type GlobalValues struct {
 	ImagePullPolicy string            `json:"imagePullPolicy,"`
@@ -33,8 +37,15 @@ type GlobalValues struct {
 	ProxyConfig     map[string]string `json:"proxyConfig,"`
 }
 
+type UserArgs struct {
+	LogEncoder  string `json:"logEncoder,"`
+	LogLevel    int8   `json:"logLevel,"`
+	PkgLogLevel int8   `json:"pkgLogLevel,"`
+}
+
 type UserValues struct {
 	GlobalValues GlobalValues `json:"global,"`
+	UserArgs     UserArgs     `json:"args,"`
 }
 
 var genericScheme = runtime.NewScheme()
@@ -147,4 +158,22 @@ func (pa *PolicyAgentAddon) Manifests(cluster *clusterv1.ManagedCluster,
 	}
 
 	return pa.AgentAddon.Manifests(cluster, addon)
+}
+
+// getLogLevel verifies the user-provided log level against Zap, returning 0 if the check fails.
+func GetLogLevel(component string, level string) int8 {
+	logDefault := int8(0)
+
+	logLevel, err := strconv.ParseInt(level, 10, 8)
+	if err != nil || logLevel < 0 {
+		log.Error(err, fmt.Sprintf(
+			"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
+			PolicyLogLevelAnnotation, level, component, logDefault),
+		)
+
+		return logDefault
+	}
+
+	// This is safe because we specified the int8 in ParseInt
+	return int8(logLevel)
 }

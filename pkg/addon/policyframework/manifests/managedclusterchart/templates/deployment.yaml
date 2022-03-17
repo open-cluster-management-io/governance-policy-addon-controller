@@ -38,6 +38,9 @@ spec:
           {{- if semverCompare "< 1.14.0" .Capabilities.KubeVersion.Version }}
           - --legacy-leader-elect=true
           {{- end }}
+          - --log-encoder={{ .Values.args.logEncoder }}
+          - --log-level={{ .Values.args.logLevel }}
+          - --v={{ .Values.args.pkgLogLevel }}
         env:
           - name: WATCH_NAMESPACE
             value: "{{ .Values.clusterName }}"
@@ -90,6 +93,9 @@ spec:
           {{- if semverCompare "< 1.14.0" .Capabilities.KubeVersion.Version }}
           - --legacy-leader-elect=true
           {{- end }}
+          - --log-encoder={{ .Values.args.logEncoder }}
+          - --log-level={{ .Values.args.logLevel }}
+          - --v={{ .Values.args.pkgLogLevel }}
         env:
           - name: WATCH_NAMESPACE
             value: "{{ .Values.clusterName }}"
@@ -138,6 +144,10 @@ spec:
         image: "{{ .Values.global.imageOverrides.governance_policy_template_sync }}"
         imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
         command: ["governance-policy-template-sync"]
+        args:
+          - --log-encoder={{ .Values.args.logEncoder }}
+          - --log-level={{ .Values.args.logLevel }}
+          - --v={{ .Values.args.pkgLogLevel }}
         env:
           - name: WATCH_NAMESPACE
             value: "{{ .Values.clusterName }}"

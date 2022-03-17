@@ -35,6 +35,7 @@ var agentPermissionFiles = []string{
 type userValues struct {
 	OnMulticlusterHub bool                     `json:"onMulticlusterHub"`
 	GlobalValues      policyaddon.GlobalValues `json:"global"`
+	UserArgs          policyaddon.UserArgs     `json:"args"`
 }
 
 func getValues(cluster *clusterv1.ManagedCluster,
@@ -56,6 +57,11 @@ func getValues(cluster *clusterv1.ManagedCluster,
 				"NO_PROXY":    "",
 			},
 		},
+		UserArgs: policyaddon.UserArgs{
+			LogEncoder:  "console",
+			LogLevel:    0,
+			PkgLogLevel: -1,
+		},
 	}
 	// special case for local-cluster
 	if cluster.Name == "local-cluster" {
@@ -69,6 +75,12 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			// the special case can still be overridden by this annotation
 			userValues.OnMulticlusterHub = false
 		}
+	}
+
+	if val, ok := addon.GetAnnotations()[policyaddon.PolicyLogLevelAnnotation]; ok {
+		logLevel := policyaddon.GetLogLevel(addonName, val)
+		userValues.UserArgs.LogLevel = logLevel
+		userValues.UserArgs.PkgLogLevel = logLevel - 2
 	}
 
 	return addonfactory.JsonStructToValues(userValues)

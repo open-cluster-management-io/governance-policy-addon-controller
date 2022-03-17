@@ -21,8 +21,9 @@ import (
 )
 
 const (
-	addonNamespace     string = "open-cluster-management-agent-addon"
-	kubeconfigFilename string = "../../policy-addon-ctrl"
+	addonNamespace         string = "open-cluster-management-agent-addon"
+	kubeconfigFilename     string = "../../policy-addon-ctrl"
+	loggingLevelAnnotation string = "log-level=8"
 )
 
 var (
