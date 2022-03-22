@@ -243,9 +243,9 @@ fmt-dependencies:
 #    eg: fmt: format-go format-protos
 .PHONY: fmt
 fmt: fmt-dependencies
-	find . -not \( -path "./.go" -prune \) -name "*.go" | xargs gofmt -s -w
-	find . -not \( -path "./.go" -prune \) -name "*.go" | xargs gci -w -local "$(shell cat go.mod | head -1 | cut -d " " -f 2)"
-	find . -not \( -path "./.go" -prune \) -name "*.go" | xargs gofumpt -l -w
+	find . -not \( -path "./.go" -prune -or -path "./vendor" -prune \) -name "*.go" | xargs gofmt -s -w
+	find . -not \( -path "./.go" -prune -or -path "./vendor" -prune \) -name "*.go" | xargs gci -w -local "$(shell cat go.mod | head -1 | cut -d " " -f 2)"
+	find . -not \( -path "./.go" -prune -or -path "./vendor" -prune \) -name "*.go" | xargs gofumpt -l -w
 
 ##@ Quality Control
 lint-dependencies:

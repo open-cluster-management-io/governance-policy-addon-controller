@@ -31,8 +31,8 @@ func Kubectl(args ...string) {
 	}
 }
 
-// GetWithTimeout keeps polling to get the object for timeout seconds until wantFound is met
-// (true for found, false for not found)
+// GetWithTimeout keeps polling to get the namespaced object for timeout seconds until wantFound is
+// met (true for found, false for not found)
 func GetWithTimeout(
 	client dynamic.Interface,
 	gvr schema.GroupVersionResource,
@@ -49,6 +49,44 @@ func GetWithTimeout(
 		var err error
 		namespace := client.Resource(gvr).Namespace(namespace)
 		obj, err = namespace.Get(context.TODO(), name, metav1.GetOptions{})
+		if wantFound && err != nil {
+			return err
+		}
+		if !wantFound && err == nil {
+			return fmt.Errorf("expected to return IsNotFound error")
+		}
+		if !wantFound && err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+
+		return nil
+	}, timeout, 1).Should(BeNil())
+
+	if wantFound {
+		return obj
+	}
+
+	return nil
+}
+
+// GetWithTimeoutClusterResource keeps polling to get the cluster-scoped object for timeout seconds
+// until wantFound is met (true for found, false for not found)
+func GetWithTimeoutClusterResource(
+	client dynamic.Interface,
+	gvr schema.GroupVersionResource,
+	name string,
+	wantFound bool,
+	timeout int,
+) *unstructured.Unstructured {
+	if timeout < 1 {
+		timeout = 1
+	}
+	var obj *unstructured.Unstructured
+
+	Eventually(func() error {
+		var err error
+		res := client.Resource(gvr)
+		obj, err = res.Get(context.TODO(), name, metav1.GetOptions{})
 		if wantFound && err != nil {
 			return err
 		}

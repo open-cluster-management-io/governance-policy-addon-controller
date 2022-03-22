@@ -49,8 +49,6 @@ rules:
   - update
 - apiGroups:
   - policy.open-cluster-management.io
-  # some template-sync tests currently use policies in this apiGroup: 
-  - policies.ibm.com
   resources:
   # template-sync requires ability to deal with all kinds of policies
   - '*'
