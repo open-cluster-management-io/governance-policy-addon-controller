@@ -15,7 +15,6 @@ rules:
   - ""
   resources:
   - events
-  - namespaces
   verbs:
   - create
   - delete
