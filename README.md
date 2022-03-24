@@ -78,7 +78,17 @@ kubectl -n my-managed-cluster annotate managedclusteraddon config-policy-control
 
 Any values in the
 [Helm chart's values.yaml](./pkg/addon/configpolicy/manifests/managedclusterchart/values.yaml) can
-be modified in this way.
+be modified with the `addon.open-cluster-management.io/values` annotation. However, the structure
+of that annotation makes it difficult to apply mutliple changes - separate `kubectl annotate`
+commands will override each other, as opposed to being merged.
+
+To address this issue, there are some separate annotations that can be applied independently:
+- `addon.open-cluster-management.io/on-multicluster-hub` - set to "true" on the
+governance-policy-framework addon when deploying it on a self-managed hub. It has no effect on
+other addons.
+- `log-level` - set to an integer to adjust the logging levels on the addon. A higher number will
+generate more logs. Note that logs from libraries used by the addon will be 2 levels below this
+setting; to get a `v=5` log message from a library, annotate the addon with `log-level=7`.
 
 ## Getting Started - Development
 
@@ -101,6 +111,13 @@ Two make targets are used to update the controller running in the kind clusters 
 changes. The `kind-load-image` target will re-build the image, and load it into the kind cluster.
 The `kind-regenerate-controller` target will update the deployment manifests with any local changes
 (including RBAC changes), and restart the controller on the cluster to update it.
+
+In general, the addon-controller will revert changes made to its managed ManifestWorks, to match 
+what is rendered by the helm charts. To more quickly test changes to deployed resources without 
+rebuilding the controller image, the `policy-addon-pause=true` annotation can be added to the 
+ManagedClusterAddOn resource. This will enable changes to the ManifestWork on the hub cluster to
+persist, but direct changes to resources on a managed cluster will still be reverted to match the
+ManifestWork.
 
 ### Running Tests
 
