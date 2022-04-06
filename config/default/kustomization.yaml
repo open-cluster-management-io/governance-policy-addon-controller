@@ -47,5 +47,5 @@ resources:
 - ../manager
 images:
 - name: policy-addon-image
-  newName: quay.io/stolostron/policy-addon-controller
+  newName: quay.io/stolostron/governance-policy-addon-controller
   newTag: latest
