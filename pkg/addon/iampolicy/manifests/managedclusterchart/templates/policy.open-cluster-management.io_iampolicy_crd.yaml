@@ -78,10 +78,13 @@ spec:
                   type: array
               type: object
             remediationAction:
-              description: enforce, inform
+              description: Only Inform is currently supported. Setting this to Enforce
+                will have the same effect as Inform.
               enum:
               - Inform
               - inform
+              - Enforce
+              - enforce
               type: string
             severity:
               description: low, medium, high, or critical
@@ -202,10 +205,13 @@ spec:
                     type: array
                 type: object
               remediationAction:
-                description: enforce, inform
+                description: Only Inform is currently supported. Setting this to Enforce
+                  will have the same effect as Inform.
                 enum:
                 - Inform
                 - inform
+                - Enforce
+                - enforce
                 type: string
               severity:
                 description: low, medium, high, or critical
