@@ -1,5 +1,5 @@
-
-PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+PWD := $(shell pwd)
+LOCAL_BIN ?= $(PWD)/bin
 
 # Image URL to use all building/pushing image targets;
 # Use your own docker registry and image name for dev/test by overridding the IMG and REGISTRY environment variable.
@@ -15,20 +15,25 @@ GOOS = $(shell go env GOOS)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
 
-PWD := $(shell pwd)
-BASE_DIR := $(shell basename $(PWD))
-export PATH=$(PWD)/bin:$(shell echo $$PATH)
 # Keep an existing GOPATH, make a private one if it is undefined
 GOPATH_DEFAULT := $(PWD)/.go
 export GOPATH ?= $(GOPATH_DEFAULT)
 GOBIN_DEFAULT := $(GOPATH)/bin
 export GOBIN ?= $(GOBIN_DEFAULT)
+export PATH=$(LOCAL_BIN):$(GOBIN):$(shell echo $$PATH)
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
+
+# go-get-tool will 'go install' any package $1 and install it to LOCAL_BIN.
+define go-get-tool
+@set -e ;\
+echo "Checking installation of $(1)" ;\
+GOBIN=$(LOCAL_BIN) go install $(1)
+endef
 
 .PHONY: all
 all: build
@@ -79,15 +84,15 @@ vet: ## Run go vet against code.
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test `go list ./... | grep -v test/e2e` -coverprofile coverage.out
 
-GOSEC = $(PWD)/bin/gosec
+GOSEC = $(LOCAL_BIN)/gosec
 GOSEC_VERSION = 2.9.6
 
-$(GOSEC):
-	mkdir -p $(PWD)/bin
-	curl -L https://github.com/securego/gosec/releases/download/v$(GOSEC_VERSION)/gosec_$(GOSEC_VERSION)_$(GOOS)_$(GOARCH).tar.gz | tar -xz -C $(PWD)/bin gosec
+.PHONY: gosec
+gosec:
+	$(call go-get-tool,github.com/securego/gosec/v2/cmd/gosec@v2.9.6)
 
 .PHONY: gosec-scan
-gosec-scan: $(GOSEC) ## Run a gosec scan against the code.
+gosec-scan: gosec ## Run a gosec scan against the code.
 	$(GOSEC) -fmt sonarqube -out gosec.json -no-fail -exclude-dir=.go ./...
 
 ##@ Build
@@ -127,33 +132,20 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
-CONTROLLER_GEN = $(PWD)/bin/controller-gen
+CONTROLLER_GEN = $(LOCAL_BIN)/controller-gen
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
+	$(call go-get-tool,sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
 
-KUSTOMIZE = $(PWD)/bin/kustomize
+KUSTOMIZE = $(LOCAL_BIN)/kustomize
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+	$(call go-get-tool,sigs.k8s.io/kustomize/kustomize/v4@v4.5.4)
 
-ENVTEST = $(PWD)/bin/setup-envtest
+ENVTEST = $(LOCAL_BIN)/setup-envtest
 .PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.
-	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
-
-# go-get-tool will 'go get' any package $2 and install it to $1.
-define go-get-tool
-@[ -f $(1) ] || { \
-set -e ;\
-TMP_DIR=$$(mktemp -d) ;\
-cd $$TMP_DIR ;\
-go mod init tmp ;\
-echo "Downloading $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
-rm -rf $$TMP_DIR ;\
-}
-endef
+	$(call go-get-tool,sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
 KUBEWAIT ?= $(PWD)/build/common/scripts/kubewait.sh
 
@@ -233,10 +225,10 @@ DEPLOYMENT_TARGETS := kind-deploy-registration-operator-hub kind-deploy-registra
 .PHONY: kind-deploy-controller
 kind-deploy-controller: $(DEPLOYMENT_TARGETS) ## Deploy the policy-addon-controller to the kind cluster.
 
-GINKGO = $(PWD)/bin/ginkgo
+GINKGO = $(LOCAL_BIN)/ginkgo
 .PHONY: e2e-dependencies
 e2e-dependencies: ## Download ginkgo locally if necessary.
-	$(call go-get-tool,$(GINKGO),github.com/onsi/ginkgo/v2/ginkgo@v2.1.3)
+	$(call go-get-tool,github.com/onsi/ginkgo/v2/ginkgo@$(shell awk '/github.com\/onsi\/ginkgo\/v2/ {print $$2}' go.mod))
 
 .PHONY: e2e-test
 e2e-test: e2e-dependencies
@@ -244,8 +236,8 @@ e2e-test: e2e-dependencies
 
 .PHONY: fmt-dependencies
 fmt-dependencies:
-	$(call go-get-tool,$(PWD)/bin/gci,github.com/daixiang0/gci@v0.2.9)
-	$(call go-get-tool,$(PWD)/bin/gofumpt,mvdan.cc/gofumpt@v0.2.0)
+	$(call go-get-tool,github.com/daixiang0/gci@v0.2.9)
+	$(call go-get-tool,mvdan.cc/gofumpt@v0.2.0)
 
 # All available format: format-go format-protos format-python
 # Default value will run all formats, override these make target with your requirements:
@@ -258,7 +250,7 @@ fmt: fmt-dependencies
 
 ##@ Quality Control
 lint-dependencies:
-	$(call go-get-tool,$(PWD)/bin/golangci-lint,github.com/golangci/golangci-lint/cmd/golangci-lint@v1.41.1)
+	$(call go-get-tool,github.com/golangci/golangci-lint/cmd/golangci-lint@v1.41.1)
 
 # All available linters: lint-dockerfiles lint-scripts lint-yaml lint-copyright-banner lint-go lint-python lint-helm lint-markdown lint-sass lint-typescript lint-protos
 # Default value will run all linters, override these make target with your requirements:
