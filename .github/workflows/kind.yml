@@ -66,28 +66,6 @@ jobs:
         make wait-for-work-agent
         make e2e-test
 
-    - name: Gosec
-      if: |
-        github.event_name == 'push' &&
-        github.repository_owner == 'stolostron'  &&
-        matrix.kind == 'latest'
-      run: |
-        make gosec-scan
-
-    - name: SonarCloud Analysis
-      if: |
-        github.event_name == 'push' &&
-        github.repository_owner == 'stolostron'  &&
-        matrix.kind == 'latest'
-      uses: sonarsource/sonarcloud-github-action@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      with:
-        projectBaseDir: governance-policy-addon-controller
-        args: >
-          --debug
-
     - name: Clean up cluster
       if: ${{ always() }}
       run: |

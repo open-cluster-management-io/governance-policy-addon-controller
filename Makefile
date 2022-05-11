@@ -4,7 +4,7 @@ LOCAL_BIN ?= $(PWD)/bin
 # Image URL to use all building/pushing image targets;
 # Use your own docker registry and image name for dev/test by overridding the IMG and REGISTRY environment variable.
 IMG ?= $(shell cat COMPONENT_NAME 2> /dev/null)
-REGISTRY ?= quay.io/stolostron
+REGISTRY ?= quay.io/open-cluster-management
 TAG ?= latest
 VERSION ?= $(shell cat COMPONENT_VERSION 2> /dev/null)
 IMAGE_NAME_AND_VERSION ?= $(REGISTRY)/$(IMG):$(VERSION)

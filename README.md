@@ -4,8 +4,8 @@
 
 Open Cluster Management - Governance Policy Addon Controller
 
-[![Build](https://img.shields.io/badge/build-Prow-informational)](https://prow.ci.openshift.org/?repo=stolostron%2Fgovernance-policy-addon-controller)
-[![KinD tests](https://github.com/stolostron/governance-policy-addon-controller/actions/workflows/kind.yml/badge.svg?branch=main&event=push)](https://github.com/stolostron/governance-policy-addon-controller/actions/workflows/kind.yml)
+[![Build](https://github.com/open-cluster-management-io/governance-policy-addon-controller/actions/workflows/go-postsubmit.yml/badge.svg?branch=main&event=push)](https://github.com/open-cluster-management-io/governance-policy-addon-controller/actions/workflows/go-postsubmit.yml)
+[![KinD tests](https://github.com/open-cluster-management-io/governance-policy-addon-controller/actions/workflows/kind.yml/badge.svg?branch=main&event=push)](https://github.com/open-cluster-management-io/governance-policy-addon-controller/actions/workflows/kind.yml)
 [![License](https://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
 ## Description
@@ -19,19 +19,17 @@ more information on the addon framework, see the
 The addons managed by this controller are:
 
 - The "config-policy-controller" consisting of the
-  [Configuration Policy Controller](https://github.com/stolostron/config-policy-controller).
-- The "cert-policy-controller" consisting of the
-  [Certificate Policy Controller](https://github.com/stolostron/cert-policy-controller).
-- The "iam-policy-controller" consisting of the
-  [IAM Policy Controller](https://github.com/stolostron/iam-policy-controller).
+  [Configuration Policy Controller](https://github.com/open-cluster-management-io/config-policy-controller).
 - The "governance-policy-framework" consisting of the
-  [Policy Spec Sync](https://github.com/stolostron/governance-policy-spec-sync), the
-  [Policy Status Sync](https://github.com/stolostron/governance-policy-status-sync), and the
-  [Policy Template Sync](https://github.com/stolostron/governance-policy-template-sync).
+  [Policy Spec Sync](https://github.com/open-cluster-management-io/governance-policy-spec-sync), the
+  [Policy Status Sync](https://github.com/open-cluster-management-io/governance-policy-status-sync), and the
+  [Policy Template Sync](https://github.com/open-cluster-management-io/governance-policy-template-sync).
 
 Go to the [Contributing guide](CONTRIBUTING.md) to learn how to get involved.
 
 Check the [Security guide](SECURITY.md) if you need to report a security issue.
+
+The `governance-policy-addon-controller` is part of the `open-cluster-management` community. For more information, visit: [open-cluster-management.io](https://open-cluster-management.io).
 
 ## Getting Started - Usage
 
@@ -125,5 +123,5 @@ The e2e tests are intended to be run against a `kind` cluster. After setting one
 above (and waiting for the work-agent), the tests can be run with the `e2e-test` make target.
 
 <!---
-Date: May/11/2022
+Date: April/29/2022
 -->

@@ -16,10 +16,8 @@ rules:
 - apiGroups:
   - addon.open-cluster-management.io
   resourceNames:
-  - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
-  - iam-policy-controller
   resources:
   - clustermanagementaddons/finalizers
   verbs:
@@ -37,10 +35,8 @@ rules:
 - apiGroups:
   - addon.open-cluster-management.io
   resourceNames:
-  - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
-  - iam-policy-controller
   resources:
   - managedclusteraddons
   verbs:
@@ -48,10 +44,8 @@ rules:
 - apiGroups:
   - addon.open-cluster-management.io
   resourceNames:
-  - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
-  - iam-policy-controller
   resources:
   - managedclusteraddons/finalizers
   verbs:
@@ -59,10 +53,8 @@ rules:
 - apiGroups:
   - addon.open-cluster-management.io
   resourceNames:
-  - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
-  - iam-policy-controller
   resources:
   - managedclusteraddons/status
   verbs:
@@ -109,10 +101,8 @@ rules:
 - apiGroups:
   - coordination.k8s.io
   resourceNames:
-  - cert-policy-controller
   - config-policy-controller
   - governance-policy-framework
-  - iam-policy-controller
   resources:
   - leases
   verbs:
@@ -166,9 +156,7 @@ rules:
 - apiGroups:
   - rbac.authorization.k8s.io
   resourceNames:
-  - open-cluster-management:cert-policy-controller-hub
   - open-cluster-management:config-policy-controller-hub
-  - open-cluster-management:iam-policy-controller-hub
   - open-cluster-management:policy-framework-hub
   resources:
   - clusterroles
@@ -186,9 +174,7 @@ rules:
 - apiGroups:
   - rbac.authorization.k8s.io
   resourceNames:
-  - open-cluster-management:cert-policy-controller-hub
   - open-cluster-management:config-policy-controller-hub
-  - open-cluster-management:iam-policy-controller-hub
   - open-cluster-management:policy-framework-hub
   resources:
   - rolebindings
@@ -209,10 +195,8 @@ rules:
 - apiGroups:
   - work.open-cluster-management.io
   resourceNames:
-  - addon-cert-policy-controller-deploy
   - addon-config-policy-controller-deploy
   - addon-governance-policy-framework-deploy
-  - addon-iam-policy-controller-deploy
   resources:
   - manifestworks
   verbs:
