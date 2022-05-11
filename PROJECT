@@ -1,0 +1,6 @@
+domain: open-cluster-management.io
+layout:
+- go.kubebuilder.io/v3
+projectName: governance-policy-addon-controller
+repo: open-cluster-management.io/governance-policy-addon-controller
+version: "3"

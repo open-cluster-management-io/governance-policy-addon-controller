@@ -1,0 +1,8 @@
+# Copyright Contributors to the Open Cluster Management project
+
+{{- if not .Values.onMulticlusterHub }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "{{ .Values.clusterName }}"
+{{- end }}

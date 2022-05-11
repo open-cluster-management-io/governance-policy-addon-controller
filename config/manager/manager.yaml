@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+  labels:
+    control-plane: controller-manager
+spec:
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - command:
+        - governance-policy-addon-controller
+        args:
+        - controller
+        image: policy-addon-image
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CONFIG_POLICY_CONTROLLER_IMAGE
+          value: quay.io/open-cluster-management/config-policy-controller:latest
+        - name: GOVERNANCE_POLICY_SPEC_SYNC_IMAGE
+          value: quay.io/open-cluster-management/governance-policy-spec-sync:latest
+        - name: GOVERNANCE_POLICY_STATUS_SYNC_IMAGE
+          value: quay.io/open-cluster-management/governance-policy-status-sync:latest
+        - name: GOVERNANCE_POLICY_TEMPLATE_SYNC_IMAGE
+          value: quay.io/open-cluster-management/governance-policy-template-sync:latest
+        name: manager
+        securityContext:
+          allowPrivilegeEscalation: false
+        # TODO(user): Configure the resources accordingly based on the project requirements.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+      serviceAccountName: controller-manager
+      terminationGracePeriodSeconds: 10

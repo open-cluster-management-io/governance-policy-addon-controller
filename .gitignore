@@ -8,8 +8,12 @@
 # Test binary, built with `go test -c`
 *.test
 
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
+# Common places for build details that don't need to be committed
+.go/
+bin/
+vendor/
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+*.kubeconfig
+*.kubeconfig-internal
+coverage.out
+gosec.json
