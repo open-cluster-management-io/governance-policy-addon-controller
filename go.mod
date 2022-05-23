@@ -1,4 +1,4 @@
-module github.com/stolostron/governance-policy-addon-controller
+module open-cluster-management.io/governance-policy-addon-controller
 
 go 1.17
 

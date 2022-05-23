@@ -12,7 +12,7 @@ import (
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 
-	policyaddon "github.com/stolostron/governance-policy-addon-controller/pkg/addon"
+	policyaddon "open-cluster-management.io/governance-policy-addon-controller/pkg/addon"
 )
 
 const (

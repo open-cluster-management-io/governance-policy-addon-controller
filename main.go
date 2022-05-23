@@ -31,10 +31,8 @@ import (
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/stolostron/governance-policy-addon-controller/pkg/addon/certpolicy"
-	"github.com/stolostron/governance-policy-addon-controller/pkg/addon/configpolicy"
-	"github.com/stolostron/governance-policy-addon-controller/pkg/addon/iampolicy"
-	"github.com/stolostron/governance-policy-addon-controller/pkg/addon/policyframework"
+	"open-cluster-management.io/governance-policy-addon-controller/pkg/addon/configpolicy"
+	"open-cluster-management.io/governance-policy-addon-controller/pkg/addon/policyframework"
 )
 
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=get;create
@@ -46,24 +44,24 @@ import (
 // RBAC below will need to be updated if/when new policy controllers are added.
 
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create
-//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;patch;update,resourceNames=governance-policy-framework;config-policy-controller;iam-policy-controller;cert-policy-controller
+//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;patch;update,resourceNames=governance-policy-framework;config-policy-controller
 
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=create
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework-hub";"open-cluster-management:config-policy-controller-hub";"open-cluster-management:iam-policy-controller-hub";"open-cluster-management:cert-policy-controller-hub"
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework-hub";"open-cluster-management:config-policy-controller-hub"
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=create
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework-hub";"open-cluster-management:config-policy-controller-hub";"open-cluster-management:iam-policy-controller-hub";"open-cluster-management:cert-policy-controller-hub"
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework-hub";"open-cluster-management:config-policy-controller-hub"
 
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=create
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=get;list;watch
-//+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=update;patch;delete,resourceNames=addon-config-policy-controller-deploy;addon-governance-policy-framework-deploy;addon-iam-policy-controller-deploy;addon-cert-policy-controller-deploy
+//+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=update;patch;delete,resourceNames=addon-config-policy-controller-deploy;addon-governance-policy-framework-deploy
 
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons,verbs=create
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons,verbs=get;list;watch;update
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons,verbs=delete,resourceNames=config-policy-controller;governance-policy-framework;iam-policy-controller;cert-policy-controller
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/finalizers,verbs=update,resourceNames=config-policy-controller;governance-policy-framework;iam-policy-controller;cert-policy-controller
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/status,verbs=update;patch,resourceNames=config-policy-controller;governance-policy-framework;iam-policy-controller;cert-policy-controller
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons,verbs=delete,resourceNames=config-policy-controller;governance-policy-framework
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/finalizers,verbs=update,resourceNames=config-policy-controller;governance-policy-framework
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=managedclusteraddons/status,verbs=update;patch,resourceNames=config-policy-controller;governance-policy-framework
 
-//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons/finalizers,verbs=update,resourceNames=config-policy-controller;governance-policy-framework;iam-policy-controller;cert-policy-controller
+//+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons/finalizers,verbs=update,resourceNames=config-policy-controller;governance-policy-framework
 
 // Permissions required for policy-framework
 // (see https://kubernetes.io/docs/reference/access-authn-authz/rbac/#privilege-escalation-prevention-and-bootstrapping)
@@ -125,8 +123,6 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 	agentFuncs := []func(addonmanager.AddonManager, *controllercmd.ControllerContext) error{
 		policyframework.GetAndAddAgent,
 		configpolicy.GetAndAddAgent,
-		iampolicy.GetAndAddAgent,
-		certpolicy.GetAndAddAgent,
 	}
 
 	for _, f := range agentFuncs {
