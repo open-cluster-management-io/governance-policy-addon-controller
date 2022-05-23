@@ -7,7 +7,7 @@ IMG ?= $(shell cat COMPONENT_NAME 2> /dev/null)
 REGISTRY ?= quay.io/open-cluster-management
 TAG ?= latest
 VERSION ?= $(shell cat COMPONENT_VERSION 2> /dev/null)
-IMAGE_NAME_AND_VERSION ?= $(REGISTRY)/$(IMG):$(VERSION)
+IMAGE_NAME_AND_VERSION ?= $(REGISTRY)/$(IMG)
 
 GOARCH = $(shell go env GOARCH)
 GOOS = $(shell go env GOOS)
@@ -108,6 +108,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 .PHONY: build-images
 build-images: generate fmt vet
 	@docker build -t ${IMAGE_NAME_AND_VERSION} -f build/Dockerfile .
+	@docker tag ${IMAGE_NAME_AND_VERSION} $(REGISTRY)/$(IMG):$(TAG)
 
 ##@ Deployment
 
