@@ -1,6 +1,6 @@
 module open-cluster-management.io/governance-policy-addon-controller
 
-go 1.17
+go 1.18
 
 require (
 	github.com/onsi/ginkgo/v2 v2.1.3
