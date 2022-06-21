@@ -32,7 +32,8 @@ var agentPermissionFiles = []string{
 }
 
 func getValues(cluster *clusterv1.ManagedCluster,
-	addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
+	addon *addonapiv1alpha1.ManagedClusterAddOn,
+) (addonfactory.Values, error) {
 	userValues := policyaddon.UserValues{
 		GlobalValues: policyaddon.GlobalValues{
 			ImagePullPolicy: "IfNotPresent",

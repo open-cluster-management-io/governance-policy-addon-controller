@@ -39,7 +39,8 @@ type userValues struct {
 }
 
 func getValues(cluster *clusterv1.ManagedCluster,
-	addon *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
+	addon *addonapiv1alpha1.ManagedClusterAddOn,
+) (addonfactory.Values, error) {
 	userValues := userValues{
 		OnMulticlusterHub: false,
 		GlobalValues: policyaddon.GlobalValues{
