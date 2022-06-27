@@ -9,6 +9,7 @@ args:
   logLevel: 0
   pkgLogLevel: -1
   logEncoder: console
+  evaluationConcurrency: 2
 hubKubeConfigSecret: config-policy-controller-hub-kubeconfig
 
 resources:
