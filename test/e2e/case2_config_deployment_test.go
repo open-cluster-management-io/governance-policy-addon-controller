@@ -81,7 +81,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 		}
 	})
 
-	It("should create a config-policy-controller deployment with custom logging levels", func() {
+	It("should create a config-policy-controller deployment with custom logging levels and concurrency", func() {
 		for _, cluster := range managedClusterList {
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 			By(logPrefix + "deploying the default config-policy-controller managedclusteraddon")
@@ -102,6 +102,18 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 			By(logPrefix + "annotating the managedclusteraddon with the " + loggingLevelAnnotation + " annotation")
 			Kubectl("annotate", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, loggingLevelAnnotation)
+			By(
+				logPrefix + "annotating the managedclusteraddon with the " + evaluationConcurrencyAnnotation +
+					" annotation",
+			)
+			Kubectl(
+				"annotate",
+				"-n",
+				cluster.clusterName,
+				"-f",
+				case2ManagedClusterAddOnCR,
+				evaluationConcurrencyAnnotation,
+			)
 
 			By(logPrefix + "verifying a new config-policy-controller pod is deployed")
 			opts := metav1.ListOptions{
@@ -109,7 +121,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 			}
 			_ = ListWithTimeoutByNamespace(cluster.clusterClient, gvrPod, opts, addonNamespace, 2, true, 30)
 
-			By(logPrefix + "verifying the pod has been deployed with a new logging level")
+			By(logPrefix + "verifying the pod has been deployed with a new logging level and concurrency")
 			pods := ListWithTimeoutByNamespace(cluster.clusterClient, gvrPod, opts, addonNamespace, 1, true, 60)
 			phase := pods.Items[0].Object["status"].(map[string]interface{})["phase"]
 
@@ -128,6 +140,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 						Expect(args).To(ContainElement("--log-encoder=console"))
 						Expect(args).To(ContainElement("--log-level=8"))
 						Expect(args).To(ContainElement("--v=6"))
+						Expect(args).To(ContainElement("--evaluation-concurrency=5"))
 					}
 				} else {
 					panic(fmt.Errorf("containerObj type assertion failed"))

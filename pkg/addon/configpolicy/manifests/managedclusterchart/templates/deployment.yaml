@@ -40,6 +40,7 @@ spec:
           - --log-encoder={{ .Values.args.logEncoder }}
           - --log-level={{ .Values.args.logLevel }}
           - --v={{ .Values.args.pkgLogLevel }}
+          - --evaluation-concurrency={{ .Values.args.evaluationConcurrency }}
         env:
           - name: WATCH_NAMESPACE
             value: "{{ .Values.clusterName }}"
