@@ -82,7 +82,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 	})
 
 	It("should create a config-policy-controller deployment with custom logging levels and concurrency", func() {
-		for _, cluster := range managedClusterList {
+		for i, cluster := range managedClusterList {
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 			By(logPrefix + "deploying the default config-policy-controller managedclusteraddon")
 			Kubectl("apply", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
@@ -115,13 +115,30 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				evaluationConcurrencyAnnotation,
 			)
 
-			By(logPrefix + "verifying a new config-policy-controller pod is deployed")
+			By(logPrefix + "restarting the config-policy-controller deployment")
+			Kubectl(
+				"-n",
+				addonNamespace,
+				"rollout",
+				"restart",
+				"deployments/config-policy-controller",
+				fmt.Sprintf("--kubeconfig=%s%d.kubeconfig", kubeconfigFilename, i+1),
+			)
+			Kubectl(
+				"-n",
+				addonNamespace,
+				"rollout",
+				"status",
+				"deployments/config-policy-controller",
+				"--watch",
+				"--timeout=60s",
+				fmt.Sprintf("--kubeconfig=%s%d.kubeconfig", kubeconfigFilename, i+1),
+			)
+
+			By(logPrefix + "verifying the pod has been deployed with a new logging level and concurrency")
 			opts := metav1.ListOptions{
 				LabelSelector: case2PodSelector,
 			}
-			_ = ListWithTimeoutByNamespace(cluster.clusterClient, gvrPod, opts, addonNamespace, 2, true, 30)
-
-			By(logPrefix + "verifying the pod has been deployed with a new logging level and concurrency")
 			pods := ListWithTimeoutByNamespace(cluster.clusterClient, gvrPod, opts, addonNamespace, 1, true, 60)
 			phase := pods.Items[0].Object["status"].(map[string]interface{})["phase"]
 
