@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -18,8 +19,21 @@ import (
 
 // Kubectl executes kubectl commands
 func Kubectl(args ...string) {
-	// Inject the kubeconfig to ensure we're pointing to the hub
-	args = append(args, "--kubeconfig="+kubeconfigFilename+"1.kubeconfig")
+	// Inject the kubeconfig to ensure we're pointing to the hub if none is provided
+	skipKubeconfig := false
+
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "--kubeconfig=") {
+			skipKubeconfig = true
+
+			break
+		}
+	}
+
+	if !skipKubeconfig {
+		args = append(args, "--kubeconfig="+kubeconfigFilename+"1.kubeconfig")
+	}
+
 	cmd := exec.Command("kubectl", args...)
 
 	output, err := cmd.CombinedOutput()
