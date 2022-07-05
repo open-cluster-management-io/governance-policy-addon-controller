@@ -58,18 +58,8 @@ spec:
           - name: NO_PROXY
             value: {{ .Values.global.proxyConfig.NO_PROXY }}
           {{- end }}
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          failureThreshold: 3
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          failureThreshold: 3
-          periodSeconds: 10
+        livenessProbe: null
+        readinessProbe: null
         resources: {{- toYaml .Values.resources | nindent 10 }}
         securityContext:
           allowPrivilegeEscalation: false
@@ -117,18 +107,8 @@ spec:
           - name: NO_PROXY
             value: {{ .Values.global.proxyConfig.NO_PROXY }}
           {{- end }}
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8082
-          failureThreshold: 3
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8082
-          failureThreshold: 3
-          periodSeconds: 10
+        livenessProbe: null
+        readinessProbe: null
         resources: {{- toYaml .Values.resources | nindent 10 }}
         securityContext:
           allowPrivilegeEscalation: false
