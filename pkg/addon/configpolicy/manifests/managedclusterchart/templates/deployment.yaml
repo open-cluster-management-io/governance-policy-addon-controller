@@ -16,6 +16,8 @@ spec:
     matchLabels:
       app: {{ include "controller.name" . }}
       release: {{ .Release.Name }}
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
@@ -41,6 +43,7 @@ spec:
           - --log-level={{ .Values.args.logLevel }}
           - --v={{ .Values.args.pkgLogLevel }}
           - --evaluation-concurrency={{ .Values.args.evaluationConcurrency }}
+          - --health-probe-bind-address=:8081
         env:
           - name: WATCH_NAMESPACE
             value: "{{ .Values.clusterName }}"
@@ -58,8 +61,33 @@ spec:
           - name: NO_PROXY
             value: {{ .Values.global.proxyConfig.NO_PROXY }}
           {{- end }}
-        livenessProbe: null
-        readinessProbe: null
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          failureThreshold: 3
+          periodSeconds: 10
+          {{- if semverCompare "< 1.20.0" .Capabilities.KubeVersion.Version }}
+          initialDelaySeconds: 300
+          {{- end }}
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          failureThreshold: 3
+          periodSeconds: 10
+          {{- if semverCompare "< 1.20.0" .Capabilities.KubeVersion.Version }}
+          initialDelaySeconds: 300
+          {{- end }}
+        {{- if semverCompare ">= 1.20.0" .Capabilities.KubeVersion.Version }}
+        {{- /* startupProbe became stable in k8s 1.20 */}}
+        startupProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          failureThreshold: 30
+          periodSeconds: 10
+        {{- end }}
         resources: {{- toYaml .Values.resources | nindent 10 }}
         securityContext:
         allowPrivilegeEscalation: false
