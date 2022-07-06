@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"encoding/json"
 	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -23,7 +24,7 @@ const (
 
 var _ = Describe("Test framework deployment", func() {
 	It("should create the default framework deployment on separate managed clusters", func() {
-		for _, cluster := range managedClusterList[1:] {
+		for i, cluster := range managedClusterList[1:] {
 			Expect(cluster.clusterType).To(Equal("managed"))
 
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
@@ -34,7 +35,7 @@ var _ = Describe("Test framework deployment", func() {
 			)
 			Expect(deploy).NotTo(BeNil())
 
-			checkContainersAndAvailability(cluster)
+			checkContainersAndAvailability(cluster, i+1)
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
 			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
@@ -46,7 +47,7 @@ var _ = Describe("Test framework deployment", func() {
 	})
 
 	It("should create a framework deployment with custom logging levels", func() {
-		for _, cluster := range managedClusterList {
+		for i, cluster := range managedClusterList {
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 			By(logPrefix + "deploying the default framework managedclusteraddon")
 			if cluster.clusterType == "hub" {
@@ -60,7 +61,7 @@ var _ = Describe("Test framework deployment", func() {
 			)
 			Expect(deploy).NotTo(BeNil())
 
-			checkContainersAndAvailability(cluster)
+			checkContainersAndAvailability(cluster, i)
 
 			By(logPrefix + "annotating the managedclusteraddon with the " + loggingLevelAnnotation + " annotation")
 			Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, loggingLevelAnnotation)
@@ -89,7 +90,7 @@ var _ = Describe("Test framework deployment", func() {
 		)
 		Expect(deploy).NotTo(BeNil())
 
-		checkContainersAndAvailability(cluster)
+		checkContainersAndAvailability(cluster, 0)
 
 		By(logPrefix + "annotating the managedclusteraddon with the " + loggingLevelAnnotation + " annotation")
 		Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, loggingLevelAnnotation)
@@ -122,7 +123,7 @@ var _ = Describe("Test framework deployment", func() {
 		)
 		Expect(deploy).NotTo(BeNil())
 
-		checkContainersAndAvailability(cluster)
+		checkContainersAndAvailability(cluster, 0)
 
 		By(logPrefix + "annotating the managedclusteraddon with the " + loggingLevelAnnotation + " annotation")
 		Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, loggingLevelAnnotation)
@@ -264,9 +265,49 @@ var _ = Describe("Test framework deployment", func() {
 			GetWithTimeoutClusterResource(cluster.clusterClient, gvrNamespace, cluster.clusterName, false, 15)
 		}
 	})
+
+	It("should deploy with startupProbes or initialDelaySeconds depending on version", func() {
+		for i, cluster := range managedClusterList[1:] {
+			Expect(cluster.clusterType).To(Equal("managed"))
+
+			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+			By(logPrefix + "deploying the default framework managedclusteraddon")
+			Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			deploy := GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+			)
+			Expect(deploy).NotTo(BeNil())
+
+			containers, found, err := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "containers")
+			Expect(err).To(BeNil())
+			Expect(found).To(BeTrue())
+
+			container, ok := containers[0].(map[string]interface{})
+			Expect(ok).To(BeTrue())
+
+			if startupProbeInCluster(i) {
+				By(logPrefix + "checking for startupProbe on kubernetes 1.20 or higher")
+				_, found, err = unstructured.NestedMap(container, "startupProbe")
+				Expect(err).To(BeNil())
+				Expect(found).To(BeTrue())
+			} else {
+				By(logPrefix + "checking for initialDelaySeconds on kubernetes 1.19 or lower")
+				_, found, err = unstructured.NestedInt64(container, "livenessProbe", "initialDelaySeconds")
+				Expect(err).To(BeNil())
+				Expect(found).To(BeTrue())
+			}
+
+			By(logPrefix + "deleting the managedclusteraddon")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			deploy = GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
+			)
+			Expect(deploy).To(BeNil())
+		}
+	})
 })
 
-func checkContainersAndAvailability(cluster managedClusterConfig) {
+func checkContainersAndAvailability(cluster managedClusterConfig, clusterIdx int) {
 	logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 
 	desiredContainerCount := 3
@@ -284,17 +325,19 @@ func checkContainersAndAvailability(cluster managedClusterConfig) {
 		return len(containers.([]interface{}))
 	}, 60, 1).Should(Equal(desiredContainerCount))
 
-	By(logPrefix + "verifying all replicas in framework deployment are available")
-	Eventually(func() bool {
-		deploy := GetWithTimeout(
-			cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
-		)
-		status := deploy.Object["status"]
-		replicas := status.(map[string]interface{})["replicas"]
-		availableReplicas := status.(map[string]interface{})["availableReplicas"]
+	if startupProbeInCluster(clusterIdx) {
+		By(logPrefix + "verifying all replicas in framework deployment are available")
+		Eventually(func() bool {
+			deploy := GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+			)
+			status := deploy.Object["status"]
+			replicas := status.(map[string]interface{})["replicas"]
+			availableReplicas := status.(map[string]interface{})["availableReplicas"]
 
-		return (availableReplicas != nil) && replicas.(int64) == availableReplicas.(int64)
-	}, 240, 1).Should(Equal(true))
+			return (availableReplicas != nil) && replicas.(int64) == availableReplicas.(int64)
+		}, 240, 1).Should(Equal(true))
+	}
 
 	By(logPrefix + "verifying one framework pod is running")
 	Eventually(func() bool {
@@ -354,4 +397,26 @@ func checkArgs(cluster managedClusterConfig, desiredArgs ...string) {
 
 		return nil
 	}, 120, 1).Should(BeNil())
+}
+
+func startupProbeInCluster(clusterIdx int) bool {
+	versionJSON := Kubectl(
+		"version",
+		"-o=json",
+		fmt.Sprintf("--kubeconfig=%s%d.kubeconfig", kubeconfigFilename, clusterIdx+1),
+	)
+
+	version := struct {
+		ServerVersion struct {
+			Minor int `json:"minor,string"`
+		} `json:"serverVersion"`
+	}{}
+
+	if err := json.Unmarshal([]byte(versionJSON), &version); err != nil {
+		// Deliberately panic and fail if the output didn't match what we expected
+		p := fmt.Sprintf("error: %v, versionJSON: %v", err, versionJSON)
+		panic(p)
+	}
+
+	return version.ServerVersion.Minor >= 20
 }

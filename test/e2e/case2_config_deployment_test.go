@@ -19,7 +19,7 @@ const (
 
 var _ = Describe("Test config-policy-controller deployment", func() {
 	It("should create the default config-policy-controller deployment on the managed cluster", func() {
-		for _, cluster := range managedClusterList {
+		for i, cluster := range managedClusterList {
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 			By(logPrefix + "deploying the default config-policy-controller managedclusteraddon")
 			Kubectl("apply", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
@@ -39,17 +39,19 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				return len(containers.([]interface{}))
 			}, 60, 1).Should(Equal(1))
 
-			By(logPrefix + "verifying all replicas in config-policy-controller deployment are available")
-			Eventually(func() bool {
-				deploy = GetWithTimeout(
-					cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, true, 30,
-				)
-				status := deploy.Object["status"]
-				replicas := status.(map[string]interface{})["replicas"]
-				availableReplicas := status.(map[string]interface{})["availableReplicas"]
+			if startupProbeInCluster(i) {
+				By(logPrefix + "verifying all replicas in config-policy-controller deployment are available")
+				Eventually(func() bool {
+					deploy = GetWithTimeout(
+						cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, true, 30,
+					)
+					status := deploy.Object["status"]
+					replicas := status.(map[string]interface{})["replicas"]
+					availableReplicas := status.(map[string]interface{})["availableReplicas"]
 
-				return (availableReplicas != nil) && replicas.(int64) == availableReplicas.(int64)
-			}, 240, 1).Should(Equal(true))
+					return (availableReplicas != nil) && replicas.(int64) == availableReplicas.(int64)
+				}, 240, 1).Should(Equal(true))
+			}
 
 			By(logPrefix + "verifying a running config-policy-controller pod")
 			Eventually(func() bool {
@@ -131,7 +133,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				"status",
 				"deployments/config-policy-controller",
 				"--watch",
-				"--timeout=60s",
+				"--timeout=360s", // to allow for the 5 minute delay on old k8s
 				fmt.Sprintf("--kubeconfig=%s%d.kubeconfig", kubeconfigFilename, i+1),
 			)
 
