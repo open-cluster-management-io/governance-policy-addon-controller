@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os/exec"
@@ -18,7 +19,7 @@ import (
 )
 
 // Kubectl executes kubectl commands
-func Kubectl(args ...string) {
+func Kubectl(args ...string) string {
 	// Inject the kubeconfig to ensure we're pointing to the hub if none is provided
 	skipKubeconfig := false
 
@@ -36,13 +37,21 @@ func Kubectl(args ...string) {
 
 	cmd := exec.Command("kubectl", args...)
 
-	output, err := cmd.CombinedOutput()
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
 	if err != nil {
 		// in case of failure, print command output (including error)
 		//nolint:forbidigo
-		fmt.Printf("%s\n", output)
+		fmt.Printf("output\n======\n%s\n", stdout.String())
+		//nolint:forbidigo
+		fmt.Printf("error\n======\n%s\n", stderr.String())
 		Fail(fmt.Sprintf("Error: %v", err))
 	}
+
+	return stdout.String()
 }
 
 // GetWithTimeout keeps polling to get the namespaced object for timeout seconds until wantFound is
