@@ -156,6 +156,11 @@ KIND_NAME ?= policy-addon-ctrl1
 KIND_KUBECONFIG ?= $(PWD)/$(KIND_NAME).kubeconfig
 HUB_KUBECONFIG ?= $(PWD)/$(KIND_NAME).kubeconfig-internal
 MANAGED_CLUSTER_NAME ?= cluster1
+ifneq ($(KIND_VERSION), latest)
+	KIND_ARGS = --image kindest/node:$(KIND_VERSION)
+else
+	KIND_ARGS =
+endif
 
 .PHONY: kind-create-cluster
 kind-create-cluster: $(KIND_KUBECONFIG) ## Create a kind cluster.
