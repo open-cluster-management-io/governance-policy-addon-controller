@@ -92,6 +92,8 @@ var _ = Describe("Test framework deployment", func() {
 
 		checkContainersAndAvailability(cluster, 0)
 
+		// Adding this annotation and later verifying the cluster namespace is not removed checks
+		// that the helm values annotation and the logging level annotation are stackable.
 		By(logPrefix + "annotating the managedclusteraddon with the " + loggingLevelAnnotation + " annotation")
 		Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, loggingLevelAnnotation)
 
@@ -125,6 +127,8 @@ var _ = Describe("Test framework deployment", func() {
 
 		checkContainersAndAvailability(cluster, 0)
 
+		// Adding this annotation and later verifying the cluster namespace is not removed checks
+		// that the multiclusterhub annotation and the logging level annotation are stackable.
 		By(logPrefix + "annotating the managedclusteraddon with the " + loggingLevelAnnotation + " annotation")
 		Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, loggingLevelAnnotation)
 
@@ -319,10 +323,10 @@ func checkContainersAndAvailability(cluster managedClusterConfig, clusterIdx int
 	Eventually(func() int {
 		deploy := GetWithTimeout(cluster.clusterClient, gvrDeployment,
 			case1DeploymentName, addonNamespace, true, 30)
-		spec := deploy.Object["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"]
-		containers := spec.(map[string]interface{})["containers"]
 
-		return len(containers.([]interface{}))
+		containers, _, _ := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "containers")
+
+		return len(containers)
 	}, 60, 1).Should(Equal(desiredContainerCount))
 
 	if startupProbeInCluster(clusterIdx) {
@@ -331,11 +335,18 @@ func checkContainersAndAvailability(cluster managedClusterConfig, clusterIdx int
 			deploy := GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
 			)
-			status := deploy.Object["status"]
-			replicas := status.(map[string]interface{})["replicas"]
-			availableReplicas := status.(map[string]interface{})["availableReplicas"]
 
-			return (availableReplicas != nil) && replicas.(int64) == availableReplicas.(int64)
+			replicas, found, err := unstructured.NestedInt64(deploy.Object, "status", "replicas")
+			if !found || err != nil {
+				return false
+			}
+
+			available, found, err := unstructured.NestedInt64(deploy.Object, "status", "availableReplicas")
+			if !found || err != nil {
+				return false
+			}
+
+			return available == replicas
 		}, 240, 1).Should(Equal(true))
 	}
 
@@ -345,9 +356,10 @@ func checkContainersAndAvailability(cluster managedClusterConfig, clusterIdx int
 			LabelSelector: case1PodSelector,
 		}
 		pods := ListWithTimeoutByNamespace(cluster.clusterClient, gvrPod, opts, addonNamespace, 1, true, 30)
-		phase := pods.Items[0].Object["status"].(map[string]interface{})["phase"]
 
-		return phase.(string) == "Running"
+		phase, _, _ := unstructured.NestedString(pods.Items[0].Object, "status", "phase")
+
+		return phase == "Running"
 	}, 60, 1).Should(Equal(true))
 
 	By(logPrefix + "showing the framework managedclusteraddon as available")
