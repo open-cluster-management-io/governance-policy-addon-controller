@@ -240,6 +240,29 @@ e2e-dependencies: ## Download ginkgo locally if necessary.
 e2e-test: e2e-dependencies
 	$(GINKGO) -v --fail-fast --slow-spec-threshold=10s test/e2e
 
+.PHONY: e2e-debug
+e2e-debug: ## Collect debug logs from deployed clusters.
+	@echo "##### Gathering information from $(KIND_NAME) #####"
+	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl get managedclusteraddons --all-namespaces
+	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) get deployments
+	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) get pods
+	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon get deployments
+	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon get pods
+	@echo "* Container logs in namespace $(CONTROLLER_NAMESPACE):"
+	-@for POD in $(shell KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) get pods -o name); do \
+		for CONTAINER in $$(KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) get $${POD} -o jsonpath={.spec.containers[*].name}); do \
+			echo "* Logs for pod $${POD} from container $${CONTAINER} in namespace $(CONTROLLER_NAMESPACE)"; \
+			KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) logs $${POD}; \
+		done; \
+	done
+	@echo "* Container logs in namespace open-cluster-management-agent-addon:"
+	-@for POD in $(shell KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon get pods -o name); do \
+		for CONTAINER in $$(KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon get $${POD} -o jsonpath={.spec.containers[*].name}); do \
+			echo "* Logs for pod $${POD} from container $${CONTAINER} in namespace open-cluster-management-agent-addon"; \
+			KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon logs $${POD}; \
+		done; \
+	done
+
 .PHONY: fmt-dependencies
 fmt-dependencies:
 	$(call go-get-tool,github.com/daixiang0/gci@v0.2.9)
