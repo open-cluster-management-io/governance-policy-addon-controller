@@ -20,6 +20,7 @@ import (
 const (
 	addonName                       = "config-policy-controller"
 	evaluationConcurrencyAnnotation = "policy-evaluation-concurrency"
+	prometheusEnabledAnnotation     = "prometheus-metrics-enabled"
 )
 
 var log = ctrl.Log.WithName("configpolicy")
@@ -30,8 +31,10 @@ type UserArgs struct {
 }
 
 type UserValues struct {
-	GlobalValues policyaddon.GlobalValues `json:"global,"`
-	UserArgs     UserArgs                 `json:"args,"`
+	GlobalValues           policyaddon.GlobalValues `json:"global,"`
+	KubernetesDistribution string                   `json:"kubernetesDistribution"`
+	Prometheus             map[string]interface{}   `json:"prometheus"`
+	UserArgs               UserArgs                 `json:"args,"`
 }
 
 //FS go:embed
@@ -56,6 +59,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			ImagePullSecret: "open-cluster-management-image-pull-credentials",
 			ImageOverrides: map[string]string{
 				"config_policy_controller": os.Getenv("CONFIG_POLICY_CONTROLLER_IMAGE"),
+				"kube_rbac_proxy":          os.Getenv("KUBE_RBAC_PROXY_IMAGE"),
 			},
 			NodeSelector: map[string]string{},
 			ProxyConfig: map[string]string{
@@ -64,6 +68,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 				"NO_PROXY":    "",
 			},
 		},
+		Prometheus: map[string]interface{}{},
 		UserArgs: UserArgs{
 			UserArgs: policyaddon.UserArgs{
 				LogEncoder:  "console",
@@ -72,6 +77,14 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			},
 			EvaluationConcurrency: 2,
 		},
+	}
+
+	for _, cc := range cluster.Status.ClusterClaims {
+		if cc.Name == "product.open-cluster-management.io" {
+			userValues.KubernetesDistribution = cc.Value
+
+			break
+		}
 	}
 
 	if val, ok := addon.GetAnnotations()[policyaddon.PolicyLogLevelAnnotation]; ok {
@@ -93,6 +106,24 @@ func getValues(cluster *clusterv1.ManagedCluster,
 		}
 	}
 
+	// Enable Prometheus metrics by default on OpenShift
+	userValues.Prometheus["enabled"] = userValues.KubernetesDistribution == "OpenShift"
+	if userValues.KubernetesDistribution == "OpenShift" {
+		userValues.Prometheus["serviceMonitor"] = map[string]interface{}{"namespace": "openshift-monitoring"}
+	}
+
+	if val, ok := addon.GetAnnotations()[prometheusEnabledAnnotation]; ok {
+		valBool, err := strconv.ParseBool(val)
+		if err != nil {
+			log.Error(err, fmt.Sprintf(
+				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %v)",
+				prometheusEnabledAnnotation, val, addonName, userValues.Prometheus["enabled"]),
+			)
+		} else {
+			userValues.Prometheus["enabled"] = valBool
+		}
+	}
+
 	return addonfactory.JsonStructToValues(userValues)
 }
 
@@ -106,6 +137,7 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
 		WithGetValuesFuncs(getValues, addonfactory.GetValuesFromAddonAnnotation).
 		WithAgentRegistrationOption(registrationOption).
+		WithScheme(policyaddon.Scheme).
 		BuildHelmAgentAddon()
 }
 

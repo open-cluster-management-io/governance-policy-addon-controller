@@ -11,6 +11,7 @@ import (
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
+	prometheusv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -48,12 +49,18 @@ type UserValues struct {
 	UserArgs     UserArgs     `json:"args,"`
 }
 
-var genericScheme = runtime.NewScheme()
+var Scheme = runtime.NewScheme()
 
 func init() {
-	err := scheme.AddToScheme(genericScheme)
+	err := scheme.AddToScheme(Scheme)
 	if err != nil {
 		log.Error(err, "Failed to add to scheme")
+		os.Exit(1)
+	}
+
+	err = prometheusv1.AddToScheme(Scheme)
+	if err != nil {
+		log.Error(err, "Failed to add the Prometheus scheme to scheme")
 		os.Exit(1)
 	}
 }

@@ -25,6 +25,7 @@ const (
 	kubeconfigFilename              string = "../../policy-addon-ctrl"
 	loggingLevelAnnotation          string = "log-level=8"
 	evaluationConcurrencyAnnotation string = "policy-evaluation-concurrency=5"
+	prometheusEnabledAnnotation     string = "prometheus-metrics-enabled=true"
 )
 
 var (
@@ -34,6 +35,8 @@ var (
 	gvrManagedClusterAddOn schema.GroupVersionResource
 	gvrManagedCluster      schema.GroupVersionResource
 	gvrManifestWork        schema.GroupVersionResource
+	gvrServiceMonitor      schema.GroupVersionResource
+	gvrService             schema.GroupVersionResource
 	managedClusterList     []managedClusterConfig
 	clientDynamic          dynamic.Interface
 )
@@ -62,6 +65,10 @@ var _ = BeforeSuite(func() {
 	gvrManifestWork = schema.GroupVersionResource{
 		Group: "work.open-cluster-management.io", Version: "v1", Resource: "manifestworks",
 	}
+	gvrServiceMonitor = schema.GroupVersionResource{
+		Group: "monitoring.coreos.com", Version: "v1", Resource: "servicemonitors",
+	}
+	gvrService = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}
 	clientDynamic = NewKubeClientDynamic("", kubeconfigFilename+"1.kubeconfig", "")
 	managedClusterList = getManagedClusters(clientDynamic)
 })

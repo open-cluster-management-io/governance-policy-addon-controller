@@ -169,6 +169,7 @@ $(KIND_KUBECONFIG):
 	@echo "creating cluster"
 	kind create cluster --name $(KIND_NAME) $(KIND_ARGS)
 	kind get kubeconfig --name $(KIND_NAME) > $(KIND_KUBECONFIG)
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.57.0/example/prometheus-operator-crd-full/monitoring.coreos.com_servicemonitors.yaml
 
 $(HUB_KUBECONFIG):
 	@echo "fetching internal kubeconfig"

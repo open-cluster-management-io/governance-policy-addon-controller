@@ -40,6 +40,8 @@ spec:
               fieldPath: metadata.name
         - name: CONFIG_POLICY_CONTROLLER_IMAGE
           value: quay.io/open-cluster-management/config-policy-controller:latest
+        - name: KUBE_RBAC_PROXY_IMAGE
+          value: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.10
         - name: GOVERNANCE_POLICY_SPEC_SYNC_IMAGE
           value: quay.io/open-cluster-management/governance-policy-spec-sync:latest
         - name: GOVERNANCE_POLICY_STATUS_SYNC_IMAGE
