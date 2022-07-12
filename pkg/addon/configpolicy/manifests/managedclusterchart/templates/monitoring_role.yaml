@@ -1,0 +1,24 @@
+# Copyright Contributors to the Open Cluster Management project
+
+{{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "controller.fullname" . }}-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+      app: {{ include "controller.fullname" . }}
+      chart: {{ include "controller.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+{{- end }}
