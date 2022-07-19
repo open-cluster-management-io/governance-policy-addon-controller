@@ -126,6 +126,9 @@ spec:
           - ALL
         privileged: false
         readOnlyRootFilesystem: true
+        volumeMounts:
+          - name: klusterlet-config
+            mountPath: /var/run/klusterlet
       volumes:
         - name: klusterlet-config
           secret:
