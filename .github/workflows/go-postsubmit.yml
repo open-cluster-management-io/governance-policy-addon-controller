@@ -8,9 +8,6 @@ on:
   workflow_dispatch: {}
 
 env:
-  # Common versions
-  GO_VERSION: '1.18'
-  GO_REQUIRED_MIN_VERSION: ''
   GOPATH: '/home/runner/work/governance-policy-addon-controller/governance-policy-addon-controller/go'
 defaults:
   run:
@@ -22,14 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 1
           path: go/src/open-cluster-management.io/governance-policy-addon-controller
       - name: install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: go/src/open-cluster-management.io/governance-policy-addon-controller/go.mod
       - name: images
         run: make build-images
       - name: push

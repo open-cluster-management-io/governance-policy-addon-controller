@@ -18,8 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go:
-          - '1.18'
         # KinD tags: https://hub.docker.com/r/kindest/node/tags
         # (OCP 4.6 runs Kubernetes v1.19)
         kind:
@@ -30,17 +28,16 @@ jobs:
           - "false"
     name: KinD tests
     steps:
-    - name: Checkout 
-      uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v3
       with:
         path: governance-policy-addon-controller
         fetch-depth: 0 # Fetch all history for all tags and branches
 
-    - name: Set up Go - ${{ matrix.go }}
-      uses: actions/setup-go@v2
-      id: go
+    - name: Set up Go
+      uses: actions/setup-go@v3
       with:
-        go-version: ${{ matrix.go }}
+        go-version-file: governance-policy-addon-controller/go.mod
 
     - name: Create KinD Cluster (${{ matrix.kind }}) and deploy components
       env:
