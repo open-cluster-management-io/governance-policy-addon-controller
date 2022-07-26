@@ -32,7 +32,7 @@ var _ = Describe("Test framework deployment", func() {
 			By(logPrefix + "deploying the default framework managedclusteraddon")
 			Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
 			deploy := GetWithTimeout(
-				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
 			)
 			Expect(deploy).NotTo(BeNil())
 
@@ -109,7 +109,7 @@ var _ = Describe("Test framework deployment", func() {
 			}
 
 			deploy := GetWithTimeout(
-				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
 			)
 			Expect(deploy).NotTo(BeNil())
 
@@ -138,7 +138,7 @@ var _ = Describe("Test framework deployment", func() {
 		By(logPrefix + "deploying the annotated framework managedclusteraddon")
 		Kubectl("apply", "-n", cluster.clusterName, "-f", case1hubValuesMCAOCR)
 		deploy := GetWithTimeout(
-			cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+			cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
 		)
 		Expect(deploy).NotTo(BeNil())
 
@@ -173,7 +173,7 @@ var _ = Describe("Test framework deployment", func() {
 		By(logPrefix + "deploying the annotated framework managedclusteraddon")
 		Kubectl("apply", "-n", cluster.clusterName, "-f", case1hubAnnotationMCAOCR)
 		deploy := GetWithTimeout(
-			cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+			cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
 		)
 		Expect(deploy).NotTo(BeNil())
 
@@ -209,7 +209,7 @@ var _ = Describe("Test framework deployment", func() {
 				Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
 			}
 			deploy := GetWithTimeout(
-				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
 			)
 			Expect(deploy).NotTo(BeNil())
 
@@ -254,7 +254,7 @@ var _ = Describe("Test framework deployment", func() {
 				Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
 			}
 			deploy := GetWithTimeout(
-				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
 			)
 			Expect(deploy).NotTo(BeNil())
 
@@ -303,7 +303,7 @@ var _ = Describe("Test framework deployment", func() {
 			By(logPrefix + "deploying the default framework managedclusteraddon")
 			Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
 			deploy := GetWithTimeout(
-				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
 			)
 			Expect(deploy).NotTo(BeNil())
 
@@ -330,7 +330,7 @@ var _ = Describe("Test framework deployment", func() {
 			By(logPrefix + "deploying the default framework managedclusteraddon")
 			Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
 			deploy := GetWithTimeout(
-				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
 			)
 			Expect(deploy).NotTo(BeNil())
 
@@ -393,7 +393,7 @@ func checkContainersAndAvailability(cluster managedClusterConfig, clusterIdx int
 		By(logPrefix + "verifying all replicas in framework deployment are available")
 		Eventually(func() bool {
 			deploy := GetWithTimeout(
-				client, gvrDeployment, case1DeploymentName, namespace, true, 30,
+				client, gvrDeployment, case1DeploymentName, namespace, true, 60,
 			)
 
 			replicas, found, err := unstructured.NestedInt64(deploy.Object, "status", "replicas")

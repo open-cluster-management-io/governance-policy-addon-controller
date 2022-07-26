@@ -27,7 +27,7 @@ func verifyConfigPolicyDeployment(
 	By(logPrefix + "checking the number of containers in the deployment")
 
 	deploy := GetWithTimeout(
-		client, gvrDeployment, case2DeploymentName, namespace, true, 30,
+		client, gvrDeployment, case2DeploymentName, namespace, true, 60,
 	)
 	Expect(deploy).NotTo(BeNil())
 
