@@ -60,3 +60,15 @@ rules:
   - get
   - list
   - watch
+# Rule for status-sync
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch

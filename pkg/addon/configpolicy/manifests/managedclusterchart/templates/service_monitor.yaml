@@ -11,6 +11,7 @@ metadata:
     chart: {{ include "controller.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    addon.open-cluster-management.io/hosted-manifest-location: hosting
 spec:
   endpoints:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token

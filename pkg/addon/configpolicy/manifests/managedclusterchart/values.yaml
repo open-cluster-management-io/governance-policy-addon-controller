@@ -30,6 +30,7 @@ tolerations:
   effect: NoSchedule
 
 clusterName: null
+managedKubeConfigSecret: null
 
 # This is the Kubernetes distribution of the managed cluster. If set to OpenShift,
 # some features such as automatic TLS certificate generation will be used.

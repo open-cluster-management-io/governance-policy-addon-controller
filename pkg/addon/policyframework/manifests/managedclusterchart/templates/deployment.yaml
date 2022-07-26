@@ -10,6 +10,7 @@ metadata:
     chart: {{ include "controller.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    addon.open-cluster-management.io/hosted-manifest-location: hosting
 spec:
   replicas: {{ .Values.replicas }}
   selector:
@@ -43,9 +44,12 @@ spec:
           - --log-encoder={{ .Values.args.logEncoder }}
           - --log-level={{ .Values.args.logLevel }}
           - --v={{ .Values.args.pkgLogLevel }}
+          {{- if eq .Values.installMode "Hosted" }}
+          - --target-namespace={{ .Release.Namespace }}
+          {{- end }}
         env:
           - name: WATCH_NAMESPACE
-            value: "{{ .Values.clusterName }}"
+            value: {{ .Values.clusterName }}
           - name: POD_NAME
             valueFrom:
               fieldRef:
@@ -113,9 +117,16 @@ spec:
           - --log-encoder={{ .Values.args.logEncoder }}
           - --log-level={{ .Values.args.logLevel }}
           - --v={{ .Values.args.pkgLogLevel }}
+          {{- if eq .Values.installMode "Hosted" }}
+          - --cluster-namespace={{ .Values.clusterName }}
+          {{- end }}
         env:
           - name: WATCH_NAMESPACE
-            value: "{{ .Values.clusterName }}"
+            {{- if eq .Values.installMode "Hosted" }}
+            value: {{ .Release.Namespace }}
+            {{- else }}
+            value: {{ .Values.clusterName }}
+            {{- end }}
           - name: POD_NAME
             valueFrom:
               fieldRef:
@@ -186,7 +197,11 @@ spec:
           - --health-probe-bind-address=:8083
         env:
           - name: WATCH_NAMESPACE
-            value: "{{ .Values.clusterName }}"
+            {{- if eq .Values.installMode "Hosted" }}
+            value: {{ .Release.Namespace }}
+            {{- else }}
+            value: {{ .Values.clusterName }}
+            {{- end }}
           - name: POD_NAME
             valueFrom:
               fieldRef:

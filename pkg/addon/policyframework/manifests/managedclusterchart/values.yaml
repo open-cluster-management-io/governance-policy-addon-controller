@@ -31,6 +31,7 @@ tolerations:
   effect: NoSchedule
 
 clusterName: null
+installMode: null
 
 global: 
   imagePullPolicy: IfNotPresent

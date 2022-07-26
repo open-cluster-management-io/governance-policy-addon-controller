@@ -1,0 +1,11 @@
+# Copyright Contributors to the Open Cluster Management project
+
+{{- if ne .Release.Namespace "open-cluster-management-agent-addon" }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+  labels:
+    addon.open-cluster-management.io/namespace: "true"
+    addon.open-cluster-management.io/hosted-manifest-location: hosting
+{{- end }}

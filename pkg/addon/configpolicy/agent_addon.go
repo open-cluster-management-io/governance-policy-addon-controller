@@ -138,6 +138,7 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 		WithGetValuesFuncs(getValues, addonfactory.GetValuesFromAddonAnnotation).
 		WithAgentRegistrationOption(registrationOption).
 		WithScheme(policyaddon.Scheme).
+		WithAgentHostedModeEnabledOption().
 		BuildHelmAgentAddon()
 }
 
