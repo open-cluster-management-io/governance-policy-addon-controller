@@ -26,13 +26,15 @@ done
     cp deploy/crds/policy.open-cluster-management.io_policies.yaml ../policy-crd-v1beta1.yaml
 )
 
+addLabelsExpression='.metadata.labels += {"addon.open-cluster-management.io/hosted-manifest-location": "hosting"}'
+
 cat > pkg/addon/configpolicy/manifests/managedclusterchart/templates/policy.open-cluster-management.io_configurationpolicies_crd.yaml << EOF
 # Copyright Contributors to the Open Cluster Management project
 
 {{- if semverCompare "< 1.16.0" .Capabilities.KubeVersion.Version }}
-$(cat .go/config-policy-crd-v1beta1.yaml)
+$(yq e "$addLabelsExpression" .go/config-policy-crd-v1beta1.yaml)
 {{ else }}
-$(cat .go/config-policy-crd-v1.yaml)
+$(yq e "$addLabelsExpression" .go/config-policy-crd-v1.yaml)
 {{- end }}
 EOF
 
@@ -40,9 +42,9 @@ cat > pkg/addon/policyframework/manifests/managedclusterchart/templates/policy.o
 # Copyright Contributors to the Open Cluster Management project
 
 {{- if semverCompare "< 1.16.0" .Capabilities.KubeVersion.Version }}
-$(cat .go/policy-crd-v1beta1.yaml)
+$(yq e "$addLabelsExpression" .go/policy-crd-v1beta1.yaml)
 {{ else }}
-$(cat .go/policy-crd-v1.yaml)
+$(yq e "$addLabelsExpression" .go/policy-crd-v1.yaml)
 {{- end }}
 EOF
 

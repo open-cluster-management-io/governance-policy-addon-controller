@@ -35,16 +35,20 @@ var (
 	gvrManagedClusterAddOn schema.GroupVersionResource
 	gvrManagedCluster      schema.GroupVersionResource
 	gvrManifestWork        schema.GroupVersionResource
+	gvrSecret              schema.GroupVersionResource
 	gvrServiceMonitor      schema.GroupVersionResource
 	gvrService             schema.GroupVersionResource
 	managedClusterList     []managedClusterConfig
 	clientDynamic          dynamic.Interface
+	hubKubeconfigInternal  []byte
 )
 
 type managedClusterConfig struct {
 	clusterName   string
 	clusterClient dynamic.Interface
 	clusterType   string
+	// Only relevant for hosted mode tests.
+	hostedOnHub bool
 }
 
 func TestE2e(t *testing.T) {
@@ -65,11 +69,17 @@ var _ = BeforeSuite(func() {
 	gvrManifestWork = schema.GroupVersionResource{
 		Group: "work.open-cluster-management.io", Version: "v1", Resource: "manifestworks",
 	}
+	gvrSecret = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
 	gvrServiceMonitor = schema.GroupVersionResource{
 		Group: "monitoring.coreos.com", Version: "v1", Resource: "servicemonitors",
 	}
 	gvrService = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}
 	clientDynamic = NewKubeClientDynamic("", kubeconfigFilename+"1.kubeconfig", "")
+
+	var err error
+	hubKubeconfigInternal, err = os.ReadFile(kubeconfigFilename + "1.kubeconfig-internal")
+	Expect(err).To(BeNil())
+
 	managedClusterList = getManagedClusters(clientDynamic)
 })
 
@@ -100,6 +110,7 @@ func getManagedClusters(client dynamic.Interface) []managedClusterConfig {
 			clusterName,
 			clusterClient,
 			clusterType,
+			false,
 		}
 		clusters = append(clusters, newCluster)
 	}

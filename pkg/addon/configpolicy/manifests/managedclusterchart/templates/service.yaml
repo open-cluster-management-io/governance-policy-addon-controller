@@ -11,6 +11,7 @@ metadata:
     chart: {{ include "controller.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    addon.open-cluster-management.io/hosted-manifest-location: hosting
   annotations:
     {{- if eq .Values.kubernetesDistribution "OpenShift" }}
     service.beta.openshift.io/serving-cert-secret-name: {{ include "controller.fullname" . }}-metrics

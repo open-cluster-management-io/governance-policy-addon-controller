@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -43,6 +44,57 @@ var _ = Describe("Test framework deployment", func() {
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
 			Expect(deploy).To(BeNil())
+		}
+	})
+
+	It("should create the default framework deployment in hosted mode", Label("hosted-mode"), func() {
+		for i, cluster := range managedClusterList[1:] {
+			Expect(cluster.clusterType).To(Equal("managed"))
+
+			cluster = managedClusterConfig{
+				clusterClient: cluster.clusterClient,
+				clusterName:   cluster.clusterName,
+				clusterType:   cluster.clusterType,
+				hostedOnHub:   true,
+			}
+			hubClusterConfig := managedClusterList[0]
+			hubClient := hubClusterConfig.clusterClient
+			installNamespace := fmt.Sprintf("%s-hosted", cluster.clusterName)
+
+			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+
+			By(logPrefix + "deploying the default framework ManagedClusterAddOn in hosted mode")
+			addon := unstructured.Unstructured{Object: map[string]interface{}{
+				"apiVersion": "addon.open-cluster-management.io/v1alpha1",
+				"kind":       "ManagedClusterAddOn",
+				"metadata": map[string]interface{}{
+					"name": "governance-policy-framework",
+					"annotations": map[string]interface{}{
+						"addon.open-cluster-management.io/hosting-cluster-name": hubClusterConfig.clusterName,
+					},
+				},
+				"spec": map[string]interface{}{
+					"installNamespace": installNamespace,
+				},
+			}}
+			_, err := hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Create(
+				context.TODO(), &addon, metav1.CreateOptions{},
+			)
+			Expect(err).To(BeNil())
+
+			checkContainersAndAvailability(cluster, i+1)
+
+			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
+			err = hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
+				context.TODO(), addon.GetName(), metav1.DeleteOptions{},
+			)
+			Expect(err).To(BeNil())
+
+			deploy := GetWithTimeout(hubClient, gvrDeployment, case1DeploymentName, installNamespace, false, 30)
+			Expect(deploy).To(BeNil())
+
+			namespace := GetWithTimeout(hubClient, gvrNamespace, installNamespace, "", false, 30)
+			Expect(namespace).To(BeNil())
 		}
 	})
 
@@ -319,10 +371,18 @@ func checkContainersAndAvailability(cluster managedClusterConfig, clusterIdx int
 		desiredContainerCount = 2
 	}
 
+	client := cluster.clusterClient
+	namespace := addonNamespace
+
+	if cluster.hostedOnHub {
+		client = managedClusterList[0].clusterClient
+		namespace = fmt.Sprintf("%s-hosted", cluster.clusterName)
+	}
+
 	By(logPrefix + "checking the number of containers in the deployment")
 	Eventually(func() int {
-		deploy := GetWithTimeout(cluster.clusterClient, gvrDeployment,
-			case1DeploymentName, addonNamespace, true, 30)
+		deploy := GetWithTimeout(client, gvrDeployment,
+			case1DeploymentName, namespace, true, 30)
 
 		containers, _, _ := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "containers")
 
@@ -333,7 +393,7 @@ func checkContainersAndAvailability(cluster managedClusterConfig, clusterIdx int
 		By(logPrefix + "verifying all replicas in framework deployment are available")
 		Eventually(func() bool {
 			deploy := GetWithTimeout(
-				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+				client, gvrDeployment, case1DeploymentName, namespace, true, 30,
 			)
 
 			replicas, found, err := unstructured.NestedInt64(deploy.Object, "status", "replicas")
@@ -355,7 +415,7 @@ func checkContainersAndAvailability(cluster managedClusterConfig, clusterIdx int
 		opts := metav1.ListOptions{
 			LabelSelector: case1PodSelector,
 		}
-		pods := ListWithTimeoutByNamespace(cluster.clusterClient, gvrPod, opts, addonNamespace, 1, true, 30)
+		pods := ListWithTimeoutByNamespace(client, gvrPod, opts, namespace, 1, true, 30)
 
 		phase, _, _ := unstructured.NestedString(pods.Items[0].Object, "status", "phase")
 

@@ -97,6 +97,7 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
 		WithGetValuesFuncs(getValues, addonfactory.GetValuesFromAddonAnnotation).
 		WithAgentRegistrationOption(registrationOption).
+		WithAgentHostedModeEnabledOption().
 		BuildHelmAgentAddon()
 }
 

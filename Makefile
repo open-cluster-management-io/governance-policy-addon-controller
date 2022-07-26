@@ -154,7 +154,10 @@ KUBEWAIT ?= $(PWD)/build/common/scripts/kubewait.sh
 
 KIND_NAME ?= policy-addon-ctrl1
 KIND_KUBECONFIG ?= $(PWD)/$(KIND_NAME).kubeconfig
-HUB_KUBECONFIG ?= $(PWD)/$(KIND_NAME).kubeconfig-internal
+KIND_KUBECONFIG_INTERNAL ?= $(PWD)/$(KIND_NAME).kubeconfig-internal
+HUB_KUBECONFIG ?= $(PWD)/policy-addon-ctrl1.kubeconfig
+HUB_KUBECONFIG_INTERNAL ?= $(PWD)/policy-addon-ctrl1.kubeconfig-internal
+HUB_CLUSTER_NAME ?= policy-addon-ctrl1
 MANAGED_CLUSTER_NAME ?= cluster1
 ifneq ($(KIND_VERSION), latest)
 	KIND_ARGS = --image kindest/node:$(KIND_VERSION)
@@ -169,33 +172,38 @@ $(KIND_KUBECONFIG):
 	@echo "creating cluster"
 	kind create cluster --name $(KIND_NAME) $(KIND_ARGS)
 	kind get kubeconfig --name $(KIND_NAME) > $(KIND_KUBECONFIG)
+	kind get kubeconfig --name $(KIND_NAME) --internal > $(KIND_KUBECONFIG_INTERNAL)
 	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.57.0/example/prometheus-operator-crd-full/monitoring.coreos.com_servicemonitors.yaml
-
-$(HUB_KUBECONFIG):
-	@echo "fetching internal kubeconfig"
-	kind get kubeconfig --name $(KIND_NAME) --internal > $(HUB_KUBECONFIG)
 
 .PHONY: kind-delete-cluster
 kind-delete-cluster: ## Delete a kind cluster.
 	kind delete cluster --name $(KIND_NAME) || true
-	rm $(KIND_KUBECONFIG) || true
-	rm $(HUB_KUBECONFIG) || true
+	-rm $(KIND_KUBECONFIG)
+	-rm $(KIND_KUBECONFIG_INTERNAL)
 
 REGISTRATION_OPERATOR = $(PWD)/.go/registration-operator
 $(REGISTRATION_OPERATOR):
 	@mkdir -p .go
 	git clone --depth 1 https://github.com/open-cluster-management-io/registration-operator.git .go/registration-operator
+	# A workaround for https://github.com/open-cluster-management-io/registration-operator/pull/266
+	sed -i 's/-e "s,mode: Default,mode: Detached,"/-e "s,mode: Default,mode: Detached," -e "s,cluster1,$$(MANAGED_CLUSTER_NAME),"/' .go/registration-operator/Makefile
 
 .PHONY: kind-deploy-registration-operator-hub
-kind-deploy-registration-operator-hub: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG) $(HUB_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster.
+kind-deploy-registration-operator-hub: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster.
 	cd $(REGISTRATION_OPERATOR) && KUBECONFIG=$(KIND_KUBECONFIG) make deploy-hub
 	@printf "\n*** Pausing and waiting to let everything deploy ***\n\n"
 	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r deploy/cluster-manager -n open-cluster-management -c condition=Available -m 90
 	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r deploy/cluster-manager-placement-controller -n open-cluster-management-hub -c condition=Available -m 90
+	@echo installing Policy CRD on hub
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f https://raw.githubusercontent.com/open-cluster-management-io/governance-policy-propagator/main/deploy/crds/policy.open-cluster-management.io_policies.yaml
 
 .PHONY: kind-deploy-registration-operator-managed
 kind-deploy-registration-operator-managed: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster.
-	cd $(REGISTRATION_OPERATOR) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(MANAGED_CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG) make deploy-spoke
+	cd $(REGISTRATION_OPERATOR) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(MANAGED_CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) make deploy-spoke
+
+.PHONY: kind-deploy-registration-operator-managed-hosted
+kind-deploy-registration-operator-managed-hosted: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster in hosted mode.
+	cd $(REGISTRATION_OPERATOR) && KUBECONFIG=$(HUB_KUBECONFIG) MANAGED_CLUSTER_NAME=$(MANAGED_CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) HOSTED_CLUSTER_MANAGER_NAME=$(HUB_CLUSTER_NAME) EXTERNAL_MANAGED_KUBECONFIG=$(KIND_KUBECONFIG_INTERNAL) make deploy-spoke-hosted
 
 .PHONY: kind-approve-cluster
 kind-approve-cluster: $(KIND_KUBECONFIG) ## Approve managed cluster in the kind cluster.
@@ -239,7 +247,11 @@ e2e-dependencies: ## Download ginkgo locally if necessary.
 
 .PHONY: e2e-test
 e2e-test: e2e-dependencies
-	$(GINKGO) -v --fail-fast --slow-spec-threshold=10s test/e2e
+	$(GINKGO) -v --label-filter="!hosted-mode" --fail-fast --slow-spec-threshold=10s test/e2e
+
+.PHONY: e2e-test-hosted-mode
+e2e-test-hosted-mode: e2e-dependencies
+	$(GINKGO) -v --label-filter="hosted-mode" --fail-fast --slow-spec-threshold=10s test/e2e
 
 .PHONY: e2e-debug
 e2e-debug: ## Collect debug logs from deployed clusters.

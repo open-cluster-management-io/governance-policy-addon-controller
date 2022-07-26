@@ -3,6 +3,7 @@ package addon
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -161,7 +162,7 @@ func (pa *PolicyAgentAddon) Manifests(cluster *clusterv1.ManagedCluster,
 ) ([]runtime.Object, error) {
 	pauseAnnotation := addon.GetAnnotations()[PolicyAddonPauseAnnotation]
 	if pauseAnnotation == "true" {
-		return []runtime.Object{}, nil
+		return nil, errors.New("the Policy Addon controller is paused due to the policy-addon-pause annotation")
 	}
 
 	return pa.AgentAddon.Manifests(cluster, addon)

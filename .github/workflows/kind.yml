@@ -25,6 +25,9 @@ jobs:
         kind:
           - 'v1.19.16'
           - 'latest'
+        hosted_mode:
+          - "true"
+          - "false"
     name: KinD tests
     steps:
     - name: Checkout 
@@ -39,38 +42,37 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
 
-    - name: Verify modules
-      run: |
-        go mod verify
-
-    - name: Verify format
-      run: |
-        make fmt
-        git diff --exit-code
-        make lint
-
     - name: Create KinD Cluster (${{ matrix.kind }}) and deploy components
       env:
         KIND_VERSION: ${{ matrix.kind }}
+        HOSTED_MODE: ${{ matrix.hosted_mode }}
       run: |
         ./build/manage-clusters.sh
 
-    - name: Unit and Integration Tests
-      run: |
-        make test
-
-    - name: E2E Tests
+    - if: matrix.hosted_mode == 'false'
+      name: E2E tests
       run: |
         export GOPATH=$(go env GOPATH)
         make wait-for-work-agent
         make e2e-test
-    
+
+    - if: matrix.hosted_mode == 'true'
+      name: E2E tests hosted mode
+      run: |
+        export GOPATH=$(go env GOPATH)
+        make wait-for-work-agent
+        make e2e-test-hosted-mode
+
+    - name: Clean up clusters
+      run: |
+        RUN_MODE="delete" ./build/manage-clusters.sh
+
     - name: Debug
       if: ${{ failure() }}
       run: |
         RUN_MODE="debug" ./build/manage-clusters.sh
 
-    - name: Clean up cluster
+    - name: Clean up clusters
       if: ${{ always() }}
       run: |
         RUN_MODE="delete" ./build/manage-clusters.sh

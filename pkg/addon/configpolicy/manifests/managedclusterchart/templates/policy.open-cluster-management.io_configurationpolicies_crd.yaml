@@ -1,8 +1,6 @@
 # Copyright Contributors to the Open Cluster Management project
 
 {{- if semverCompare "< 1.16.0" .Capabilities.KubeVersion.Version }}
-
----
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -10,11 +8,13 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.6.1
   creationTimestamp: null
   name: configurationpolicies.policy.open-cluster-management.io
+  labels:
+    addon.open-cluster-management.io/hosted-manifest-location: hosting
 spec:
   additionalPrinterColumns:
-  - JSONPath: .status.compliant
-    name: Compliance state
-    type: string
+    - JSONPath: .status.compliant
+      name: Compliance state
+      type: string
   group: policy.open-cluster-management.io
   names:
     kind: ConfigurationPolicy
@@ -26,18 +26,13 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: ConfigurationPolicy is the Schema for the configurationpolicies
-        API
+      description: ConfigurationPolicy is the Schema for the configurationpolicies API
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
@@ -45,79 +40,57 @@ spec:
           description: ConfigurationPolicySpec defines the desired state of ConfigurationPolicy
           properties:
             evaluationInterval:
-              description: Configures the minimum elapsed time before a ConfigurationPolicy
-                is reevaluated
+              description: Configures the minimum elapsed time before a ConfigurationPolicy is reevaluated
               properties:
                 compliant:
-                  description: The minimum elapsed time before a ConfigurationPolicy
-                    is reevaluated when in the compliant state. Set this to "never"
-                    to disable reevaluation when in the compliant state.
+                  description: The minimum elapsed time before a ConfigurationPolicy is reevaluated when in the compliant state. Set this to "never" to disable reevaluation when in the compliant state.
                   pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never)+$
                   type: string
                 noncompliant:
-                  description: The minimum elapsed time before a ConfigurationPolicy
-                    is reevaluated when in the noncompliant state. Set this to "never"
-                    to disable reevaluation when in the noncompliant state.
+                  description: The minimum elapsed time before a ConfigurationPolicy is reevaluated when in the noncompliant state. Set this to "never" to disable reevaluation when in the noncompliant state.
                   pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never)+$
                   type: string
               type: object
             namespaceSelector:
-              description: '''namespaceSelector'' defines the list of namespaces to
-                include/exclude for objects defined in spec.objectTemplates. All selector
-                rules are ANDed. If ''include'' is not provided but ''matchLabels''
-                and/or ''matchExpressions'' are, ''include'' will behave as if [''*'']
-                were given. If ''matchExpressions'' and ''matchLabels'' are both not
-                provided, ''include'' must be provided to retrieve namespaces.'
+              description: '''namespaceSelector'' defines the list of namespaces to include/exclude for objects defined in spec.objectTemplates. All selector rules are ANDed. If ''include'' is not provided but ''matchLabels'' and/or ''matchExpressions'' are, ''include'' will behave as if [''*''] were given. If ''matchExpressions'' and ''matchLabels'' are both not provided, ''include'' must be provided to retrieve namespaces.'
               properties:
                 exclude:
-                  description: '''exclude'' is an array of filepath expressions to
-                    exclude objects by name.'
+                  description: '''exclude'' is an array of filepath expressions to exclude objects by name.'
                   items:
                     minLength: 1
                     type: string
                   type: array
                 include:
-                  description: '''include'' is an array of filepath expressions to
-                    include objects by name.'
+                  description: '''include'' is an array of filepath expressions to include objects by name.'
                   items:
                     minLength: 1
                     type: string
                   type: array
                 matchExpressions:
-                  description: '''matchExpressions'' is an array of label selector
-                    requirements matching objects by label.'
+                  description: '''matchExpressions'' is an array of label selector requirements matching objects by label.'
                   items:
-                    description: A label selector requirement is a selector that contains
-                      values, a key, and an operator that relates the key and values.
+                    description: A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
                     properties:
                       key:
-                        description: key is the label key that the selector applies
-                          to.
+                        description: key is the label key that the selector applies to.
                         type: string
                       operator:
-                        description: operator represents a key's relationship to a
-                          set of values. Valid operators are In, NotIn, Exists and
-                          DoesNotExist.
+                        description: operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
                         type: string
                       values:
-                        description: values is an array of string values. If the operator
-                          is In or NotIn, the values array must be non-empty. If the
-                          operator is Exists or DoesNotExist, the values array must
-                          be empty. This array is replaced during a strategic merge
-                          patch.
+                        description: values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
                         items:
                           type: string
                         type: array
                     required:
-                    - key
-                    - operator
+                      - key
+                      - operator
                     type: object
                   type: array
                 matchLabels:
                   additionalProperties:
                     type: string
-                  description: '''matchLabels'' is a map of {key,value} pairs matching
-                    objects by label.'
+                  description: '''matchLabels'' is a map of {key,value} pairs matching objects by label.'
                   type: object
               type: object
             object-templates:
@@ -125,65 +98,62 @@ spec:
                 description: ObjectTemplate describes how an object should look
                 properties:
                   complianceType:
-                    description: 'ComplianceType specifies whether it is: musthave,
-                      mustnothave, mustonlyhave'
+                    description: 'ComplianceType specifies whether it is: musthave, mustnothave, mustonlyhave'
                     enum:
-                    - MustHave
-                    - Musthave
-                    - musthave
-                    - MustOnlyHave
-                    - Mustonlyhave
-                    - mustonlyhave
-                    - MustNotHave
-                    - Mustnothave
-                    - mustnothave
+                      - MustHave
+                      - Musthave
+                      - musthave
+                      - MustOnlyHave
+                      - Mustonlyhave
+                      - mustonlyhave
+                      - MustNotHave
+                      - Mustnothave
+                      - mustnothave
                     type: string
                   metadataComplianceType:
-                    description: MetadataComplianceType describes how to check compliance
-                      for the labels/annotations of a given object
+                    description: MetadataComplianceType describes how to check compliance for the labels/annotations of a given object
                     enum:
-                    - MustHave
-                    - Musthave
-                    - musthave
-                    - MustOnlyHave
-                    - Mustonlyhave
-                    - mustonlyhave
+                      - MustHave
+                      - Musthave
+                      - musthave
+                      - MustOnlyHave
+                      - Mustonlyhave
+                      - mustonlyhave
                     type: string
                   objectDefinition:
-                    description: ObjectDefinition defines required fields for the
-                      object
+                    description: ObjectDefinition defines required fields for the object
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                 required:
-                - complianceType
+                  - complianceType
                 type: object
               type: array
             pruneObjectBehavior:
               description: 'PruneObjectBehavior : DeleteAll, DeleteIfCreated, or None'
               enum:
-              - DeleteAll
-              - DeleteIfCreated
-              - None
+                - DeleteAll
+                - DeleteIfCreated
+                - None
               type: string
             remediationAction:
               description: 'RemediationAction : enforce or inform'
               enum:
-              - Inform
-              - inform
-              - Enforce
-              - enforce
+                - Inform
+                - inform
+                - Enforce
+                - enforce
               type: string
             severity:
               description: 'Severity : low, medium, high, or critical'
               enum:
-              - low
-              - Low
-              - medium
-              - Medium
-              - high
-              - High
-              - critical
-              - Critical
+                - low
+                - Low
+                - medium
+                - Medium
+                - high
+                - High
+                - critical
+                - Critical
               type: string
           type: object
         status:
@@ -206,30 +176,26 @@ spec:
                     type: object
                   conditions:
                     items:
-                      description: Condition is the base struct for representing resource
-                        conditions
+                      description: Condition is the base struct for representing resource conditions
                       properties:
                         lastTransitionTime:
-                          description: The last time the condition transitioned from
-                            one status to another.
+                          description: The last time the condition transitioned from one status to another.
                           format: date-time
                           type: string
                         message:
-                          description: A human readable message indicating details
-                            about the transition.
+                          description: A human readable message indicating details about the transition.
                           type: string
                         reason:
                           description: The reason for the condition's last transition.
                           type: string
                         status:
-                          description: Status of the condition, one of True, False,
-                            Unknown.
+                          description: Status of the condition, one of True, False, Unknown.
                           type: string
                         type:
                           description: Type of condition, e.g Complete or Failed.
                           type: string
                       required:
-                      - type
+                        - type
                       type: object
                     type: array
                 type: object
@@ -241,21 +207,18 @@ spec:
               description: An ISO-8601 timestamp of the last time the policy was evaluated
               type: string
             lastEvaluatedGeneration:
-              description: The generation of the ConfigurationPolicy object when it
-                was last evaluated
+              description: The generation of the ConfigurationPolicy object when it was last evaluated
               format: int64
               type: integer
             relatedObjects:
               description: List of resources processed by the policy
               items:
-                description: RelatedObject is the list of objects matched by this
-                  Policy resource.
+                description: RelatedObject is the list of objects matched by this Policy resource.
                 properties:
                   compliant:
                     type: string
                   object:
-                    description: ObjectResource is an object identified by the policy
-                      as a resource that needs to be validated.
+                    description: ObjectResource is an object identified by the policy as a resource that needs to be validated.
                     properties:
                       apiVersion:
                         description: API version of the referent.
@@ -277,12 +240,10 @@ spec:
                   properties:
                     properties:
                       createdByPolicy:
-                        description: Whether the object was created by the parent
-                          policy
+                        description: Whether the object was created by the parent policy
                         type: boolean
                       uid:
-                        description: Store object UID to help track object ownership
-                          for deletion
+                        description: Store object UID to help track object ownership for deletion
                         type: string
                     type: object
                   reason:
@@ -293,9 +254,9 @@ spec:
       type: object
   version: v1
   versions:
-  - name: v1
-    served: true
-    storage: true
+    - name: v1
+      served: true
+      storage: true
 status:
   acceptedNames:
     kind: ""
@@ -303,8 +264,6 @@ status:
   conditions: []
   storedVersions: []
 {{ else }}
-
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -312,6 +271,8 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.6.1
   creationTimestamp: null
   name: configurationpolicies.policy.open-cluster-management.io
+  labels:
+    addon.open-cluster-management.io/hosted-manifest-location: hosting
 spec:
   group: policy.open-cluster-management.io
   names:
@@ -321,288 +282,244 @@ spec:
     singular: configurationpolicy
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .status.compliant
-      name: Compliance state
-      type: string
-    name: v1
-    schema:
-      openAPIV3Schema:
-        description: ConfigurationPolicy is the Schema for the configurationpolicies
-          API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: ConfigurationPolicySpec defines the desired state of ConfigurationPolicy
-            properties:
-              evaluationInterval:
-                description: Configures the minimum elapsed time before a ConfigurationPolicy
-                  is reevaluated
-                properties:
-                  compliant:
-                    description: The minimum elapsed time before a ConfigurationPolicy
-                      is reevaluated when in the compliant state. Set this to "never"
-                      to disable reevaluation when in the compliant state.
-                    pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never)+$
-                    type: string
-                  noncompliant:
-                    description: The minimum elapsed time before a ConfigurationPolicy
-                      is reevaluated when in the noncompliant state. Set this to "never"
-                      to disable reevaluation when in the noncompliant state.
-                    pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never)+$
-                    type: string
-                type: object
-              namespaceSelector:
-                description: '''namespaceSelector'' defines the list of namespaces
-                  to include/exclude for objects defined in spec.objectTemplates.
-                  All selector rules are ANDed. If ''include'' is not provided but
-                  ''matchLabels'' and/or ''matchExpressions'' are, ''include'' will
-                  behave as if [''*''] were given. If ''matchExpressions'' and ''matchLabels''
-                  are both not provided, ''include'' must be provided to retrieve
-                  namespaces.'
-                properties:
-                  exclude:
-                    description: '''exclude'' is an array of filepath expressions
-                      to exclude objects by name.'
-                    items:
-                      minLength: 1
-                      type: string
-                    type: array
-                  include:
-                    description: '''include'' is an array of filepath expressions
-                      to include objects by name.'
-                    items:
-                      minLength: 1
-                      type: string
-                    type: array
-                  matchExpressions:
-                    description: '''matchExpressions'' is an array of label selector
-                      requirements matching objects by label.'
-                    items:
-                      description: A label selector requirement is a selector that
-                        contains values, a key, and an operator that relates the key
-                        and values.
-                      properties:
-                        key:
-                          description: key is the label key that the selector applies
-                            to.
-                          type: string
-                        operator:
-                          description: operator represents a key's relationship to
-                            a set of values. Valid operators are In, NotIn, Exists
-                            and DoesNotExist.
-                          type: string
-                        values:
-                          description: values is an array of string values. If the
-                            operator is In or NotIn, the values array must be non-empty.
-                            If the operator is Exists or DoesNotExist, the values
-                            array must be empty. This array is replaced during a strategic
-                            merge patch.
-                          items:
-                            type: string
-                          type: array
-                      required:
-                      - key
-                      - operator
-                      type: object
-                    type: array
-                  matchLabels:
-                    additionalProperties:
-                      type: string
-                    description: '''matchLabels'' is a map of {key,value} pairs matching
-                      objects by label.'
-                    type: object
-                type: object
-              object-templates:
-                items:
-                  description: ObjectTemplate describes how an object should look
-                  properties:
-                    complianceType:
-                      description: 'ComplianceType specifies whether it is: musthave,
-                        mustnothave, mustonlyhave'
-                      enum:
-                      - MustHave
-                      - Musthave
-                      - musthave
-                      - MustOnlyHave
-                      - Mustonlyhave
-                      - mustonlyhave
-                      - MustNotHave
-                      - Mustnothave
-                      - mustnothave
-                      type: string
-                    metadataComplianceType:
-                      description: MetadataComplianceType describes how to check compliance
-                        for the labels/annotations of a given object
-                      enum:
-                      - MustHave
-                      - Musthave
-                      - musthave
-                      - MustOnlyHave
-                      - Mustonlyhave
-                      - mustonlyhave
-                      type: string
-                    objectDefinition:
-                      description: ObjectDefinition defines required fields for the
-                        object
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                  required:
-                  - complianceType
-                  type: object
-                type: array
-              pruneObjectBehavior:
-                default: None
-                description: 'PruneObjectBehavior : DeleteAll, DeleteIfCreated, or
-                  None'
-                enum:
-                - DeleteAll
-                - DeleteIfCreated
-                - None
-                type: string
-              remediationAction:
-                description: 'RemediationAction : enforce or inform'
-                enum:
-                - Inform
-                - inform
-                - Enforce
-                - enforce
-                type: string
-              severity:
-                description: 'Severity : low, medium, high, or critical'
-                enum:
-                - low
-                - Low
-                - medium
-                - Medium
-                - high
-                - High
-                - critical
-                - Critical
-                type: string
-            type: object
-          status:
-            description: ConfigurationPolicyStatus defines the observed state of ConfigurationPolicy
-            properties:
-              compliancyDetails:
-                items:
-                  description: TemplateStatus hold the status result
-                  properties:
-                    Compliant:
-                      description: ComplianceState shows the state of enforcement
-                      type: string
-                    Validity:
-                      description: Validity describes if it is valid or not
-                      properties:
-                        reason:
-                          type: string
-                        valid:
-                          type: boolean
-                      type: object
-                    conditions:
-                      items:
-                        description: Condition is the base struct for representing
-                          resource conditions
-                        properties:
-                          lastTransitionTime:
-                            description: The last time the condition transitioned
-                              from one status to another.
-                            format: date-time
-                            type: string
-                          message:
-                            description: A human readable message indicating details
-                              about the transition.
-                            type: string
-                          reason:
-                            description: The reason for the condition's last transition.
-                            type: string
-                          status:
-                            description: Status of the condition, one of True, False,
-                              Unknown.
-                            type: string
-                          type:
-                            description: Type of condition, e.g Complete or Failed.
-                            type: string
-                        required:
-                        - type
-                        type: object
-                      type: array
-                  type: object
-                type: array
-              compliant:
-                description: ComplianceState shows the state of enforcement
-                type: string
-              lastEvaluated:
-                description: An ISO-8601 timestamp of the last time the policy was
-                  evaluated
-                type: string
-              lastEvaluatedGeneration:
-                description: The generation of the ConfigurationPolicy object when
-                  it was last evaluated
-                format: int64
-                type: integer
-              relatedObjects:
-                description: List of resources processed by the policy
-                items:
-                  description: RelatedObject is the list of objects matched by this
-                    Policy resource.
+    - additionalPrinterColumns:
+        - jsonPath: .status.compliant
+          name: Compliance state
+          type: string
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: ConfigurationPolicy is the Schema for the configurationpolicies API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: ConfigurationPolicySpec defines the desired state of ConfigurationPolicy
+              properties:
+                evaluationInterval:
+                  description: Configures the minimum elapsed time before a ConfigurationPolicy is reevaluated
                   properties:
                     compliant:
+                      description: The minimum elapsed time before a ConfigurationPolicy is reevaluated when in the compliant state. Set this to "never" to disable reevaluation when in the compliant state.
+                      pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never)+$
                       type: string
-                    object:
-                      description: ObjectResource is an object identified by the policy
-                        as a resource that needs to be validated.
-                      properties:
-                        apiVersion:
-                          description: API version of the referent.
-                          type: string
-                        kind:
-                          description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                          type: string
-                        metadata:
-                          description: Metadata values from the referent.
-                          properties:
-                            name:
-                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                              type: string
-                            namespace:
-                              description: 'Namespace of the referent. More info:
-                                https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                              type: string
-                          type: object
-                      type: object
-                    properties:
-                      properties:
-                        createdByPolicy:
-                          description: Whether the object was created by the parent
-                            policy
-                          type: boolean
-                        uid:
-                          description: Store object UID to help track object ownership
-                            for deletion
-                          type: string
-                      type: object
-                    reason:
+                    noncompliant:
+                      description: The minimum elapsed time before a ConfigurationPolicy is reevaluated when in the noncompliant state. Set this to "never" to disable reevaluation when in the noncompliant state.
+                      pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never)+$
                       type: string
                   type: object
-                type: array
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+                namespaceSelector:
+                  description: '''namespaceSelector'' defines the list of namespaces to include/exclude for objects defined in spec.objectTemplates. All selector rules are ANDed. If ''include'' is not provided but ''matchLabels'' and/or ''matchExpressions'' are, ''include'' will behave as if [''*''] were given. If ''matchExpressions'' and ''matchLabels'' are both not provided, ''include'' must be provided to retrieve namespaces.'
+                  properties:
+                    exclude:
+                      description: '''exclude'' is an array of filepath expressions to exclude objects by name.'
+                      items:
+                        minLength: 1
+                        type: string
+                      type: array
+                    include:
+                      description: '''include'' is an array of filepath expressions to include objects by name.'
+                      items:
+                        minLength: 1
+                        type: string
+                      type: array
+                    matchExpressions:
+                      description: '''matchExpressions'' is an array of label selector requirements matching objects by label.'
+                      items:
+                        description: A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+                        properties:
+                          key:
+                            description: key is the label key that the selector applies to.
+                            type: string
+                          operator:
+                            description: operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
+                            type: string
+                          values:
+                            description: values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
+                            items:
+                              type: string
+                            type: array
+                        required:
+                          - key
+                          - operator
+                        type: object
+                      type: array
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: '''matchLabels'' is a map of {key,value} pairs matching objects by label.'
+                      type: object
+                  type: object
+                object-templates:
+                  items:
+                    description: ObjectTemplate describes how an object should look
+                    properties:
+                      complianceType:
+                        description: 'ComplianceType specifies whether it is: musthave, mustnothave, mustonlyhave'
+                        enum:
+                          - MustHave
+                          - Musthave
+                          - musthave
+                          - MustOnlyHave
+                          - Mustonlyhave
+                          - mustonlyhave
+                          - MustNotHave
+                          - Mustnothave
+                          - mustnothave
+                        type: string
+                      metadataComplianceType:
+                        description: MetadataComplianceType describes how to check compliance for the labels/annotations of a given object
+                        enum:
+                          - MustHave
+                          - Musthave
+                          - musthave
+                          - MustOnlyHave
+                          - Mustonlyhave
+                          - mustonlyhave
+                        type: string
+                      objectDefinition:
+                        description: ObjectDefinition defines required fields for the object
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                    required:
+                      - complianceType
+                    type: object
+                  type: array
+                pruneObjectBehavior:
+                  default: None
+                  description: 'PruneObjectBehavior : DeleteAll, DeleteIfCreated, or None'
+                  enum:
+                    - DeleteAll
+                    - DeleteIfCreated
+                    - None
+                  type: string
+                remediationAction:
+                  description: 'RemediationAction : enforce or inform'
+                  enum:
+                    - Inform
+                    - inform
+                    - Enforce
+                    - enforce
+                  type: string
+                severity:
+                  description: 'Severity : low, medium, high, or critical'
+                  enum:
+                    - low
+                    - Low
+                    - medium
+                    - Medium
+                    - high
+                    - High
+                    - critical
+                    - Critical
+                  type: string
+              type: object
+            status:
+              description: ConfigurationPolicyStatus defines the observed state of ConfigurationPolicy
+              properties:
+                compliancyDetails:
+                  items:
+                    description: TemplateStatus hold the status result
+                    properties:
+                      Compliant:
+                        description: ComplianceState shows the state of enforcement
+                        type: string
+                      Validity:
+                        description: Validity describes if it is valid or not
+                        properties:
+                          reason:
+                            type: string
+                          valid:
+                            type: boolean
+                        type: object
+                      conditions:
+                        items:
+                          description: Condition is the base struct for representing resource conditions
+                          properties:
+                            lastTransitionTime:
+                              description: The last time the condition transitioned from one status to another.
+                              format: date-time
+                              type: string
+                            message:
+                              description: A human readable message indicating details about the transition.
+                              type: string
+                            reason:
+                              description: The reason for the condition's last transition.
+                              type: string
+                            status:
+                              description: Status of the condition, one of True, False, Unknown.
+                              type: string
+                            type:
+                              description: Type of condition, e.g Complete or Failed.
+                              type: string
+                          required:
+                            - type
+                          type: object
+                        type: array
+                    type: object
+                  type: array
+                compliant:
+                  description: ComplianceState shows the state of enforcement
+                  type: string
+                lastEvaluated:
+                  description: An ISO-8601 timestamp of the last time the policy was evaluated
+                  type: string
+                lastEvaluatedGeneration:
+                  description: The generation of the ConfigurationPolicy object when it was last evaluated
+                  format: int64
+                  type: integer
+                relatedObjects:
+                  description: List of resources processed by the policy
+                  items:
+                    description: RelatedObject is the list of objects matched by this Policy resource.
+                    properties:
+                      compliant:
+                        type: string
+                      object:
+                        description: ObjectResource is an object identified by the policy as a resource that needs to be validated.
+                        properties:
+                          apiVersion:
+                            description: API version of the referent.
+                            type: string
+                          kind:
+                            description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                            type: string
+                          metadata:
+                            description: Metadata values from the referent.
+                            properties:
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                                type: string
+                              namespace:
+                                description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                                type: string
+                            type: object
+                        type: object
+                      properties:
+                        properties:
+                          createdByPolicy:
+                            description: Whether the object was created by the parent policy
+                            type: boolean
+                          uid:
+                            description: Store object UID to help track object ownership for deletion
+                            type: string
+                        type: object
+                      reason:
+                        type: string
+                    type: object
+                  type: array
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
 status:
   acceptedNames:
     kind: ""
