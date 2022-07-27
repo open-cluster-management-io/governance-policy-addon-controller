@@ -1,6 +1,10 @@
 #! /bin/bash
 
-RUN_MODE=${RUN_MODE:-"create"}
+if [[ "${HOSTED_MODE}" == "true" ]]; then
+  RUN_MODE=${RUN_MODE:-"create"}
+else
+  RUN_MODE=${RUN_MODE:-"create-dev"}
+fi
 
 # Number of managed clusters
 MANAGED_CLUSTER_COUNT=${MANAGED_CLUSTER_COUNT:-1}
@@ -32,6 +36,9 @@ case ${RUN_MODE} in
   create)
     make kind-deploy-controller
     ;;
+  create-dev)
+    make kind-prep-ocm
+    ;;
 esac
 
 # Deploy a variable number of managed clusters starting with cluster2
@@ -45,7 +52,7 @@ for i in $(seq 2 $((MANAGED_CLUSTER_COUNT+1))); do
     debug)
       make e2e-debug
       ;;
-    create)
+    create | create-dev)
       if [[ "${HOSTED_MODE}" == "true" ]]; then
         make kind-deploy-registration-operator-managed-hosted
       else
