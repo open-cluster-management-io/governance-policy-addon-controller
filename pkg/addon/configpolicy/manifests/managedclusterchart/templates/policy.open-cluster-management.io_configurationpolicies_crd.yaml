@@ -11,6 +11,10 @@ metadata:
   creationTimestamp: null
   name: configurationpolicies.policy.open-cluster-management.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.compliant
+    name: Compliance state
+    type: string
   group: policy.open-cluster-management.io
   names:
     kind: ConfigurationPolicy
@@ -317,7 +321,11 @@ spec:
     singular: configurationpolicy
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .status.compliant
+      name: Compliance state
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: ConfigurationPolicy is the Schema for the configurationpolicies
