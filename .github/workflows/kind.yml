@@ -17,6 +17,7 @@ jobs:
   kind-tests:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         # KinD tags: https://hub.docker.com/r/kindest/node/tags
         # (OCP 4.6 runs Kubernetes v1.19)
@@ -51,7 +52,7 @@ jobs:
       run: |
         export GOPATH=$(go env GOPATH)
         make wait-for-work-agent
-        make e2e-test
+        make e2e-test-coverage
 
     - if: matrix.hosted_mode == 'true'
       name: E2E tests hosted mode
@@ -59,6 +60,14 @@ jobs:
         export GOPATH=$(go env GOPATH)
         make wait-for-work-agent
         make e2e-test-hosted-mode
+
+    - name: Test Coverage Verification
+      if: |
+        github.event_name == 'pull_request' &&
+        matrix.hosted_mode == 'false'
+      run: |
+        make test-coverage
+        make coverage-verify
 
     - name: Clean up clusters
       run: |
