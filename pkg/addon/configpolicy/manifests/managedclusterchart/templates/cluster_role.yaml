@@ -48,6 +48,14 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - policy.open-cluster-management.io
+  resources:
+  - configurationpolicies/status
+  verbs:
+  - get
+  - patch
+  - update
 {{- else }}
 - apiGroups:
   - '*'
