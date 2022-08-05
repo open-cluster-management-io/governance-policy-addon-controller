@@ -9,10 +9,10 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.57.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
-	k8s.io/apimachinery v0.24.0
-	k8s.io/client-go v0.24.0
-	k8s.io/component-base v0.24.0
-	open-cluster-management.io/addon-framework v0.4.1-0.20220721073535-12c9395bde82
+	k8s.io/apimachinery v0.24.3
+	k8s.io/client-go v0.24.3
+	k8s.io/component-base v0.24.3
+	open-cluster-management.io/addon-framework v0.4.1-0.20220805023606-4de6c788fddf
 	open-cluster-management.io/api v0.6.0
 	sigs.k8s.io/controller-runtime v0.11.2
 )
@@ -113,7 +113,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	helm.sh/helm/v3 v3.7.2 // indirect
-	k8s.io/api v0.24.0 // indirect
+	k8s.io/api v0.24.3 // indirect
 	k8s.io/apiextensions-apiserver v0.24.0 // indirect
 	k8s.io/apiserver v0.24.0 // indirect
 	k8s.io/klog/v2 v2.60.1 // indirect
