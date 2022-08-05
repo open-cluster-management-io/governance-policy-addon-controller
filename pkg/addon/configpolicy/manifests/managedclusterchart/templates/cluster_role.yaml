@@ -56,6 +56,16 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resourceNames:
+  - policy-encryption-key
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
 {{- else }}
 - apiGroups:
   - '*'
