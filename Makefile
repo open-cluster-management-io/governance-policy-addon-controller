@@ -190,8 +190,6 @@ REGISTRATION_OPERATOR = $(PWD)/.go/registration-operator
 $(REGISTRATION_OPERATOR):
 	@mkdir -p .go
 	git clone --depth 1 https://github.com/open-cluster-management-io/registration-operator.git .go/registration-operator
-	# A workaround for https://github.com/open-cluster-management-io/registration-operator/pull/266
-	sed -i 's/-e "s,mode: Default,mode: Detached,"/-e "s,mode: Default,mode: Detached," -e "s,cluster1,$$(MANAGED_CLUSTER_NAME),"/' .go/registration-operator/Makefile
 
 .PHONY: kind-deploy-registration-operator-hub
 kind-deploy-registration-operator-hub: $(REGISTRATION_OPERATOR) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster.
