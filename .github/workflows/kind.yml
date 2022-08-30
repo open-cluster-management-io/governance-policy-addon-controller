@@ -69,10 +69,6 @@ jobs:
         make test-coverage
         make coverage-verify
 
-    - name: Clean up clusters
-      run: |
-        RUN_MODE="delete" ./build/manage-clusters.sh
-
     - name: Debug
       if: ${{ failure() }}
       run: |
