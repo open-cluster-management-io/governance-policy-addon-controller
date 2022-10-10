@@ -19,7 +19,8 @@ const (
 	addonName = "governance-policy-framework"
 )
 
-//FS go:embed
+// FS go:embed
+//
 //go:embed manifests
 //go:embed manifests/managedclusterchart
 //go:embed manifests/managedclusterchart/templates/_helpers.tpl

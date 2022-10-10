@@ -37,7 +37,8 @@ type UserValues struct {
 	UserArgs               UserArgs                 `json:"args,"`
 }
 
-//FS go:embed
+// FS go:embed
+//
 //go:embed manifests
 //go:embed manifests/managedclusterchart
 //go:embed manifests/managedclusterchart/templates/_helpers.tpl
