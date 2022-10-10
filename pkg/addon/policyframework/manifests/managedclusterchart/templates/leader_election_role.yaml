@@ -44,11 +44,3 @@ rules:
   verbs:
   - create
   - patch
-# Used for the health check by status-sync
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-  - list

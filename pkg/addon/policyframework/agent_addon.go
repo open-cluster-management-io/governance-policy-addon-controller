@@ -47,9 +47,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			ImagePullPolicy: "IfNotPresent",
 			ImagePullSecret: "open-cluster-management-image-pull-credentials",
 			ImageOverrides: map[string]string{
-				"governance_policy_spec_sync":     os.Getenv("GOVERNANCE_POLICY_SPEC_SYNC_IMAGE"),
-				"governance_policy_status_sync":   os.Getenv("GOVERNANCE_POLICY_STATUS_SYNC_IMAGE"),
-				"governance_policy_template_sync": os.Getenv("GOVERNANCE_POLICY_TEMPLATE_SYNC_IMAGE"),
+				"governance_policy_framework_addon": os.Getenv("GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE"),
 			},
 			NodeSelector: map[string]string{},
 			ProxyConfig: map[string]string{

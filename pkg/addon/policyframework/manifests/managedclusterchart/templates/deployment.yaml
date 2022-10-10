@@ -30,113 +30,35 @@ spec:
         heritage: {{ .Release.Service }}
     spec:
       containers:
-      {{- if not .Values.onMulticlusterHub }}
-      - name: spec-sync
-        image: "{{ .Values.global.imageOverrides.governance_policy_spec_sync }}"
+      - name: governance-policy-framework-addon
+        image: "{{ .Values.global.imageOverrides.governance_policy_framework_addon }}"
         imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
-        command: ["governance-policy-spec-sync"]
-        args:
-          - '--hub-cluster-configfile=/var/run/klusterlet/kubeconfig'
-          - '--health-probe-bind-address=:8081'
-          {{- if semverCompare "< 1.14.0" .Capabilities.KubeVersion.Version }}
-          - --legacy-leader-elect=true
-          {{- end }}
-          - --log-encoder={{ .Values.args.logEncoder }}
-          - --log-level={{ .Values.args.logLevel }}
-          - --v={{ .Values.args.pkgLogLevel }}
-          {{- if eq .Values.installMode "Hosted" }}
-          - --target-namespace={{ .Release.Namespace }}
-          {{- end }}
-        env:
-          - name: WATCH_NAMESPACE
-            value: {{ .Values.clusterName }}
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: OPERATOR_NAME
-            value: "governance-policy-spec-sync"
-          {{- if .Values.global.proxyConfig }}
-          - name: HTTP_PROXY
-            value: {{ .Values.global.proxyConfig.HTTP_PROXY }}
-          - name: HTTPS_PROXY
-            value: {{ .Values.global.proxyConfig.HTTPS_PROXY }}
-          - name: NO_PROXY
-            value: {{ .Values.global.proxyConfig.NO_PROXY }}
-          {{- end }}
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          failureThreshold: 3
-          periodSeconds: 10
-          {{- if semverCompare "< 1.20.0" .Capabilities.KubeVersion.Version }}
-          initialDelaySeconds: 300
-          {{- end }}
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          failureThreshold: 3
-          periodSeconds: 10
-          {{- if semverCompare "< 1.20.0" .Capabilities.KubeVersion.Version }}
-          initialDelaySeconds: 300
-          {{- end }}
-        {{- if semverCompare ">= 1.20.0" .Capabilities.KubeVersion.Version }}
-        {{- /* startupProbe became stable in k8s 1.20 */}}
-        startupProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          failureThreshold: 30
-          periodSeconds: 10
-        {{- end }}
-        resources: {{- toYaml .Values.resources | nindent 10 }}
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
-        volumeMounts:
-          - name: klusterlet-config
-            mountPath: /var/run/klusterlet
-      {{- end }}
-      - name: status-sync
-        image: "{{ .Values.global.imageOverrides.governance_policy_status_sync }}"
-        imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
-        command: ["governance-policy-status-sync"]
+        command: ["governance-policy-framework-addon"]
         args:
           - '--enable-lease=true'
           - '--hub-cluster-configfile=/var/run/klusterlet/kubeconfig'
-          - '--health-probe-bind-address=:8082'
           {{- if semverCompare "< 1.14.0" .Capabilities.KubeVersion.Version }}
           - --legacy-leader-elect=true
           {{- end }}
           - --log-encoder={{ .Values.args.logEncoder }}
           - --log-level={{ .Values.args.logLevel }}
           - --v={{ .Values.args.pkgLogLevel }}
+          {{- if .Values.onMulticlusterHub }}
+          - --disable-spec-sync=true
+          {{- end }}
           {{- if eq .Values.installMode "Hosted" }}
+          - --cluster-namespace={{ .Release.Namespace }}
+          - --cluster-namespace-on-hub={{ .Values.clusterName }}
+          {{- else }}
           - --cluster-namespace={{ .Values.clusterName }}
           {{- end }}
         env:
-          - name: WATCH_NAMESPACE
-            {{- if eq .Values.installMode "Hosted" }}
-            value: {{ .Release.Namespace }}
-            {{- else }}
-            value: {{ .Values.clusterName }}
-            {{- end }}
           - name: POD_NAME
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
           - name: OPERATOR_NAME
-            value: "governance-policy-status-sync"
-          {{- if .Values.onMulticlusterHub }}
-          - name: ON_MULTICLUSTERHUB
-            value: "true"
-          {{- end }}
+            value: "governance-policy-framework-addon"
           {{- if .Values.global.proxyConfig }}
           - name: HTTP_PROXY
             value: {{ .Values.global.proxyConfig.HTTP_PROXY }}
@@ -148,7 +70,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 8082
+            port: 8080
           failureThreshold: 3
           periodSeconds: 10
           {{- if semverCompare "< 1.20.0" .Capabilities.KubeVersion.Version }}
@@ -157,7 +79,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /readyz
-            port: 8082
+            port: 8080
           failureThreshold: 3
           periodSeconds: 10
           {{- if semverCompare "< 1.20.0" .Capabilities.KubeVersion.Version }}
@@ -168,7 +90,7 @@ spec:
         startupProbe:
           httpGet:
             path: /readyz
-            port: 8082
+            port: 8080
           failureThreshold: 30
           periodSeconds: 10
         {{- end }}
@@ -183,74 +105,6 @@ spec:
         volumeMounts:
           - name: klusterlet-config
             mountPath: /var/run/klusterlet
-      - name: template-sync
-        image: "{{ .Values.global.imageOverrides.governance_policy_template_sync }}"
-        imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
-        command: ["governance-policy-template-sync"]
-        args:
-          {{- if semverCompare "< 1.14.0" .Capabilities.KubeVersion.Version }}
-          - --legacy-leader-elect=true
-          {{- end }}
-          - --log-encoder={{ .Values.args.logEncoder }}
-          - --log-level={{ .Values.args.logLevel }}
-          - --v={{ .Values.args.pkgLogLevel }}
-          - --health-probe-bind-address=:8083
-        env:
-          - name: WATCH_NAMESPACE
-            {{- if eq .Values.installMode "Hosted" }}
-            value: {{ .Release.Namespace }}
-            {{- else }}
-            value: {{ .Values.clusterName }}
-            {{- end }}
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: OPERATOR_NAME
-            value: "governance-policy-template-sync"
-          {{- if .Values.global.proxyConfig }}
-          - name: HTTP_PROXY
-            value: {{ .Values.global.proxyConfig.HTTP_PROXY }}
-          - name: HTTPS_PROXY
-            value: {{ .Values.global.proxyConfig.HTTPS_PROXY }}
-          - name: NO_PROXY
-            value: {{ .Values.global.proxyConfig.NO_PROXY }}
-          {{- end }}
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8083
-          failureThreshold: 3
-          periodSeconds: 10
-          {{- if semverCompare "< 1.20.0" .Capabilities.KubeVersion.Version }}
-          initialDelaySeconds: 300
-          {{- end }}
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8083
-          failureThreshold: 3
-          periodSeconds: 10
-          {{- if semverCompare "< 1.20.0" .Capabilities.KubeVersion.Version }}
-          initialDelaySeconds: 300
-          {{- end }}
-        {{- if semverCompare ">= 1.20.0" .Capabilities.KubeVersion.Version }}
-        {{- /* startupProbe became stable in k8s 1.20 */}}
-        startupProbe:
-          httpGet:
-            path: /readyz
-            port: 8083
-          failureThreshold: 30
-          periodSeconds: 10
-        {{- end }}
-        resources: {{- toYaml .Values.resources | nindent 10 }}
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
       volumes:
         - name: klusterlet-config
           secret:
