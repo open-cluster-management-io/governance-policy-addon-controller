@@ -38,6 +38,14 @@ var _ = Describe("Test framework deployment", func() {
 
 			checkContainersAndAvailability(cluster, i+1)
 
+			expectedArgs := []string{"--cluster-namespace=" + cluster.clusterName}
+
+			if cluster.clusterType == "hub" {
+				expectedArgs = append(expectedArgs, "--disable-spec-sync=true")
+			}
+
+			checkArgs(cluster, expectedArgs...)
+
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
 			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
 			deploy = GetWithTimeout(
@@ -83,6 +91,12 @@ var _ = Describe("Test framework deployment", func() {
 			Expect(err).To(BeNil())
 
 			checkContainersAndAvailability(cluster, i+1)
+
+			checkArgs(
+				cluster,
+				"--cluster-namespace="+installNamespace,
+				"--cluster-namespace-on-hub="+cluster.clusterName,
+			)
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
 			err = hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
@@ -365,12 +379,6 @@ var _ = Describe("Test framework deployment", func() {
 
 func checkContainersAndAvailability(cluster managedClusterConfig, clusterIdx int) {
 	logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
-
-	desiredContainerCount := 3
-	if cluster.clusterType == "hub" {
-		desiredContainerCount = 2
-	}
-
 	client := cluster.clusterClient
 	namespace := addonNamespace
 
@@ -378,16 +386,6 @@ func checkContainersAndAvailability(cluster managedClusterConfig, clusterIdx int
 		client = managedClusterList[0].clusterClient
 		namespace = fmt.Sprintf("%s-hosted", cluster.clusterName)
 	}
-
-	By(logPrefix + "checking the number of containers in the deployment")
-	Eventually(func() int {
-		deploy := GetWithTimeout(client, gvrDeployment,
-			case1DeploymentName, namespace, true, 30)
-
-		containers, _, _ := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "containers")
-
-		return len(containers)
-	}, 60, 1).Should(Equal(desiredContainerCount))
 
 	if startupProbeInCluster(clusterIdx) {
 		By(logPrefix + "verifying all replicas in framework deployment are available")
@@ -435,12 +433,20 @@ func checkContainersAndAvailability(cluster managedClusterConfig, clusterIdx int
 func checkArgs(cluster managedClusterConfig, desiredArgs ...string) {
 	logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 
+	client := cluster.clusterClient
+	namespace := addonNamespace
+
+	if cluster.hostedOnHub {
+		client = managedClusterList[0].clusterClient
+		namespace = fmt.Sprintf("%s-hosted", cluster.clusterName)
+	}
+
 	By(logPrefix + "verifying one framework pod is running and has the desired args")
 	Eventually(func(g Gomega) error {
 		opts := metav1.ListOptions{
 			LabelSelector: case1PodSelector,
 		}
-		pods := ListWithTimeoutByNamespace(cluster.clusterClient, gvrPod, opts, addonNamespace, 1, true, 30)
+		pods := ListWithTimeoutByNamespace(client, gvrPod, opts, namespace, 1, true, 30)
 		podObj := pods.Items[0].Object
 
 		phase, found, err := unstructured.NestedString(podObj, "status", "phase")
@@ -453,19 +459,23 @@ func checkArgs(cluster managedClusterConfig, desiredArgs ...string) {
 			return fmt.Errorf("could not get container list; found=%v; err=%w", found, err)
 		}
 
-		for _, container := range containerList {
-			containerObj, ok := container.(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("could not convert container to map; container=%v", container)
-			}
-
-			argList, found, err := unstructured.NestedStringSlice(containerObj, "args")
-			if err != nil || !found {
-				return fmt.Errorf("could not get container args; found=%v; err=%w", found, err)
-			}
-
-			g.Expect(argList).To(ContainElements(desiredArgs))
+		if len(containerList) != 1 {
+			return fmt.Errorf("the container list had more than 1 entry; containerList=%v", containerList)
 		}
+
+		container := containerList[0]
+
+		containerObj, ok := container.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("could not convert container to map; container=%v", container)
+		}
+
+		argList, found, err := unstructured.NestedStringSlice(containerObj, "args")
+		if err != nil || !found {
+			return fmt.Errorf("could not get container args; found=%v; err=%w", found, err)
+		}
+
+		g.Expect(argList).To(ContainElements(desiredArgs))
 
 		return nil
 	}, 120, 1).Should(BeNil())

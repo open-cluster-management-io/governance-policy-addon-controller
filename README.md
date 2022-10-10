@@ -21,9 +21,7 @@ The addons managed by this controller are:
 - The "config-policy-controller" consisting of the
   [Configuration Policy Controller](https://github.com/open-cluster-management-io/config-policy-controller).
 - The "governance-policy-framework" consisting of the
-  [Policy Spec Sync](https://github.com/open-cluster-management-io/governance-policy-spec-sync), the
-  [Policy Status Sync](https://github.com/open-cluster-management-io/governance-policy-status-sync), and the
-  [Policy Template Sync](https://github.com/open-cluster-management-io/governance-policy-template-sync).
+  [Governance Policy Framework Addon](https://github.com/open-cluster-management-io/governance-policy-framework-addon).
 
 Go to the [Contributing guide](CONTRIBUTING.md) to learn how to get involved.
 
