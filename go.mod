@@ -127,4 +127,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace helm.sh/helm/v3 => helm.sh/helm/v3 v3.9.4 // sonatype-2022-5277; see helm v3.9.4 release notes
+replace (
+	golang.org/x/text => golang.org/x/text v0.3.8 // CVE-2022-32149
+	helm.sh/helm/v3 => helm.sh/helm/v3 v3.9.4 // sonatype-2022-5277; see helm v3.9.4 release notes
+)
