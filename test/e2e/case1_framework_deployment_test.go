@@ -38,7 +38,7 @@ var _ = Describe("Test framework deployment", func() {
 
 			checkContainersAndAvailability(cluster, i+1)
 
-			expectedArgs := []string{"--cluster-namespace=" + cluster.clusterName}
+			expectedArgs := []string{"--cluster-namespace=" + cluster.clusterName, "--leader-elect=false"}
 
 			if cluster.clusterType == "hub" {
 				expectedArgs = append(expectedArgs, "--disable-spec-sync=true")
