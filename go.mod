@@ -12,8 +12,8 @@ require (
 	k8s.io/apimachinery v0.25.0
 	k8s.io/client-go v0.25.0
 	k8s.io/component-base v0.25.0
-	open-cluster-management.io/addon-framework v0.4.1-0.20220805023606-4de6c788fddf
-	open-cluster-management.io/api v0.6.0
+	open-cluster-management.io/addon-framework v0.5.0
+	open-cluster-management.io/api v0.8.1-0.20220919023232-a2688935edf3
 	sigs.k8s.io/controller-runtime v0.11.2
 )
 
@@ -112,9 +112,9 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	helm.sh/helm/v3 v3.7.2 // indirect
+	helm.sh/helm/v3 v3.9.4 // indirect
 	k8s.io/api v0.25.0 // indirect
-	k8s.io/apiextensions-apiserver v0.24.2 // indirect
+	k8s.io/apiextensions-apiserver v0.25.0 // indirect
 	k8s.io/apiserver v0.25.0 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-aggregator v0.24.0 // indirect
