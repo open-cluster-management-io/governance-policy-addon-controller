@@ -14,13 +14,14 @@ import (
 )
 
 const (
-	case1ManagedClusterAddOnCR string = "../resources/framework_addon_cr.yaml"
-	case1hubAnnotationMCAOCR   string = "../resources/framework_hub_annotation_addon_cr.yaml"
-	case1hubValuesMCAOCR       string = "../resources/framework_hub_values_addon_cr.yaml"
-	case1DeploymentName        string = "governance-policy-framework"
-	case1PodSelector           string = "app=governance-policy-framework"
-	case1MWName                string = "addon-governance-policy-framework-deploy"
-	case1MWPatch               string = "../resources/manifestwork_add_patch.json"
+	case1ManagedClusterAddOnCR    string = "../resources/framework_addon_cr.yaml"
+	case1ClusterManagementAddOnCR string = "../resources/framework_clustermanagementaddon.yaml"
+	case1hubAnnotationMCAOCR      string = "../resources/framework_hub_annotation_addon_cr.yaml"
+	case1hubValuesMCAOCR          string = "../resources/framework_hub_values_addon_cr.yaml"
+	case1DeploymentName           string = "governance-policy-framework"
+	case1PodSelector              string = "app=governance-policy-framework"
+	case1MWName                   string = "addon-governance-policy-framework-deploy-0"
+	case1MWPatch                  string = "../resources/manifestwork_add_patch.json"
 )
 
 var _ = Describe("Test framework deployment", func() {
@@ -141,6 +142,59 @@ var _ = Describe("Test framework deployment", func() {
 			)
 			Expect(deploy).To(BeNil())
 		}
+	})
+
+	It("should create a framework deployment with node selector on the managed cluster", func() {
+		By("Creating the AddOnDeploymentConfig")
+		Kubectl("apply", "-f", addOnDeplomentConfigCR)
+		By("Creating the governance-policy-framework ClusterManagementAddOn to use the AddOnDeploymentConfig")
+		Kubectl("apply", "-f", case1ClusterManagementAddOnCR)
+
+		for i, cluster := range managedClusterList {
+			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+			By(logPrefix + "deploying the default framework managedclusteraddon")
+			if cluster.clusterType == "hub" {
+				Kubectl("apply", "-n", cluster.clusterName, "-f", case1hubAnnotationMCAOCR)
+			} else {
+				Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			}
+
+			deploy := GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
+			)
+			Expect(deploy).NotTo(BeNil())
+
+			checkContainersAndAvailability(cluster, i)
+
+			By(logPrefix + "verifying the nodeSelector")
+			nodeSelector, _, _ := unstructured.NestedStringMap(
+				deploy.Object, "spec", "template", "spec", "nodeSelector",
+			)
+			Expect(nodeSelector).To(Equal(map[string]string{"kubernetes.io/os": "linux"}))
+
+			By(logPrefix + "verifying the tolerations")
+			tolerations, _, _ := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "tolerations")
+			Expect(tolerations).To(HaveLen(1))
+			expected := map[string]interface{}{
+				"key":      "dedicated",
+				"operator": "Equal",
+				"value":    "something-else",
+				"effect":   "NoSchedule",
+			}
+			Expect(tolerations[0]).To(Equal(expected))
+
+			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			deploy = GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
+			)
+			Expect(deploy).To(BeNil())
+		}
+
+		By("Deleting the AddOnDeploymentConfig")
+		Kubectl("delete", "-f", addOnDeplomentConfigCR)
+		By("Deleting the governance-policy-framework ClusterManagementAddOn to use the AddOnDeploymentConfig")
+		Kubectl("delete", "-f", case1ClusterManagementAddOnCR)
 	})
 
 	It("should use the onManagedClusterHub value set in helm values annotation", func() {

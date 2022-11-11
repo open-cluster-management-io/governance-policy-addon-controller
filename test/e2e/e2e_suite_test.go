@@ -26,6 +26,7 @@ const (
 	loggingLevelAnnotation          string = "log-level=8"
 	evaluationConcurrencyAnnotation string = "policy-evaluation-concurrency=5"
 	prometheusEnabledAnnotation     string = "prometheus-metrics-enabled=true"
+	addOnDeplomentConfigCR          string = "../resources/addondeploymentconfig.yaml"
 )
 
 var (

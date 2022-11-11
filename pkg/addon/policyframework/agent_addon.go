@@ -2,6 +2,7 @@ package policyframework
 
 import (
 	"embed"
+	"fmt"
 	"os"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+	addonv1alpha1client "open-cluster-management.io/api/client/addon/clientset/versioned"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 
 	policyaddon "open-cluster-management.io/governance-policy-addon-controller/pkg/addon"
@@ -50,7 +52,6 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			ImageOverrides: map[string]string{
 				"governance_policy_framework_addon": os.Getenv("GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE"),
 			},
-			NodeSelector: map[string]string{},
 			ProxyConfig: map[string]string{
 				"HTTP_PROXY":  "",
 				"HTTPS_PROXY": "",
@@ -68,7 +69,9 @@ func getValues(cluster *clusterv1.ManagedCluster,
 		userValues.OnMulticlusterHub = true
 	}
 
-	if val, ok := addon.GetAnnotations()["addon.open-cluster-management.io/on-multicluster-hub"]; ok {
+	annotations := addon.GetAnnotations()
+
+	if val, ok := annotations["addon.open-cluster-management.io/on-multicluster-hub"]; ok {
 		if strings.EqualFold(val, "true") {
 			userValues.OnMulticlusterHub = true
 		} else if strings.EqualFold(val, "false") {
@@ -77,7 +80,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 		}
 	}
 
-	if val, ok := addon.GetAnnotations()[policyaddon.PolicyLogLevelAnnotation]; ok {
+	if val, ok := annotations[policyaddon.PolicyLogLevelAnnotation]; ok {
 		logLevel := policyaddon.GetLogLevel(addonName, val)
 		userValues.UserArgs.LogLevel = logLevel
 		userValues.UserArgs.PkgLogLevel = logLevel - 2
@@ -93,8 +96,20 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 		agentPermissionFiles,
 		FS)
 
+	addonClient, err := addonv1alpha1client.NewForConfig(controllerContext.KubeConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve addon client: %w", err)
+	}
+
 	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
-		WithGetValuesFuncs(getValues, addonfactory.GetValuesFromAddonAnnotation).
+		WithConfigGVRs(addonfactory.AddOnDeploymentConfigGVR).
+		WithGetValuesFuncs(
+			addonfactory.GetAddOnDeloymentConfigValues(
+				addonfactory.NewAddOnDeloymentConfigGetter(addonClient), addonfactory.ToAddOnNodePlacementValues,
+			),
+			getValues,
+			addonfactory.GetValuesFromAddonAnnotation,
+		).
 		WithAgentRegistrationOption(registrationOption).
 		WithAgentHostedModeEnabledOption().
 		BuildHelmAgentAddon()

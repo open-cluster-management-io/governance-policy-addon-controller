@@ -117,8 +117,12 @@ spec:
       - name: "{{ .Values.global.imagePullSecret }}"
       {{- end }}
       affinity: {{ toYaml .Values.affinity | nindent 8 }}
+      {{- if hasKey .Values "tolerations" }}
       tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if hasKey .Values.global "nodeSelector" }}
       nodeSelector: {{ toYaml .Values.global.nodeSelector | nindent 8 }}
+      {{- end }}
       hostNetwork: false
       hostPID: false
       hostIPC: false

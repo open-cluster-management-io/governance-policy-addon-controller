@@ -11,6 +11,7 @@ import (
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+	addonv1alpha1client "open-cluster-management.io/api/client/addon/clientset/versioned"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -62,7 +63,6 @@ func getValues(cluster *clusterv1.ManagedCluster,
 				"config_policy_controller": os.Getenv("CONFIG_POLICY_CONTROLLER_IMAGE"),
 				"kube_rbac_proxy":          os.Getenv("KUBE_RBAC_PROXY_IMAGE"),
 			},
-			NodeSelector: map[string]string{},
 			ProxyConfig: map[string]string{
 				"HTTP_PROXY":  "",
 				"HTTPS_PROXY": "",
@@ -88,13 +88,21 @@ func getValues(cluster *clusterv1.ManagedCluster,
 		}
 	}
 
-	if val, ok := addon.GetAnnotations()[policyaddon.PolicyLogLevelAnnotation]; ok {
+	// Enable Prometheus metrics by default on OpenShift
+	userValues.Prometheus["enabled"] = userValues.KubernetesDistribution == "OpenShift"
+	if userValues.KubernetesDistribution == "OpenShift" {
+		userValues.Prometheus["serviceMonitor"] = map[string]interface{}{"namespace": "openshift-monitoring"}
+	}
+
+	annotations := addon.GetAnnotations()
+
+	if val, ok := annotations[policyaddon.PolicyLogLevelAnnotation]; ok {
 		logLevel := policyaddon.GetLogLevel(addonName, val)
 		userValues.UserArgs.LogLevel = logLevel
 		userValues.UserArgs.PkgLogLevel = logLevel - 2
 	}
 
-	if val, ok := addon.GetAnnotations()[evaluationConcurrencyAnnotation]; ok {
+	if val, ok := annotations[evaluationConcurrencyAnnotation]; ok {
 		value, err := strconv.ParseUint(val, 10, 8)
 		if err != nil {
 			log.Error(err, fmt.Sprintf(
@@ -105,12 +113,6 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			// This is safe because we specified the uint8 in ParseUint
 			userValues.UserArgs.EvaluationConcurrency = uint8(value)
 		}
-	}
-
-	// Enable Prometheus metrics by default on OpenShift
-	userValues.Prometheus["enabled"] = userValues.KubernetesDistribution == "OpenShift"
-	if userValues.KubernetesDistribution == "OpenShift" {
-		userValues.Prometheus["serviceMonitor"] = map[string]interface{}{"namespace": "openshift-monitoring"}
 	}
 
 	if val, ok := addon.GetAnnotations()[prometheusEnabledAnnotation]; ok {
@@ -135,8 +137,20 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 		agentPermissionFiles,
 		FS)
 
+	addonClient, err := addonv1alpha1client.NewForConfig(controllerContext.KubeConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve addon client: %w", err)
+	}
+
 	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
-		WithGetValuesFuncs(getValues, addonfactory.GetValuesFromAddonAnnotation).
+		WithConfigGVRs(addonfactory.AddOnDeploymentConfigGVR).
+		WithGetValuesFuncs(
+			addonfactory.GetAddOnDeloymentConfigValues(
+				addonfactory.NewAddOnDeloymentConfigGetter(addonClient), addonfactory.ToAddOnNodePlacementValues,
+			),
+			getValues,
+			addonfactory.GetValuesFromAddonAnnotation,
+		).
 		WithAgentRegistrationOption(registrationOption).
 		WithScheme(policyaddon.Scheme).
 		WithAgentHostedModeEnabledOption().
