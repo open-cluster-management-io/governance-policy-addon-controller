@@ -1,0 +1,14 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnDeploymentConfig
+metadata:
+  name: addon-default-placement
+  namespace: open-cluster-management
+spec:
+  nodePlacement:
+    nodeSelector:
+      "kubernetes.io/os": "linux"
+    tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "something-else"
+      effect: "NoSchedule"

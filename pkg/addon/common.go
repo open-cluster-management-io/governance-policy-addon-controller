@@ -35,7 +35,6 @@ type GlobalValues struct {
 	ImagePullPolicy string            `json:"imagePullPolicy,"`
 	ImagePullSecret string            `json:"imagePullSecret"`
 	ImageOverrides  map[string]string `json:"imageOverrides,"`
-	NodeSelector    map[string]string `json:"nodeSelector,"`
 	ProxyConfig     map[string]string `json:"proxyConfig,"`
 }
 
