@@ -11,9 +11,11 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 )
 
 const (
+	case1ManagedClusterAddOnName  string = "governance-policy-framework"
 	case1ManagedClusterAddOnCR    string = "../resources/framework_addon_cr.yaml"
 	case1ClusterManagementAddOnCR string = "../resources/framework_clustermanagementaddon.yaml"
 	case1hubAnnotationMCAOCR      string = "../resources/framework_hub_annotation_addon_cr.yaml"
@@ -72,24 +74,9 @@ var _ = Describe("Test framework deployment", func() {
 
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 
-			By(logPrefix + "deploying the default framework ManagedClusterAddOn in hosted mode")
-			addon := unstructured.Unstructured{Object: map[string]interface{}{
-				"apiVersion": "addon.open-cluster-management.io/v1alpha1",
-				"kind":       "ManagedClusterAddOn",
-				"metadata": map[string]interface{}{
-					"name": "governance-policy-framework",
-					"annotations": map[string]interface{}{
-						"addon.open-cluster-management.io/hosting-cluster-name": hubClusterConfig.clusterName,
-					},
-				},
-				"spec": map[string]interface{}{
-					"installNamespace": installNamespace,
-				},
-			}}
-			_, err := hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Create(
-				context.TODO(), &addon, metav1.CreateOptions{},
-			)
-			Expect(err).To(BeNil())
+			installAddonInHostedMode(
+				logPrefix, hubClient, case1ManagedClusterAddOnName,
+				cluster.clusterName, hubClusterConfig.clusterName, installNamespace)
 
 			checkContainersAndAvailability(cluster, i+1)
 
@@ -100,8 +87,8 @@ var _ = Describe("Test framework deployment", func() {
 			)
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
-			err = hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
-				context.TODO(), addon.GetName(), metav1.DeleteOptions{},
+			err := hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
+				context.TODO(), case1ManagedClusterAddOnName, metav1.DeleteOptions{},
 			)
 			Expect(err).To(BeNil())
 
@@ -112,6 +99,62 @@ var _ = Describe("Test framework deployment", func() {
 			Expect(namespace).To(BeNil())
 		}
 	})
+
+	It("should create the default framework deployment in hosted mode in klusterlet agent namespace",
+		Label("hosted-mode"), func() {
+			By("Creating the AddOnDeploymentConfig")
+			Kubectl("apply", "-f", addOnDeplomentConfigWithCustomVarsCR)
+			By("Creating the governance-policy-framework ClusterManagementAddOn to use the AddOnDeploymentConfig")
+			Kubectl("apply", "-f", case1ClusterManagementAddOnCR)
+
+			for i, cluster := range managedClusterList[1:] {
+				Expect(cluster.clusterType).To(Equal("managed"))
+
+				cluster = managedClusterConfig{
+					clusterClient: cluster.clusterClient,
+					clusterName:   cluster.clusterName,
+					clusterType:   cluster.clusterType,
+					hostedOnHub:   true,
+				}
+				hubClusterConfig := managedClusterList[0]
+				hubClient := hubClusterConfig.clusterClient
+				installNamespace := fmt.Sprintf("klusterlet-%s", cluster.clusterName)
+
+				logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+
+				installAddonInHostedMode(
+					logPrefix, hubClient, case1ManagedClusterAddOnName,
+					cluster.clusterName, hubClusterConfig.clusterName, installNamespace)
+
+				checkContainersAndAvailabilityInNamespace(cluster, i+1, installNamespace)
+
+				By(logPrefix + "verifying removing the framework deployment when the ManagedClusterAddOn CR is removed")
+				err := hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
+					context.TODO(), case1ManagedClusterAddOnName, metav1.DeleteOptions{},
+				)
+				Expect(err).To(BeNil())
+
+				deploy := GetWithTimeout(hubClient, gvrDeployment, case1DeploymentName, installNamespace, false, 30)
+				Expect(deploy).To(BeNil())
+
+				By(logPrefix + "verifying install namespace is not removed when the ManagedClusterAddOn CR is removed")
+				namespace := GetWithTimeout(hubClient, gvrNamespace, installNamespace, "", true, 30)
+				Expect(namespace).NotTo(BeNil())
+
+				By(logPrefix + "Cleaning up the install namespace")
+				err = hubClient.Resource(gvrNamespace).Delete(
+					context.TODO(), installNamespace, metav1.DeleteOptions{},
+				)
+				Expect(err).To(BeNil())
+
+				namespace = GetWithTimeout(hubClient, gvrNamespace, installNamespace, "", false, 30)
+				Expect(namespace).To(BeNil())
+			}
+			By("Deleting the AddOnDeploymentConfig")
+			Kubectl("delete", "-f", addOnDeplomentConfigWithCustomVarsCR)
+			By("Deleting the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
+			Kubectl("delete", "-f", case1ClusterManagementAddOnCR)
+		})
 
 	It("should create a framework deployment with custom logging levels", func() {
 		for i, cluster := range managedClusterList {
@@ -432,14 +475,24 @@ var _ = Describe("Test framework deployment", func() {
 })
 
 func checkContainersAndAvailability(cluster managedClusterConfig, clusterIdx int) {
-	logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
-	client := cluster.clusterClient
 	namespace := addonNamespace
 
 	if cluster.hostedOnHub {
-		client = managedClusterList[0].clusterClient
 		namespace = fmt.Sprintf("%s-hosted", cluster.clusterName)
 	}
+
+	checkContainersAndAvailabilityInNamespace(cluster, clusterIdx, namespace)
+}
+
+func checkContainersAndAvailabilityInNamespace(cluster managedClusterConfig, clusterIdx int, installNamespace string) {
+	logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+	client := cluster.clusterClient
+
+	if cluster.hostedOnHub {
+		client = managedClusterList[0].clusterClient
+	}
+
+	namespace := installNamespace
 
 	if startupProbeInCluster(clusterIdx) {
 		By(logPrefix + "verifying all replicas in framework deployment are available")
@@ -555,4 +608,28 @@ func startupProbeInCluster(clusterIdx int) bool {
 	}
 
 	return version.ServerVersion.Minor >= 20
+}
+
+func installAddonInHostedMode(
+	logPrefix string, hubClient dynamic.Interface, addOnName, clusterName, hostingClusterName, installNamespace string,
+) {
+	By(logPrefix + "deploying the " + addOnName + "ManagedClusterAddOn in hosted mode")
+
+	addon := unstructured.Unstructured{Object: map[string]interface{}{
+		"apiVersion": "addon.open-cluster-management.io/v1alpha1",
+		"kind":       "ManagedClusterAddOn",
+		"metadata": map[string]interface{}{
+			"name": addOnName,
+			"annotations": map[string]interface{}{
+				"addon.open-cluster-management.io/hosting-cluster-name": hostingClusterName,
+			},
+		},
+		"spec": map[string]interface{}{
+			"installNamespace": installNamespace,
+		},
+	}}
+	_, err := hubClient.Resource(gvrManagedClusterAddOn).Namespace(clusterName).Create(
+		context.TODO(), &addon, metav1.CreateOptions{},
+	)
+	Expect(err).To(BeNil())
 }
