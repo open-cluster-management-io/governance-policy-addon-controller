@@ -164,7 +164,10 @@ HUB_KUBECONFIG_INTERNAL ?= $(PWD)/policy-addon-ctrl1.kubeconfig-internal
 HUB_CLUSTER_NAME ?= policy-addon-ctrl1
 MANAGED_CLUSTER_NAME ?= cluster1
 KIND_VERSION ?= latest
-ifneq ($(KIND_VERSION), latest)
+# Set the Kind version tag
+ifeq ($(KIND_VERSION), minimum)
+	KIND_ARGS = --image kindest/node:v1.19.16
+else ifneq ($(KIND_VERSION), latest)
 	KIND_ARGS = --image kindest/node:$(KIND_VERSION)
 else
 	KIND_ARGS =

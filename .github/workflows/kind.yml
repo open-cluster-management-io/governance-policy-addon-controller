@@ -19,10 +19,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # The "minimum" tag is set in the Makefile
         # KinD tags: https://hub.docker.com/r/kindest/node/tags
-        # (OCP 4.6 runs Kubernetes v1.19)
         kind:
-          - 'v1.19.16'
+          - 'minimum'
           - 'latest'
         hosted_mode:
           - "true"
