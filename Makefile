@@ -295,7 +295,7 @@ e2e-debug: ## Collect debug logs from deployed clusters.
 	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon get pods
 	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl get manifestwork --all-namespaces -o yaml
 	
-	@echo "* Local controller log:""
+	@echo "* Local controller log:"
 	-cat build/_output/controller.log
 	@echo "* Container logs in namespace $(CONTROLLER_NAMESPACE):"
 	-@for POD in $(shell KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) get pods -o name); do \
