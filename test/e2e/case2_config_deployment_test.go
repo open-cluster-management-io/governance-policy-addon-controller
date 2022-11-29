@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	case2ManagedClusterAddOnName  string = "config-policy-controller"
 	case2ManagedClusterAddOnCR    string = "../resources/config_policy_addon_cr.yaml"
 	case2ClusterManagementAddOnCR string = "../resources/config_policy_clustermanagementaddon.yaml"
 	case2DeploymentName           string = "config-policy-controller"
@@ -167,67 +168,25 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 			installNamespace := fmt.Sprintf("%s-hosted", cluster.clusterName)
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 
-			By(logPrefix + "creating the config-policy-controller-managed-kubeconfig secret")
-			installNamespaceObject := unstructured.Unstructured{Object: map[string]interface{}{
-				"apiVersion": "v1",
-				"kind":       "Namespace",
-				"metadata": map[string]interface{}{
-					"name": installNamespace,
-				},
-			}}
+			setupClusterSecretForHostedMode(
+				logPrefix, hubClient, "config-policy-controller-managed-kubeconfig",
+				string(hubKubeconfigInternal), installNamespace)
 
-			_, err := hubClient.Resource(gvrNamespace).Create(
-				context.TODO(), &installNamespaceObject, metav1.CreateOptions{},
-			)
-			if !errors.IsAlreadyExists(err) {
-				Expect(err).To(BeNil())
-			}
-
-			secret := unstructured.Unstructured{Object: map[string]interface{}{
-				"apiVersion": "v1",
-				"kind":       "Secret",
-				"metadata": map[string]interface{}{
-					"name": "config-policy-controller-managed-kubeconfig",
-				},
-				"stringData": map[string]interface{}{
-					"kubeconfig": string(hubKubeconfigInternal),
-				},
-			}}
-			_, err = hubClient.Resource(gvrSecret).Namespace(installNamespace).Create(
-				context.TODO(), &secret, metav1.CreateOptions{},
-			)
-			Expect(err).To(BeNil())
-
-			By(logPrefix + "deploying the default config-policy-controller ManagedClusterAddOn in hosted mode")
-			addon := unstructured.Unstructured{Object: map[string]interface{}{
-				"apiVersion": "addon.open-cluster-management.io/v1alpha1",
-				"kind":       "ManagedClusterAddOn",
-				"metadata": map[string]interface{}{
-					"name": "config-policy-controller",
-					"annotations": map[string]interface{}{
-						"addon.open-cluster-management.io/hosting-cluster-name": managedClusterList[0].clusterName,
-					},
-				},
-				"spec": map[string]interface{}{
-					"installNamespace": installNamespace,
-				},
-			}}
-			_, err = hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Create(
-				context.TODO(), &addon, metav1.CreateOptions{},
-			)
-			Expect(err).To(BeNil())
+			installAddonInHostedMode(
+				logPrefix, hubClient, case2ManagedClusterAddOnName,
+				cluster.clusterName, managedClusterList[0].clusterName, installNamespace)
 
 			verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, i)
 
 			By(logPrefix +
 				"removing the config-policy-controller deployment when the ManagedClusterAddOn CR is removed")
-			err = hubClient.Resource(gvrSecret).Namespace(installNamespace).Delete(
-				context.TODO(), secret.GetName(), metav1.DeleteOptions{},
+			err := hubClient.Resource(gvrSecret).Namespace(installNamespace).Delete(
+				context.TODO(), "config-policy-controller-managed-kubeconfig", metav1.DeleteOptions{},
 			)
 			Expect(err).To(BeNil())
 
 			err = clientDynamic.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
-				context.TODO(), addon.GetName(), metav1.DeleteOptions{},
+				context.TODO(), case2ManagedClusterAddOnName, metav1.DeleteOptions{},
 			)
 			Expect(err).To(BeNil())
 
@@ -240,6 +199,76 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 			Expect(namespace).To(BeNil())
 		}
 	})
+
+	It("should create the default config-policy-controller deployment in hosted mode in klusterlet agent namespace",
+		Label("hosted-mode"), func() {
+			By("Creating the AddOnDeploymentConfig")
+			Kubectl("apply", "-f", addOnDeplomentConfigWithCustomVarsCR)
+			By("Creating the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
+			Kubectl("apply", "-f", case2ClusterManagementAddOnCR)
+
+			for i, cluster := range managedClusterList[1:] {
+				Expect(cluster.clusterType).To(Equal("managed"))
+
+				cluster = managedClusterConfig{
+					clusterClient: cluster.clusterClient,
+					clusterName:   cluster.clusterName,
+					clusterType:   cluster.clusterType,
+					hostedOnHub:   true,
+				}
+				hubClusterConfig := managedClusterList[0]
+				hubClient := hubClusterConfig.clusterClient
+				installNamespace := fmt.Sprintf("klusterlet-%s", cluster.clusterName)
+				logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+
+				setupClusterSecretForHostedMode(
+					logPrefix, hubClient, "external-managed-kubeconfig",
+					string(hubKubeconfigInternal), installNamespace)
+
+				installAddonInHostedMode(
+					logPrefix, hubClient, case2ManagedClusterAddOnName,
+					cluster.clusterName, managedClusterList[0].clusterName, installNamespace)
+
+				verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, i)
+
+				By(logPrefix + "Removing the ManagedClusterAddOn CR")
+				err := clientDynamic.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
+					context.TODO(), case2ManagedClusterAddOnName, metav1.DeleteOptions{},
+				)
+				Expect(err).To(BeNil())
+
+				By(logPrefix +
+					"Verifying controller deployment is removed when the ManagedClusterAddOn CR is removed")
+
+				deploy := GetWithTimeout(
+					hubClient, gvrDeployment, case2DeploymentName, installNamespace, false, 30,
+				)
+				Expect(deploy).To(BeNil())
+
+				By(logPrefix + "Verifying install namespace is not removed when the ManagedClusterAddOn CR is removed")
+				namespace := GetWithTimeout(hubClient, gvrNamespace, installNamespace, "", true, 30)
+				Expect(namespace).NotTo(BeNil())
+
+				By(logPrefix + "cleaning up  the hosting cluster secret")
+				err = hubClient.Resource(gvrSecret).Namespace(installNamespace).Delete(
+					context.TODO(), "external-managed-kubeconfig", metav1.DeleteOptions{},
+				)
+				Expect(err).To(BeNil())
+
+				By(logPrefix + "Cleaning up the install namespace")
+				err = hubClient.Resource(gvrNamespace).Delete(
+					context.TODO(), installNamespace, metav1.DeleteOptions{},
+				)
+				Expect(err).To(BeNil())
+
+				namespace = GetWithTimeout(hubClient, gvrNamespace, installNamespace, "", false, 30)
+				Expect(namespace).To(BeNil())
+			}
+			By("Deleting the AddOnDeploymentConfig")
+			Kubectl("delete", "-f", addOnDeplomentConfigWithCustomVarsCR)
+			By("Deleting the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
+			Kubectl("delete", "-f", case2ClusterManagementAddOnCR)
+		})
 
 	It("should create a config-policy-controller deployment with customizations", func() {
 		for _, cluster := range managedClusterList {
@@ -474,3 +503,39 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 		}
 	})
 })
+
+func setupClusterSecretForHostedMode(
+	logPrefix string, client dynamic.Interface, secretName, secretData, installNamespace string,
+) {
+	By(logPrefix + "creating  secret " + secretName + " in namespace " + installNamespace)
+
+	installNamespaceObject := unstructured.Unstructured{Object: map[string]interface{}{
+		"apiVersion": "v1",
+		"kind":       "Namespace",
+		"metadata": map[string]interface{}{
+			"name": installNamespace,
+		},
+	}}
+
+	_, err := client.Resource(gvrNamespace).Create(
+		context.TODO(), &installNamespaceObject, metav1.CreateOptions{},
+	)
+	if !errors.IsAlreadyExists(err) {
+		Expect(err).To(BeNil())
+	}
+
+	secret := unstructured.Unstructured{Object: map[string]interface{}{
+		"apiVersion": "v1",
+		"kind":       "Secret",
+		"metadata": map[string]interface{}{
+			"name": secretName,
+		},
+		"stringData": map[string]interface{}{
+			"kubeconfig": secretData,
+		},
+	}}
+	_, err = client.Resource(gvrSecret).Namespace(installNamespace).Create(
+		context.TODO(), &secret, metav1.CreateOptions{},
+	)
+	Expect(err).To(BeNil())
+}

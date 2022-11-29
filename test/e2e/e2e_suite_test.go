@@ -21,12 +21,13 @@ import (
 )
 
 const (
-	addonNamespace                  string = "open-cluster-management-agent-addon"
-	kubeconfigFilename              string = "../../policy-addon-ctrl"
-	loggingLevelAnnotation          string = "log-level=8"
-	evaluationConcurrencyAnnotation string = "policy-evaluation-concurrency=5"
-	prometheusEnabledAnnotation     string = "prometheus-metrics-enabled=true"
-	addOnDeplomentConfigCR          string = "../resources/addondeploymentconfig.yaml"
+	addonNamespace                       string = "open-cluster-management-agent-addon"
+	kubeconfigFilename                   string = "../../policy-addon-ctrl"
+	loggingLevelAnnotation               string = "log-level=8"
+	evaluationConcurrencyAnnotation      string = "policy-evaluation-concurrency=5"
+	prometheusEnabledAnnotation          string = "prometheus-metrics-enabled=true"
+	addOnDeplomentConfigCR               string = "../resources/addondeploymentconfig.yaml"
+	addOnDeplomentConfigWithCustomVarsCR string = "../resources/addondeploymentconfig_customvars.yaml"
 )
 
 var (
