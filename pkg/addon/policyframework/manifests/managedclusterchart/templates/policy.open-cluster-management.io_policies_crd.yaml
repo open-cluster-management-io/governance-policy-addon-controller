@@ -267,6 +267,19 @@ spec:
                   description: PolicyDependencies that apply to each template in this Policy
                   items:
                     description: Each PolicyDepenency defines an object reference which must be in a certain compliance state before the policy should be created.
+                    oneOf:
+                      - properties:
+                          kind:
+                            enum:
+                              - CertificatePolicy
+                              - ConfigurationPolicy
+                              - IamPolicy
+                          namespace:
+                            maxLength: 0
+                      - not:
+                          properties:
+                            kind:
+                              pattern: ^(?:(?:Certificate|Configuration|Iam)Policy)$
                     properties:
                       apiVersion:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -300,6 +313,19 @@ spec:
                         description: Additional PolicyDependencies that only apply to this template
                         items:
                           description: Each PolicyDepenency defines an object reference which must be in a certain compliance state before the policy should be created.
+                          oneOf:
+                            - properties:
+                                kind:
+                                  enum:
+                                    - CertificatePolicy
+                                    - ConfigurationPolicy
+                                    - IamPolicy
+                                namespace:
+                                  maxLength: 0
+                            - not:
+                                properties:
+                                  kind:
+                                    pattern: ^(?:(?:Certificate|Configuration|Iam)Policy)$
                           properties:
                             apiVersion:
                               description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
