@@ -10,6 +10,6 @@ metadata:
     addon.open-cluster-management.io/hosted-manifest-location: hosting
   {{- if eq (.Release.Namespace | trimPrefix "klusterlet-") .Values.clusterName }}
   annotations:
-    "addon-cluster-management.io/deletion-orphan": ""
+    "addon.open-cluster-management.io/deletion-orphan": ""
   {{- end }}
 {{- end }}
