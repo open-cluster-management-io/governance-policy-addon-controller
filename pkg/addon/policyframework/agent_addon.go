@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
@@ -13,13 +14,17 @@ import (
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	addonv1alpha1client "open-cluster-management.io/api/client/addon/clientset/versioned"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	policyaddon "open-cluster-management.io/governance-policy-addon-controller/pkg/addon"
 )
 
 const (
-	addonName = "governance-policy-framework"
+	addonName                   = "governance-policy-framework"
+	prometheusEnabledAnnotation = "prometheus-metrics-enabled"
 )
+
+var log = ctrl.Log.WithName("policyframework")
 
 // FS go:embed
 //
@@ -36,9 +41,11 @@ var agentPermissionFiles = []string{
 }
 
 type userValues struct {
-	OnMulticlusterHub bool                     `json:"onMulticlusterHub"`
-	GlobalValues      policyaddon.GlobalValues `json:"global"`
-	UserArgs          policyaddon.UserArgs     `json:"args"`
+	OnMulticlusterHub      bool                     `json:"onMulticlusterHub"`
+	GlobalValues           policyaddon.GlobalValues `json:"global"`
+	KubernetesDistribution string                   `json:"kubernetesDistribution"`
+	Prometheus             map[string]interface{}   `json:"prometheus"`
+	UserArgs               policyaddon.UserArgs     `json:"args"`
 }
 
 func getValues(cluster *clusterv1.ManagedCluster,
@@ -51,6 +58,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			ImagePullSecret: "open-cluster-management-image-pull-credentials",
 			ImageOverrides: map[string]string{
 				"governance_policy_framework_addon": os.Getenv("GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE"),
+				"kube_rbac_proxy":                   os.Getenv("KUBE_RBAC_PROXY_IMAGE"),
 			},
 			ProxyConfig: map[string]string{
 				"HTTP_PROXY":  "",
@@ -58,6 +66,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 				"NO_PROXY":    "",
 			},
 		},
+		Prometheus: map[string]interface{}{},
 		UserArgs: policyaddon.UserArgs{
 			LogEncoder:  "console",
 			LogLevel:    0,
@@ -67,6 +76,14 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	// special case for local-cluster
 	if cluster.Name == "local-cluster" {
 		userValues.OnMulticlusterHub = true
+	}
+
+	for _, cc := range cluster.Status.ClusterClaims {
+		if cc.Name == "product.open-cluster-management.io" {
+			userValues.KubernetesDistribution = cc.Value
+
+			break
+		}
 	}
 
 	annotations := addon.GetAnnotations()
@@ -84,6 +101,24 @@ func getValues(cluster *clusterv1.ManagedCluster,
 		logLevel := policyaddon.GetLogLevel(addonName, val)
 		userValues.UserArgs.LogLevel = logLevel
 		userValues.UserArgs.PkgLogLevel = logLevel - 2
+	}
+
+	// Enable Prometheus metrics by default on OpenShift
+	userValues.Prometheus["enabled"] = userValues.KubernetesDistribution == "OpenShift"
+	if userValues.KubernetesDistribution == "OpenShift" {
+		userValues.Prometheus["serviceMonitor"] = map[string]interface{}{"namespace": "openshift-monitoring"}
+	}
+
+	if val, ok := annotations[prometheusEnabledAnnotation]; ok {
+		valBool, err := strconv.ParseBool(val)
+		if err != nil {
+			log.Error(err, fmt.Sprintf(
+				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %v)",
+				prometheusEnabledAnnotation, val, addonName, userValues.Prometheus["enabled"]),
+			)
+		} else {
+			userValues.Prometheus["enabled"] = valBool
+		}
 	}
 
 	return addonfactory.JsonStructToValues(userValues)
@@ -113,6 +148,7 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 			addonfactory.GetValuesFromAddonAnnotation,
 		).
 		WithAgentRegistrationOption(registrationOption).
+		WithScheme(policyaddon.Scheme).
 		WithAgentHostedModeEnabledOption().
 		BuildHelmAgentAddon()
 }

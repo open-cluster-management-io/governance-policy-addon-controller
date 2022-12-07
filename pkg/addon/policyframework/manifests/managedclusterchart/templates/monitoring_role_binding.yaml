@@ -1,0 +1,23 @@
+# Copyright Contributors to the Open Cluster Management project
+
+{{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "controller.fullname" . }}-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+      app: {{ include "controller.fullname" . }}
+      chart: {{ include "controller.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      addon.open-cluster-management.io/hosted-manifest-location: hosting
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "controller.fullname" . }}-metrics
+subjects:
+- kind: ServiceAccount
+  name: prometheus-k8s
+  namespace: openshift-monitoring
+{{- end }}
