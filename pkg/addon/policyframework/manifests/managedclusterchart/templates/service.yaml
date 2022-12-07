@@ -1,0 +1,37 @@
+# Copyright Contributors to the Open Cluster Management project
+
+{{- if .Values.prometheus.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "controller.fullname" . }}-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "controller.fullname" . }}
+    chart: {{ include "controller.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    addon.open-cluster-management.io/hosted-manifest-location: hosting
+  annotations:
+    {{- if eq .Values.kubernetesDistribution "OpenShift" }}
+    # The alpha annotation is required for OpenShift 3.11
+    service.alpha.openshift.io/serving-cert-secret-name: {{ include "controller.fullname" . }}-metrics
+    service.beta.openshift.io/serving-cert-secret-name: {{ include "controller.fullname" . }}-metrics
+    {{- end }}
+spec:
+  ports:
+  - name: metrics
+    protocol: TCP
+    {{- if eq .Values.kubernetesDistribution "OpenShift" }}
+    port: 8443
+    targetPort: 8443
+    {{- else }}
+    port: 8080
+    targetPort: 8383
+    {{- end }}
+  selector:
+    app: {{ include "controller.fullname" . }}
+    release: {{ .Release.Name }}
+  sessionAffinity: None
+  type: ClusterIP
+{{- end }}

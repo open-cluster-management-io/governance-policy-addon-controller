@@ -30,6 +30,27 @@ spec:
         heritage: {{ .Release.Service }}
     spec:
       containers:
+      {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+      - name: kube-rbac-proxy
+        image: "{{ .Values.global.imageOverrides.kube_rbac_proxy  }}"
+        imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
+        args:
+        - --upstream=http://127.0.0.1:8383/
+        - --logtostderr=true
+        - --v=6
+        - --secure-listen-address=0.0.0.0:8443
+        - "--tls-cert-file=/var/run/metrics-cert/tls.crt"
+        - "--tls-private-key-file=/var/run/metrics-cert/tls.key"
+        - "--tls-min-version=VersionTLS13"
+        ports:
+        - name: metrics
+          protocol: TCP
+          containerPort: 8443
+        volumeMounts:
+        - mountPath: "/var/run/metrics-cert"
+          name: metrics-cert
+          readOnly: true
+      {{- end }}
       - name: governance-policy-framework-addon
         image: "{{ .Values.global.imageOverrides.governance_policy_framework_addon }}"
         imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
@@ -54,6 +75,9 @@ spec:
           - --cluster-namespace-on-hub={{ .Values.clusterName }}
           {{- else }}
           - --cluster-namespace={{ .Values.clusterName }}
+          {{- end }}
+          {{- if and .Values.prometheus.enabled (ne .Values.kubernetesDistribution "OpenShift") }}
+          - --metrics-bind-address=0.0.0.0:8383
           {{- end }}
         env:
           - name: POD_NAME
@@ -97,6 +121,12 @@ spec:
           failureThreshold: 30
           periodSeconds: 10
         {{- end }}
+        {{- if and .Values.prometheus.enabled (ne .Values.kubernetesDistribution "OpenShift") }}
+        ports:
+        - name: metrics
+          protocol: TCP
+          containerPort: 8383
+        {{- end }}
         resources: {{- toYaml .Values.resources | nindent 10 }}
         securityContext:
           allowPrivilegeEscalation: false
@@ -112,6 +142,11 @@ spec:
         - name: klusterlet-config
           secret:
             secretName: {{ .Values.hubKubeConfigSecret }}
+        {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+        - name: metrics-cert
+          secret:
+            secretName: {{ include "controller.fullname" . }}-metrics
+        {{- end }}
       {{- if .Values.global.imagePullSecret }}
       imagePullSecrets:
       - name: "{{ .Values.global.imagePullSecret }}"
