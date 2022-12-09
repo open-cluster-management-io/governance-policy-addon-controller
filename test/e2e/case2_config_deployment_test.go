@@ -350,7 +350,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 			By(logPrefix + "verifying that the metrics ServiceMonitor exists")
 			Eventually(func(g Gomega) {
 				sm, err := cluster.clusterClient.Resource(gvrServiceMonitor).Namespace(addonNamespace).Get(
-					context.TODO(), "ocm-config-policy-controller-metrics", metav1.GetOptions{},
+					context.TODO(), "ocm-config-policy-controller-"+addonNamespace+"-metrics", metav1.GetOptions{},
 				)
 				g.Expect(err).To(BeNil())
 
@@ -446,7 +446,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 			By(logPrefix + "verifying that the metrics ServiceMonitor exists")
 			Eventually(func(g Gomega) {
 				sm, err := cluster.clusterClient.Resource(gvrServiceMonitor).Namespace("openshift-monitoring").Get(
-					context.TODO(), "ocm-config-policy-controller-metrics", metav1.GetOptions{},
+					context.TODO(), "ocm-config-policy-controller-"+addonNamespace+"-metrics", metav1.GetOptions{},
 				)
 				g.Expect(err).To(BeNil())
 
