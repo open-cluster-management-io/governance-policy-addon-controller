@@ -4,7 +4,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: ocm-{{ include "controller.fullname" . }}-metrics
+  name: ocm-{{ include "controller.fullname" . }}-{{ .Release.Namespace }}-metrics
   namespace: {{ .Values.prometheus.serviceMonitor.namespace | default .Release.Namespace }}
   labels:
     app: {{ include "controller.fullname" . }}
