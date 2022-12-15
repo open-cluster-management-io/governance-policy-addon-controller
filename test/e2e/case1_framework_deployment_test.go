@@ -209,6 +209,11 @@ var _ = Describe("Test framework deployment", func() {
 
 			checkContainersAndAvailability(cluster, i)
 
+			deploy = GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+			)
+			Expect(deploy).NotTo(BeNil())
+
 			By(logPrefix + "verifying the nodeSelector")
 			nodeSelector, _, _ := unstructured.NestedStringMap(
 				deploy.Object, "spec", "template", "spec", "nodeSelector",
