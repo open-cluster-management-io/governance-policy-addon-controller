@@ -1,0 +1,27 @@
+# Copyright Contributors to the Open Cluster Management project
+
+{{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: open-cluster-management:{{ include "controller.fullname" . }}-kube-rbac-proxy
+  labels:
+      app: {{ include "controller.fullname" . }}
+      chart: {{ include "controller.chart" . }}
+      release: {{ .Release.Name }}
+      heritage: {{ .Release.Service }}
+      addon.open-cluster-management.io/hosted-manifest-location: hosting
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+{{- end }}
