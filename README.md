@@ -35,11 +35,11 @@ The `governance-policy-addon-controller` is part of the `open-cluster-management
 
 These instructions assume:
 
-- You have at least one running kubernetes cluster;
+- You have at least one running kubernetes cluster
 - You have already followed instructions from
   [registration-operator](https://github.com/open-cluster-management-io/registration-operator) and
-  installed OCM successfully;
-- At least one managed cluster has been imported and accepted.
+  installed OCM successfully
+- At least one managed cluster has been imported and accepted
 
 ### Deploying the controller
 
@@ -75,7 +75,7 @@ kubectl -n my-managed-cluster annotate managedclusteraddon config-policy-control
 Any values in the
 [Helm chart's values.yaml](./pkg/addon/configpolicy/manifests/managedclusterchart/values.yaml) can
 be modified with the `addon.open-cluster-management.io/values` annotation. However, the structure
-of that annotation makes it difficult to apply mutliple changes - separate `kubectl annotate`
+of that annotation makes it difficult to apply multiple changes - separate `kubectl annotate`
 commands will override each other, as opposed to being merged.
 
 To address this issue, there are some separate annotations that can be applied independently:
@@ -94,12 +94,24 @@ starting a kind cluster, installing the
 [registration-operator](https://github.com/open-cluster-management-io/registration-operator), and
 importing a cluster.
 
-Alternatively, you can run `./build/manage-clusters.sh` to deploy a hub and a configurable number of
-managed clusters (defaults to one) using Kind.
+Alternatively, you can run:
+- `./build/manage-clusters.sh` to deploy a hub and a configurable number of managed clusters 
+  (defaults to one) using Kind
+- `make kind-bootstrap-cluster`, a wrapper for the `./build/manage-clusters.sh` script
+- `make kind-bootstrap-cluster-dev`, a wrapper for the `./build/manage-clusters.sh` script that stops 
+  short of deploying the controller so that the controller can be run locally.
+
+*Note*: You may need to run `make clean` if there are existing stale `kubeconfig` files at the root 
+of the repo.
 
 Before the addons can be successfully distributed to the managed cluster, the work-agent must be
 started. This usually happens automatically within 5 minutes of importing the managed cluster, and
 can be waited for programmatically with the `wait-for-work-agent` make target.
+
+To deploy basic `ManagedClusterAddons` to all managed clusters, you can run `make kind-deploy-addons`.
+
+To delete created clusters, you can use the `make kind-bootstrap-delete-clusters` target, a wrapper 
+for the `./build/manage-clusters.sh` script.
 
 ### Deploying changes
 
