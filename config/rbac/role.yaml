@@ -101,6 +101,14 @@ rules:
   - list
   - watch
 - apiGroups:
+  - config.openshift.io
+  resources:
+  - infrastructures
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -132,16 +140,6 @@ rules:
   - watch
 - apiGroups:
   - ""
-  resourceNames:
-  - policy-encryption-key
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
   resources:
   - pods
   verbs:
@@ -149,9 +147,11 @@ rules:
   - list
   - watch
 - apiGroups:
-  - config.openshift.io
+  - ""
+  resourceNames:
+  - policy-encryption-key
   resources:
-  - infrastructures
+  - secrets
   verbs:
   - get
   - list
