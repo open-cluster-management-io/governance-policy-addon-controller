@@ -71,6 +71,8 @@ import (
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policies/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=core,resources=secrets,resourceNames=policy-encryption-key,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=events,verbs=create;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
+//+kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch
 
 var (
 	setupLog    = ctrl.Log.WithName("setup")
