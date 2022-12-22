@@ -39,6 +39,9 @@ case ${RUN_MODE} in
   create-dev)
     make kind-prep-ocm
     ;;
+  deploy-addons)
+    make kind-deploy-addons-hub
+    ;;
 esac
 
 # Deploy a variable number of managed clusters starting with cluster2
@@ -62,6 +65,11 @@ for i in $(seq 2 $((MANAGED_CLUSTER_COUNT+1))); do
       # Approval takes place on the hub
       export KIND_NAME="${KIND_PREFIX}1"
       make kind-approve-cluster
+      ;;
+    deploy-addons)
+      # ManagedClusterAddon is applied to the hub
+      export KIND_NAME="${KIND_PREFIX}1"
+      make kind-deploy-addons-managed
       ;;
   esac
 done
