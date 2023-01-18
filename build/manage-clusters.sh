@@ -13,13 +13,6 @@ if [[ -n "${MANAGED_CLUSTER_COUNT//[0-9]}" ]] || [[ "${MANAGED_CLUSTER_COUNT}" =
   exit 1
 fi
 
-if [[ "${MANAGED_CLUSTER_COUNT}" -gt 1 ]] && [[ "${HOSTED_MODE}" == "true" ]]; then
-  # This is a current limitation in the registration operator Makefile where the hosted mode Klusterlet object name
-  # is not customizable.
-  echo "error: provided MANAGED_CLUSTER_COUNT cannot be greater than 1 in hosted mode"
-  exit 1
-fi
-
 KIND_PREFIX=${KIND_PREFIX:-"policy-addon-ctrl"}
 CLUSTER_PREFIX=${CLUSTER_PREFIX:-"cluster"}
 
@@ -48,6 +41,7 @@ esac
 for i in $(seq 2 $((MANAGED_CLUSTER_COUNT+1))); do
   export KIND_NAME="${KIND_PREFIX}${i}"
   export MANAGED_CLUSTER_NAME="${CLUSTER_PREFIX}${i}"
+  export KLUSTERLET_NAME="${MANAGED_CLUSTER_NAME}-klusterlet"
   case ${RUN_MODE} in
     delete)
       make kind-delete-cluster
