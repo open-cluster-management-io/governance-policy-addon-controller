@@ -96,6 +96,7 @@ spec:
                   type: object
               type: object
             object-templates:
+              description: '''object-templates'' and ''object-templates-raw'' are arrays of objects for the configuration policy to check, create, modify, or delete on the cluster. ''object-templates'' is an array of objects, while ''object-templates-raw'' is a string containing an array of objects in YAML format. Only one of the two object-templates variables can be set in a given configurationPolicy.'
               items:
                 description: ObjectTemplate describes how an object should look
                 properties:
@@ -130,6 +131,9 @@ spec:
                   - complianceType
                 type: object
               type: array
+            object-templates-raw:
+              description: '''object-templates'' and ''object-templates-raw'' are arrays of objects for the configuration policy to check, create, modify, or delete on the cluster. ''object-templates'' is an array of objects, while ''object-templates-raw'' is a string containing an array of objects in YAML format. Only one of the two object-templates variables can be set in a given configurationPolicy.'
+              type: string
             pruneObjectBehavior:
               description: PruneObjectBehavior is used to remove objects that are managed by the policy upon policy deletion.
               enum:
@@ -305,6 +309,11 @@ spec:
               type: object
             spec:
               description: ConfigurationPolicySpec defines the desired state of ConfigurationPolicy
+              oneOf:
+                - required:
+                    - object-templates
+                - required:
+                    - object-templates-raw
               properties:
                 evaluationInterval:
                   description: Configures the minimum elapsed time before a ConfigurationPolicy is reevaluated
@@ -361,6 +370,7 @@ spec:
                       type: object
                   type: object
                 object-templates:
+                  description: '''object-templates'' and ''object-templates-raw'' are arrays of objects for the configuration policy to check, create, modify, or delete on the cluster. ''object-templates'' is an array of objects, while ''object-templates-raw'' is a string containing an array of objects in YAML format. Only one of the two object-templates variables can be set in a given configurationPolicy.'
                   items:
                     description: ObjectTemplate describes how an object should look
                     properties:
@@ -395,6 +405,9 @@ spec:
                       - complianceType
                     type: object
                   type: array
+                object-templates-raw:
+                  description: '''object-templates'' and ''object-templates-raw'' are arrays of objects for the configuration policy to check, create, modify, or delete on the cluster. ''object-templates'' is an array of objects, while ''object-templates-raw'' is a string containing an array of objects in YAML format. Only one of the two object-templates variables can be set in a given configurationPolicy.'
+                  type: string
                 pruneObjectBehavior:
                   default: None
                   description: PruneObjectBehavior is used to remove objects that are managed by the policy upon policy deletion.
