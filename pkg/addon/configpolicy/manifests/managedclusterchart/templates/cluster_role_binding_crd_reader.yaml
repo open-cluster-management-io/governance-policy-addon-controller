@@ -1,16 +1,11 @@
 # Copyright Contributors to the Open Cluster Management project
 
-apiVersion: rbac.authorization.k8s.io/v1
 {{- if eq .Values.installMode "Hosted" }}
-kind: RoleBinding
-{{- else }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
-{{- end }}
 metadata:
-  name: {{ include "controller.rolename" . }}
-  {{- if eq .Values.installMode "Hosted" }}
-  namespace: {{ .Release.Namespace }}
-  {{- end }}
+  name: ocm:{{ .Release.Namespace }}:{{ include "controller.fullname" . }}
   labels:
     app: {{ include "controller.fullname" . }}
     chart: {{ include "controller.chart" . }}
@@ -19,13 +14,10 @@ metadata:
     addon.open-cluster-management.io/hosted-manifest-location: hosting
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  {{- if eq .Values.installMode "Hosted" }}
-  kind: Role
-  {{- else }}
   kind: ClusterRole
-  {{- end }}
-  name: {{ include "controller.rolename" . }}
+  name: ocm:{{ include "controller.fullname" . }}
 subjects:
 - kind: ServiceAccount
   name: {{ include "controller.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
+{{- end }}
