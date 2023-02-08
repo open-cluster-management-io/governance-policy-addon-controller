@@ -457,7 +457,8 @@ var _ = Describe("Test framework deployment", func() {
 			container, ok := containers[0].(map[string]interface{})
 			Expect(ok).To(BeTrue())
 
-			if startupProbeInCluster(i) {
+			// Use i+1 since the for loop ranges over a slice skipping first index
+			if startupProbeInCluster(i + 1) {
 				By(logPrefix + "checking for startupProbe on kubernetes 1.20 or higher")
 				_, found, err = unstructured.NestedMap(container, "startupProbe")
 				Expect(err).To(BeNil())

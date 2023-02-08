@@ -98,7 +98,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				"removing the config-policy-controller deployment when the ManagedClusterAddOn CR is removed")
 			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
 			deploy := GetWithTimeout(
-				cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, false, 30,
+				cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, false, 180,
 			)
 			Expect(deploy).To(BeNil())
 		}
@@ -142,7 +142,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				"removing the config-policy-controller deployment when the ManagedClusterAddOn CR is removed")
 			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
 			deploy = GetWithTimeout(
-				cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, false, 30,
+				cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, false, 180,
 			)
 			Expect(deploy).To(BeNil())
 		}
@@ -154,7 +154,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 	})
 
 	It("should create the default config-policy-controller deployment in hosted mode", Label("hosted-mode"), func() {
-		for i, cluster := range managedClusterList[1:] {
+		for _, cluster := range managedClusterList[1:] {
 			Expect(cluster.clusterType).To(Equal("managed"))
 
 			cluster = managedClusterConfig{
@@ -176,22 +176,17 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				logPrefix, hubClient, case2ManagedClusterAddOnName,
 				cluster.clusterName, managedClusterList[0].clusterName, installNamespace)
 
-			verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, i)
+			verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, 0)
 
 			By(logPrefix +
 				"removing the config-policy-controller deployment when the ManagedClusterAddOn CR is removed")
-			err := hubClient.Resource(gvrSecret).Namespace(installNamespace).Delete(
-				context.TODO(), "config-policy-controller-managed-kubeconfig", metav1.DeleteOptions{},
-			)
-			Expect(err).To(BeNil())
-
-			err = clientDynamic.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
+			err := clientDynamic.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
 				context.TODO(), case2ManagedClusterAddOnName, metav1.DeleteOptions{},
 			)
 			Expect(err).To(BeNil())
 
 			deploy := GetWithTimeout(
-				hubClient, gvrDeployment, case2DeploymentName, installNamespace, false, 30,
+				hubClient, gvrDeployment, case2DeploymentName, installNamespace, false, 180,
 			)
 			Expect(deploy).To(BeNil())
 
@@ -207,7 +202,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 			By("Creating the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
 			Kubectl("apply", "-f", case2ClusterManagementAddOnCR)
 
-			for i, cluster := range managedClusterList[1:] {
+			for _, cluster := range managedClusterList[1:] {
 				Expect(cluster.clusterType).To(Equal("managed"))
 
 				cluster = managedClusterConfig{
@@ -229,7 +224,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 					logPrefix, hubClient, case2ManagedClusterAddOnName,
 					cluster.clusterName, managedClusterList[0].clusterName, installNamespace)
 
-				verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, i)
+				verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, 0)
 
 				By(logPrefix + "Removing the ManagedClusterAddOn CR")
 				err := clientDynamic.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
@@ -241,7 +236,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 					"Verifying controller deployment is removed when the ManagedClusterAddOn CR is removed")
 
 				deploy := GetWithTimeout(
-					hubClient, gvrDeployment, case2DeploymentName, installNamespace, false, 30,
+					hubClient, gvrDeployment, case2DeploymentName, installNamespace, false, 180,
 				)
 				Expect(deploy).To(BeNil())
 
@@ -377,7 +372,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				"removing the config-policy-controller deployment when the ManagedClusterAddOn CR is removed")
 			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
 			deploy = GetWithTimeout(
-				cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, false, 30,
+				cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, false, 180,
 			)
 			Expect(deploy).To(BeNil())
 		}

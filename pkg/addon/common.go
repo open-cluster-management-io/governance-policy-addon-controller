@@ -156,15 +156,17 @@ type PolicyAgentAddon struct {
 	agent.AgentAddon
 }
 
-func (pa *PolicyAgentAddon) Manifests(cluster *clusterv1.ManagedCluster,
+func (pa *PolicyAgentAddon) Manifests(
+	cluster *clusterv1.ManagedCluster,
 	addon *addonapiv1alpha1.ManagedClusterAddOn,
+	hostingCluster *clusterv1.ManagedCluster,
 ) ([]runtime.Object, error) {
 	pauseAnnotation := addon.GetAnnotations()[PolicyAddonPauseAnnotation]
 	if pauseAnnotation == "true" {
 		return nil, errors.New("the Policy Addon controller is paused due to the policy-addon-pause annotation")
 	}
 
-	return pa.AgentAddon.Manifests(cluster, addon)
+	return pa.AgentAddon.Manifests(cluster, addon, hostingCluster)
 }
 
 // getLogLevel verifies the user-provided log level against Zap, returning 0 if the check fails.

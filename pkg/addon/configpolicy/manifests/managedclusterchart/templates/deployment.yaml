@@ -57,6 +57,7 @@ spec:
         imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
         command: ["config-policy-controller"]
         args:
+          - controller
           - "--enable-lease=true"
           - "--cluster-name={{ .Values.clusterName }}"
           {{- if eq (.Values.replicas | int) 1 }}
@@ -177,3 +178,4 @@ spec:
       serviceAccount: {{ include "controller.serviceAccountName" . }}
       securityContext:
         runAsNonRoot: true
+      terminationGracePeriodSeconds: 120
