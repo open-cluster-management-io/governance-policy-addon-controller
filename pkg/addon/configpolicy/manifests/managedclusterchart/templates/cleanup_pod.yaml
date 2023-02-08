@@ -1,0 +1,68 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "controller.fullname" . }}-uninstall
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "controller.fullname" . }}
+    chart: {{ include "controller.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    addon.open-cluster-management.io/hosted-manifest-location: hosting
+  annotations:
+    addon.open-cluster-management.io/addon-pre-delete: ""
+spec:
+  restartPolicy: OnFailure
+  containers:
+    - name: {{ .Chart.Name }}-uninstall
+      image: "{{ .Values.global.imageOverrides.config_policy_controller }}"
+      imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
+      command: ["config-policy-controller"]
+      args:
+        - trigger-uninstall
+        - --deployment-name={{ include "controller.fullname" . }}
+        - --deployment-namespace={{ .Release.Namespace }}
+        {{- if eq .Values.installMode "Hosted" }}
+        - --policy-namespace={{ .Release.Namespace }}
+        {{- else }}
+        - --policy-namespace={{ .Values.clusterName }}
+        {{- end }}
+        - --log-encoder={{ .Values.args.logEncoder }}
+        - --log-level={{ .Values.args.logLevel }}
+        - --v={{ .Values.args.pkgLogLevel }}
+      env:
+        {{- if .Values.global.proxyConfig }}
+        - name: HTTP_PROXY
+          value: {{ .Values.global.proxyConfig.HTTP_PROXY }}
+        - name: HTTPS_PROXY
+          value: {{ .Values.global.proxyConfig.HTTPS_PROXY }}
+        - name: NO_PROXY
+          value: {{ .Values.global.proxyConfig.NO_PROXY }}
+        {{- end }}
+      resources: {{- toYaml .Values.resources | nindent 10 }}
+      securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+  {{- if .Values.global.imagePullSecret }}
+  imagePullSecrets:
+  - name: "{{ .Values.global.imagePullSecret }}"
+  {{- end }}
+  affinity: {{ toYaml .Values.affinity | nindent 8 }}
+  {{- if hasKey .Values "tolerations" }}
+  tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
+  {{- end }}
+  {{- if hasKey .Values.global "nodeSelector" }}
+  nodeSelector: {{ toYaml .Values.global.nodeSelector | nindent 8 }}
+  {{- end }}
+  hostNetwork: false
+  hostPID: false
+  hostIPC: false
+  serviceAccount: {{ include "controller.serviceAccountName" . }}
+  securityContext:
+    runAsNonRoot: true

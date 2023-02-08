@@ -12,8 +12,8 @@ require (
 	k8s.io/apimachinery v0.25.0
 	k8s.io/client-go v0.25.0
 	k8s.io/component-base v0.25.0
-	open-cluster-management.io/addon-framework v0.5.1-0.20221206033210-55b40b1bc8c6
-	open-cluster-management.io/api v0.8.1-0.20220919023232-a2688935edf3
+	open-cluster-management.io/addon-framework v0.6.0
+	open-cluster-management.io/api v0.9.1-0.20221222015712-61cf30907d02
 	sigs.k8s.io/controller-runtime v0.11.2
 )
 
@@ -130,4 +130,6 @@ require (
 replace (
 	golang.org/x/text => golang.org/x/text v0.3.8 // CVE-2022-32149
 	helm.sh/helm/v3 => helm.sh/helm/v3 v3.9.4 // sonatype-2022-5277; see helm v3.9.4 release notes
+	// Pending https://github.com/open-cluster-management-io/addon-framework/pull/149
+	open-cluster-management.io/addon-framework => github.com/mprahl/addon-framework v0.0.0-20230213164346-e05945686992
 )
