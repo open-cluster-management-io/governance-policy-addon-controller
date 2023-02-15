@@ -278,9 +278,10 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.6.1
   creationTimestamp: null
-  name: configurationpolicies.policy.open-cluster-management.io
   labels:
+    policy.open-cluster-management.io/policy-type: template
     addon.open-cluster-management.io/hosted-manifest-location: hosting
+  name: configurationpolicies.policy.open-cluster-management.io
 spec:
   group: policy.open-cluster-management.io
   names:
