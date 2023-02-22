@@ -73,7 +73,6 @@ import (
 //+kubebuilder:rbac:groups=core,resources=events,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch
-//+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=list;watch
 
 var (
 	setupLog    = ctrl.Log.WithName("setup")
