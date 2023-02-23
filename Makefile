@@ -263,7 +263,7 @@ kind-load-image: build-images $(KIND_KUBECONFIG) ## Build and load the docker im
 kind-regenerate-controller: manifests generate kustomize $(KIND_KUBECONFIG) ## Refresh (or initially deploy) the policy-addon-controller.
 	cp config/default/kustomization.yaml config/default/kustomization.yaml.tmp
 	cd config/default && $(KUSTOMIZE) edit set image policy-addon-image=$(IMAGE_NAME_AND_VERSION)
-	$(KUSTOMIZE) build config/default | KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f -
+	$(KUSTOMIZE) build config/default | sed -E "s/(value\: .+)(:latest)$$/\1:$(TAG)/g" | KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f -
 	mv config/default/kustomization.yaml.tmp config/default/kustomization.yaml
 	KUBECONFIG=$(KIND_KUBECONFIG) kubectl delete -n $(CONTROLLER_NAMESPACE) pods -l=app=governance-policy-addon-controller
 
