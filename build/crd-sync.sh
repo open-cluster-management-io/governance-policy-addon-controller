@@ -2,14 +2,17 @@
 
 set -euxo pipefail  # exit on errors and unset vars, and stop on the first error in a "pipeline"
 
-BRANCH="${BRANCH:-main}"
+ORG=${ORG:-"open-cluster-management-io"}
+BRANCH=${BRANCH:-"main"}
 
 mkdir -p .go
 
 # Clone repositories containing the CRD definitions
 for REPO in config-policy-controller governance-policy-propagator
 do
-    git clone -b "${BRANCH}" --depth 1 https://github.com/open-cluster-management-io/${REPO}.git .go/${REPO}
+    # Try a given ORG/BRANCH, but fall back to the open-cluster-management-io org on the main branch if it fails
+    git clone -b "${BRANCH}" --depth 1 https://github.com/${ORG}/${REPO}.git .go/${REPO} \
+    || git clone -b main --depth 1 https://github.com/open-cluster-management-io/${REPO}.git .go/${REPO}
 done
 
 (
