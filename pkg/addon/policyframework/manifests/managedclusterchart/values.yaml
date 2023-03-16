@@ -15,9 +15,9 @@ hubKubeConfigSecret: governance-policy-framework-hub-kubeconfig
 
 resources:
   requests:
-    memory: 128Mi
+    memory: 64Mi
   limits:
-    memory: 256Mi
+    memory: 512Mi
 
 affinity: {}
 
