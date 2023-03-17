@@ -1,7 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "controller.rolename" . }}-crd
+  name: {{ include "controller.rolename" . }}
+  
   labels:
     app: {{ include "controller.fullname" . }}
     chart: {{ include "controller.chart" . }}
@@ -15,4 +16,28 @@ rules:
   - customresourcedefinitions
   verbs:
   - list
+  - watch
+- apiGroups:
+  - constraints.gatekeeper.sh
+  resources:
+  - '*'
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - templates.gatekeeper.sh
+  resources:
+  - constrainttemplates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
   - watch
