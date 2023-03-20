@@ -7,7 +7,7 @@ else
 fi
 
 # Number of managed clusters
-MANAGED_CLUSTER_COUNT=${MANAGED_CLUSTER_COUNT:-1}
+MANAGED_CLUSTER_COUNT="${MANAGED_CLUSTER_COUNT:-1}"
 if [[ -n "${MANAGED_CLUSTER_COUNT//[0-9]}" ]] || [[ "${MANAGED_CLUSTER_COUNT}" == "0" ]]; then
   echo "error: provided MANAGED_CLUSTER_COUNT is not a nonzero integer"
   exit 1
@@ -15,7 +15,7 @@ fi
 
 HUB_KIND_VERSION=$KIND_VERSION
 if [[ "${KIND_VERSION}" == "minimum" ]]; then
-  # The hub supports less Kubernetes versions than the managed cluster.
+  # The hub supports fewer Kubernetes versions than the managed cluster.
   HUB_KIND_VERSION=v1.23.13
 fi
 
@@ -33,10 +33,10 @@ case ${RUN_MODE} in
     make e2e-debug
     ;;
   create)
-    KIND_VERSION=$HUB_KIND_VERSION make kind-deploy-controller
+    KIND_VERSION="${HUB_KIND_VERSION}" make kind-deploy-controller
     ;;
   create-dev)
-    KIND_VERSION=$HUB_KIND_VERSION make kind-prep-ocm
+    KIND_VERSION="${HUB_KIND_VERSION}" make kind-prep-ocm
     ;;
   deploy-addons)
     make kind-deploy-addons-hub
