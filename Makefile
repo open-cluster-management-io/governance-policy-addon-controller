@@ -166,12 +166,12 @@ MANAGED_CLUSTER_NAME ?= cluster1
 KIND_VERSION ?= latest
 KUSTOMIZE_VERSION ?= v5.0.0
 # Set the Kind version tag
-ifeq ($(KIND_VERSION), minimum)
-	KIND_ARGS = --image kindest/node:v1.19.16
-else ifneq ($(KIND_VERSION), latest)
-	KIND_ARGS = --image kindest/node:$(KIND_VERSION)
-else
-	KIND_ARGS =
+ifdef KIND_VERSION
+  ifeq ($(KIND_VERSION), minimum)
+    KIND_ARGS = --image kindest/node:v1.19.16
+  else ifneq ($(KIND_VERSION), latest)
+    KIND_ARGS = --image kindest/node:$(KIND_VERSION)
+  endif
 endif
 
 .PHONY: kind-bootstrap-cluster
