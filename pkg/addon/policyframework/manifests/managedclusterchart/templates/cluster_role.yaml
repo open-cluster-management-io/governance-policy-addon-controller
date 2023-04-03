@@ -51,3 +51,15 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - apps
+  resourceNames:
+  - {{ include "controller.fullname" . }}
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
