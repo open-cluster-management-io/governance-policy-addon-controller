@@ -43,12 +43,12 @@ spec:
         {{- end }}
       resources: {{- toYaml .Values.resources | nindent 10 }}
       securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-        - ALL
-      privileged: false
-      readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
   {{- if .Values.global.imagePullSecret }}
   imagePullSecrets:
   - name: "{{ .Values.global.imagePullSecret }}"
