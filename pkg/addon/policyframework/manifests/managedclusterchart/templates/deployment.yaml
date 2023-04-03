@@ -87,6 +87,10 @@ spec:
                 fieldPath: metadata.name
           - name: OPERATOR_NAME
             value: "governance-policy-framework-addon"
+          - name: DEPLOYMENT_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['app']
           {{- if .Values.global.proxyConfig }}
           - name: HTTP_PROXY
             value: {{ .Values.global.proxyConfig.HTTP_PROXY }}
