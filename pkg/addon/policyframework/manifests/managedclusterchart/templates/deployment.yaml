@@ -72,6 +72,7 @@ spec:
           - --disable-spec-sync=true
           {{- end }}
           {{- if eq .Values.installMode "Hosted" }}
+          - --disable-gatekeeper-sync=true
           - --cluster-namespace={{ .Release.Namespace }}
           - --cluster-namespace-on-hub={{ .Values.clusterName }}
           {{- else }}
