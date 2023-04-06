@@ -12,8 +12,10 @@
 .go/
 bin/
 vendor/
+build/_output/
 
 *.kubeconfig
 *.kubeconfig-internal
-coverage.out
+coverage*.out
+report_e2e.json
 gosec.json

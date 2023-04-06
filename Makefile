@@ -292,19 +292,24 @@ e2e-test-hosted-mode: e2e-dependencies
 e2e-test-coverage: E2E_TEST_ARGS = --json-report=report_e2e.json --output-dir=.
 e2e-test-coverage: e2e-run-instrumented e2e-test e2e-stop-instrumented ## Run E2E tests using instrumented controller.
 
+.PHONY: e2e-test-coverage-foreground
+e2e-test-coverage-foreground: LOG_REDIRECT =
+e2e-test-coverage-foreground: e2e-test-coverage ## Run E2E tests using instrumented controller with logging to stdin.
+
 .PHONY: e2e-build-instrumented
 e2e-build-instrumented:
 	go test -covermode=atomic -coverpkg=$(shell cat go.mod | head -1 | cut -d ' ' -f 2)/... -c -tags e2e ./ -o build/_output/bin/$(IMG)-instrumented
 
 COVERAGE_E2E_OUT ?= coverage_e2e.out
 .PHONY: e2e-run-instrumented
+LOG_REDIRECT ?= &>build/_output/controller.log
 e2e-run-instrumented: e2e-build-instrumented
 	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl create ns $(CONTROLLER_NAMESPACE)
 	CONFIG_POLICY_CONTROLLER_IMAGE="$(REGISTRY)/config-policy-controller:$(TAG)" \
 	  KUBE_RBAC_PROXY_IMAGE="registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.10" \
 	  GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE="$(REGISTRY)/governance-policy-framework-addon:$(TAG)" \
 	  ./build/_output/bin/$(IMG)-instrumented -test.v -test.run="^TestRunMain$$" -test.coverprofile=$(COVERAGE_E2E_OUT) \
-	  --kubeconfig="$(KIND_KUBECONFIG)" &>build/_output/controller.log &
+	  --kubeconfig="$(KIND_KUBECONFIG)" $(LOG_REDIRECT) &
 
 .PHONY: e2e-stop-instrumented
 e2e-stop-instrumented:
