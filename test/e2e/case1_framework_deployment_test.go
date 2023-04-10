@@ -409,6 +409,17 @@ var _ = Describe("Test framework deployment", func() {
 				return len(manifests)
 			}, 30, 5).Should(Equal(defaultLength + 1))
 
+			By(logPrefix + "removing the pause annotation")
+			Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "policy-addon-pause-")
+
+			By(logPrefix + "verifying the edit is reverted after the annotation was removed")
+			Eventually(func() int {
+				mw := GetWithTimeout(clientDynamic, gvrManifestWork, case1MWName, cluster.clusterName, true, 15)
+				manifests, _, _ := unstructured.NestedSlice(mw.Object, "spec", "workload", "manifests")
+
+				return len(manifests)
+			}, 30, 5).Should(Equal(defaultLength))
+
 			By(logPrefix + "deleting the managedclusteraddon")
 			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
 			deploy = GetWithTimeout(
