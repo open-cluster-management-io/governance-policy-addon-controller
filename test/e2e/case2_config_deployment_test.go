@@ -5,6 +5,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -96,7 +97,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 			By(logPrefix +
 				"removing the config-policy-controller deployment when the ManagedClusterAddOn CR is removed")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, "--timeout=30s")
 			deploy := GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, false, 180,
 			)
@@ -140,7 +141,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 			By(logPrefix +
 				"removing the config-policy-controller deployment when the ManagedClusterAddOn CR is removed")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, "--timeout=30s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, false, 180,
 			)
@@ -148,9 +149,9 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 		}
 
 		By("Deleting the AddOnDeploymentConfig")
-		Kubectl("delete", "-f", addOnDeplomentConfigCR)
+		Kubectl("delete", "-f", addOnDeplomentConfigCR, "--timeout=15s")
 		By("Deleting the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
-		Kubectl("delete", "-f", case2ClusterManagementAddOnCR)
+		Kubectl("delete", "-f", case2ClusterManagementAddOnCR, "--timeout=15s")
 	})
 
 	It("should create the default config-policy-controller deployment in hosted mode", Label("hosted-mode"), func() {
@@ -178,10 +179,13 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 			verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, 0)
 
+			ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second)
+			defer cancel()
+
 			By(logPrefix +
 				"removing the config-policy-controller deployment when the ManagedClusterAddOn CR is removed")
 			err := clientDynamic.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
-				context.TODO(), case2ManagedClusterAddOnName, metav1.DeleteOptions{},
+				ctx, case2ManagedClusterAddOnName, metav1.DeleteOptions{},
 			)
 			Expect(err).To(BeNil())
 
@@ -226,9 +230,12 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 				verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, 0)
 
+				ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second)
+				defer cancel()
+
 				By(logPrefix + "Removing the ManagedClusterAddOn CR")
 				err := clientDynamic.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
-					context.TODO(), case2ManagedClusterAddOnName, metav1.DeleteOptions{},
+					ctx, case2ManagedClusterAddOnName, metav1.DeleteOptions{},
 				)
 				Expect(err).To(BeNil())
 
@@ -244,15 +251,21 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				namespace := GetWithTimeout(hubClient, gvrNamespace, installNamespace, "", true, 30)
 				Expect(namespace).NotTo(BeNil())
 
+				ctxSec, cancelSec := context.WithTimeout(context.TODO(), 15*time.Second)
+				defer cancelSec()
+
 				By(logPrefix + "cleaning up  the hosting cluster secret")
 				err = hubClient.Resource(gvrSecret).Namespace(installNamespace).Delete(
-					context.TODO(), "external-managed-kubeconfig", metav1.DeleteOptions{},
+					ctxSec, "external-managed-kubeconfig", metav1.DeleteOptions{},
 				)
 				Expect(err).To(BeNil())
 
+				ctxNS, cancelNS := context.WithTimeout(context.TODO(), 15*time.Second)
+				defer cancelNS()
+
 				By(logPrefix + "Cleaning up the install namespace")
 				err = hubClient.Resource(gvrNamespace).Delete(
-					context.TODO(), installNamespace, metav1.DeleteOptions{},
+					ctxNS, installNamespace, metav1.DeleteOptions{},
 				)
 				Expect(err).To(BeNil())
 
@@ -260,9 +273,9 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				Expect(namespace).To(BeNil())
 			}
 			By("Deleting the AddOnDeploymentConfig")
-			Kubectl("delete", "-f", addOnDeplomentConfigWithCustomVarsCR)
+			Kubectl("delete", "-f", addOnDeplomentConfigWithCustomVarsCR, "--timeout=15s")
 			By("Deleting the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
-			Kubectl("delete", "-f", case2ClusterManagementAddOnCR)
+			Kubectl("delete", "-f", case2ClusterManagementAddOnCR, "--timeout=15s")
 		})
 
 	It("should create a config-policy-controller deployment with customizations", func() {
@@ -370,7 +383,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 			By(logPrefix +
 				"removing the config-policy-controller deployment when the ManagedClusterAddOn CR is removed")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, "--timeout=30s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, false, 180,
 			)
@@ -470,9 +483,10 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				"-f",
 				case2OpenShiftClusterClaim,
 				fmt.Sprintf("--kubeconfig=%s%d.kubeconfig", kubeconfigFilename, i+1),
+				"--timeout=15s",
 			)
 
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, "--timeout=30s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, false, 30,
 			)
@@ -483,6 +497,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				"namespace",
 				"openshift-monitoring",
 				fmt.Sprintf("--kubeconfig=%s%d.kubeconfig", kubeconfigFilename, i+1),
+				"--timeout=15s",
 			)
 
 			By(logPrefix + "waiting for the ClusterClaim to not be in the ManagedCluster status")

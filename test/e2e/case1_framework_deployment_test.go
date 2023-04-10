@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -50,7 +51,7 @@ var _ = Describe("Test framework deployment", func() {
 			checkArgs(cluster, expectedArgs...)
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
@@ -86,9 +87,12 @@ var _ = Describe("Test framework deployment", func() {
 				"--cluster-namespace-on-hub="+cluster.clusterName,
 			)
 
+			ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second)
+			defer cancel()
+
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
 			err := hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
-				context.TODO(), case1ManagedClusterAddOnName, metav1.DeleteOptions{},
+				ctx, case1ManagedClusterAddOnName, metav1.DeleteOptions{},
 			)
 			Expect(err).To(BeNil())
 
@@ -128,9 +132,12 @@ var _ = Describe("Test framework deployment", func() {
 
 				checkContainersAndAvailabilityInNamespace(cluster, i+1, installNamespace)
 
+				ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second)
+				defer cancel()
+
 				By(logPrefix + "verifying removing the framework deployment when the ManagedClusterAddOn CR is removed")
 				err := hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
-					context.TODO(), case1ManagedClusterAddOnName, metav1.DeleteOptions{},
+					ctx, case1ManagedClusterAddOnName, metav1.DeleteOptions{},
 				)
 				Expect(err).To(BeNil())
 
@@ -141,9 +148,12 @@ var _ = Describe("Test framework deployment", func() {
 				namespace := GetWithTimeout(hubClient, gvrNamespace, installNamespace, "", true, 30)
 				Expect(namespace).NotTo(BeNil())
 
+				ctxNS, cancelNS := context.WithTimeout(context.TODO(), 15*time.Second)
+				defer cancelNS()
+
 				By(logPrefix + "Cleaning up the install namespace")
 				err = hubClient.Resource(gvrNamespace).Delete(
-					context.TODO(), installNamespace, metav1.DeleteOptions{},
+					ctxNS, installNamespace, metav1.DeleteOptions{},
 				)
 				Expect(err).To(BeNil())
 
@@ -151,9 +161,9 @@ var _ = Describe("Test framework deployment", func() {
 				Expect(namespace).To(BeNil())
 			}
 			By("Deleting the AddOnDeploymentConfig")
-			Kubectl("delete", "-f", addOnDeplomentConfigWithCustomVarsCR)
+			Kubectl("delete", "-f", addOnDeplomentConfigWithCustomVarsCR, "--timeout=15s")
 			By("Deleting the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
-			Kubectl("delete", "-f", case1ClusterManagementAddOnCR)
+			Kubectl("delete", "-f", case1ClusterManagementAddOnCR, "--timeout=15s")
 		})
 
 	It("should create a framework deployment with custom logging levels", func() {
@@ -179,7 +189,7 @@ var _ = Describe("Test framework deployment", func() {
 			checkArgs(cluster, "--log-encoder=console", "--log-level=8", "--v=6")
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
@@ -232,7 +242,7 @@ var _ = Describe("Test framework deployment", func() {
 			Expect(tolerations[0]).To(Equal(expected))
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
@@ -240,9 +250,9 @@ var _ = Describe("Test framework deployment", func() {
 		}
 
 		By("Deleting the AddOnDeploymentConfig")
-		Kubectl("delete", "-f", addOnDeplomentConfigCR)
+		Kubectl("delete", "-f", addOnDeplomentConfigCR, "--timeout=15s")
 		By("Deleting the governance-policy-framework ClusterManagementAddOn to use the AddOnDeploymentConfig")
-		Kubectl("delete", "-f", case1ClusterManagementAddOnCR)
+		Kubectl("delete", "-f", case1ClusterManagementAddOnCR, "--timeout=15s")
 	})
 
 	It("should use the onManagedClusterHub value set in helm values annotation", func() {
@@ -268,7 +278,7 @@ var _ = Describe("Test framework deployment", func() {
 		checkArgs(cluster, "--log-encoder=console", "--log-level=8", "--v=6")
 
 		By(logPrefix + "deleting the managedclusteraddon")
-		Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+		Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
 		deploy = GetWithTimeout(
 			cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 		)
@@ -303,7 +313,7 @@ var _ = Describe("Test framework deployment", func() {
 		checkArgs(cluster, "--log-encoder=console", "--log-level=8", "--v=6")
 
 		By(logPrefix + "deleting the managedclusteraddon")
-		Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+		Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
 		deploy = GetWithTimeout(
 			cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 		)
@@ -352,7 +362,7 @@ var _ = Describe("Test framework deployment", func() {
 			}, 60, 5).Should(Equal(defaultLength))
 
 			By(logPrefix + "deleting the managedclusteraddon")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
@@ -400,7 +410,7 @@ var _ = Describe("Test framework deployment", func() {
 			}, 30, 5).Should(Equal(defaultLength + 1))
 
 			By(logPrefix + "deleting the managedclusteraddon")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
@@ -427,7 +437,7 @@ var _ = Describe("Test framework deployment", func() {
 			GetWithTimeoutClusterResource(cluster.clusterClient, gvrNamespace, cluster.clusterName, true, 15)
 
 			By(logPrefix + "deleting the managedclusteraddon")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
@@ -471,7 +481,7 @@ var _ = Describe("Test framework deployment", func() {
 			}
 
 			By(logPrefix + "deleting the managedclusteraddon")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
