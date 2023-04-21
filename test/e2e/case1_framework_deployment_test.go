@@ -94,7 +94,7 @@ var _ = Describe("Test framework deployment", func() {
 			err := hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
 				ctx, case1ManagedClusterAddOnName, metav1.DeleteOptions{},
 			)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			deploy := GetWithTimeout(hubClient, gvrDeployment, case1DeploymentName, installNamespace, false, 30)
 			Expect(deploy).To(BeNil())
@@ -139,7 +139,7 @@ var _ = Describe("Test framework deployment", func() {
 				err := hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
 					ctx, case1ManagedClusterAddOnName, metav1.DeleteOptions{},
 				)
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(HaveOccurred())
 
 				deploy := GetWithTimeout(hubClient, gvrDeployment, case1DeploymentName, installNamespace, false, 30)
 				Expect(deploy).To(BeNil())
@@ -155,7 +155,7 @@ var _ = Describe("Test framework deployment", func() {
 				err = hubClient.Resource(gvrNamespace).Delete(
 					ctxNS, installNamespace, metav1.DeleteOptions{},
 				)
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(HaveOccurred())
 
 				namespace = GetWithTimeout(hubClient, gvrNamespace, installNamespace, "", false, 30)
 				Expect(namespace).To(BeNil())
@@ -341,25 +341,25 @@ var _ = Describe("Test framework deployment", func() {
 
 			By(logPrefix + "getting the default number of items in the ManifestWork")
 			defaultLength := 0
-			Eventually(func() int {
+			Eventually(func() []interface{} {
 				mw := GetWithTimeout(clientDynamic, gvrManifestWork, case1MWName, cluster.clusterName, true, 15)
 				manifests, _, _ := unstructured.NestedSlice(mw.Object, "spec", "workload", "manifests")
 				defaultLength = len(manifests)
 
-				return defaultLength
-			}, 60, 5).ShouldNot(Equal(0))
+				return manifests
+			}, 60, 5).ShouldNot(BeEmpty())
 
 			By(logPrefix + "patching the ManifestWork to add an item")
 			Kubectl("patch", "-n", cluster.clusterName, "manifestwork", case1MWName, "--type=json",
 				"--patch-file="+case1MWPatch)
 
 			By(logPrefix + "verifying the edit is reverted")
-			Eventually(func() int {
+			Eventually(func() []interface{} {
 				mw := GetWithTimeout(clientDynamic, gvrManifestWork, case1MWName, cluster.clusterName, true, 15)
 				manifests, _, _ := unstructured.NestedSlice(mw.Object, "spec", "workload", "manifests")
 
-				return len(manifests)
-			}, 60, 5).Should(Equal(defaultLength))
+				return manifests
+			}, 60, 5).Should(HaveLen(defaultLength))
 
 			By(logPrefix + "deleting the managedclusteraddon")
 			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
@@ -389,36 +389,36 @@ var _ = Describe("Test framework deployment", func() {
 
 			By(logPrefix + "getting the default number of items in the ManifestWork")
 			defaultLength := 0
-			Eventually(func() int {
+			Eventually(func() []interface{} {
 				mw := GetWithTimeout(clientDynamic, gvrManifestWork, case1MWName, cluster.clusterName, true, 15)
 				manifests, _, _ := unstructured.NestedSlice(mw.Object, "spec", "workload", "manifests")
 				defaultLength = len(manifests)
 
-				return defaultLength
-			}, 60, 5).ShouldNot(Equal(0))
+				return manifests
+			}, 60, 5).ShouldNot(BeEmpty())
 
 			By(logPrefix + "patching the ManifestWork to add an item")
 			Kubectl("patch", "-n", cluster.clusterName, "manifestwork", case1MWName, "--type=json",
 				"--patch-file="+case1MWPatch)
 
 			By(logPrefix + "verifying the edit is not reverted")
-			Consistently(func() int {
+			Consistently(func() []interface{} {
 				mw := GetWithTimeout(clientDynamic, gvrManifestWork, case1MWName, cluster.clusterName, true, 15)
 				manifests, _, _ := unstructured.NestedSlice(mw.Object, "spec", "workload", "manifests")
 
-				return len(manifests)
-			}, 30, 5).Should(Equal(defaultLength + 1))
+				return manifests
+			}, 30, 5).Should(HaveLen(defaultLength + 1))
 
 			By(logPrefix + "removing the pause annotation")
 			Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "policy-addon-pause-")
 
 			By(logPrefix + "verifying the edit is reverted after the annotation was removed")
-			Eventually(func() int {
+			Eventually(func() []interface{} {
 				mw := GetWithTimeout(clientDynamic, gvrManifestWork, case1MWName, cluster.clusterName, true, 15)
 				manifests, _, _ := unstructured.NestedSlice(mw.Object, "spec", "workload", "manifests")
 
-				return len(manifests)
-			}, 30, 5).Should(Equal(defaultLength))
+				return manifests
+			}, 30, 5).Should(HaveLen(defaultLength))
 
 			By(logPrefix + "deleting the managedclusteraddon")
 			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
@@ -472,7 +472,7 @@ var _ = Describe("Test framework deployment", func() {
 			Expect(deploy).NotTo(BeNil())
 
 			containers, found, err := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "containers")
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(found).To(BeTrue())
 
 			container, ok := containers[0].(map[string]interface{})
@@ -482,12 +482,12 @@ var _ = Describe("Test framework deployment", func() {
 			if startupProbeInCluster(i + 1) {
 				By(logPrefix + "checking for startupProbe on kubernetes 1.20 or higher")
 				_, found, err = unstructured.NestedMap(container, "startupProbe")
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(HaveOccurred())
 				Expect(found).To(BeTrue())
 			} else {
 				By(logPrefix + "checking for initialDelaySeconds on kubernetes 1.19 or lower")
 				_, found, err = unstructured.NestedInt64(container, "livenessProbe", "initialDelaySeconds")
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(HaveOccurred())
 				Expect(found).To(BeTrue())
 			}
 
@@ -658,5 +658,5 @@ func installAddonInHostedMode(
 	_, err := hubClient.Resource(gvrManagedClusterAddOn).Namespace(clusterName).Create(
 		context.TODO(), &addon, metav1.CreateOptions{},
 	)
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(HaveOccurred())
 }
