@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/blang/semver/v4"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
@@ -124,6 +125,39 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	return addonfactory.JsonStructToValues(userValues)
 }
 
+// mandateValues sets deployment variables regardless of user overrides. As a result, caution should
+// be taken when adding settings to this function.
+func mandateValues(
+	cluster *clusterv1.ManagedCluster,
+	_ *addonapiv1alpha1.ManagedClusterAddOn,
+) (addonfactory.Values, error) {
+	values := addonfactory.Values{}
+
+	oldKubernetes := false
+
+	for _, cc := range cluster.Status.ClusterClaims {
+		if cc.Name == "kubeversion.open-cluster-management.io" {
+			k8sVersion, err := semver.ParseTolerant(cc.Value)
+			if err != nil {
+				continue
+			}
+
+			if k8sVersion.Major <= 1 && k8sVersion.Minor < 14 {
+				oldKubernetes = true
+			}
+
+			break
+		}
+	}
+
+	// Don't allow replica overrides for older Kubernetes
+	if oldKubernetes {
+		values["replicas"] = 1
+	}
+
+	return values, nil
+}
+
 func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {
 	registrationOption := policyaddon.NewRegistrationOption(
 		controllerContext,
@@ -146,6 +180,7 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 			),
 			getValues,
 			addonfactory.GetValuesFromAddonAnnotation,
+			mandateValues,
 		).
 		WithAgentRegistrationOption(registrationOption).
 		WithScheme(policyaddon.Scheme).
