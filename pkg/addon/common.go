@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/openshift/library-go/pkg/assets"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
@@ -20,6 +21,9 @@ import (
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/addon-framework/pkg/utils"
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+	clusterv1client "open-cluster-management.io/api/client/cluster/clientset/versioned"
+	clusterv1informers "open-cluster-management.io/api/client/cluster/informers/externalversions"
+	clusterlister "open-cluster-management.io/api/client/cluster/listers/cluster/v1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -141,9 +145,16 @@ func GetAndAddAgent(
 		return fmt.Errorf("failed getting the %v agent addon: %w", addonName, err)
 	}
 
-	agentAddon = &PolicyAgentAddon{agentAddon}
+	clusterClient, err := clusterv1client.NewForConfig(controllerContext.KubeConfig)
+	if err != nil {
+		return err
+	}
 
-	err = mgr.AddAgent(agentAddon)
+	clusterInformers := clusterv1informers.NewSharedInformerFactory(clusterClient, 10*time.Minute)
+
+	pa := &PolicyAgentAddon{agentAddon, clusterInformers.Cluster().V1().ManagedClusters().Lister(), nil}
+
+	err = mgr.AddAgent(pa)
 	if err != nil {
 		return fmt.Errorf("failed adding the %v agent addon to the manager: %w", addonName, err)
 	}
@@ -154,19 +165,32 @@ func GetAndAddAgent(
 // PolicyAgentAddon wraps the AgentAddon created from the addonfactory to override some behavior
 type PolicyAgentAddon struct {
 	agent.AgentAddon
+	clusterLister  clusterlister.ManagedClusterLister
+	hostingCluster *clusterv1.ManagedCluster
 }
 
 func (pa *PolicyAgentAddon) Manifests(
 	cluster *clusterv1.ManagedCluster,
 	addon *addonapiv1alpha1.ManagedClusterAddOn,
-	hostingCluster *clusterv1.ManagedCluster,
 ) ([]runtime.Object, error) {
+	// Return error when pause annotation is set to short-circuit automatic addon updates
 	pauseAnnotation := addon.GetAnnotations()[PolicyAddonPauseAnnotation]
 	if pauseAnnotation == "true" {
 		return nil, errors.New("the Policy Addon controller is paused due to the policy-addon-pause annotation")
 	}
 
-	return pa.AgentAddon.Manifests(cluster, addon, hostingCluster)
+	// Fetch ManagedCluster for hosting cluster in hosted mode
+	hostingClusterName := addon.Annotations[addonapiv1alpha1.HostingClusterNameAnnotationKey]
+	if pa.GetAgentAddonOptions().HostedModeEnabled && hostingClusterName != "" {
+		hostingCluster, err := pa.clusterLister.Get(hostingClusterName)
+		if err != nil {
+			return nil, err
+		}
+
+		pa.hostingCluster = hostingCluster
+	}
+
+	return pa.AgentAddon.Manifests(cluster, addon)
 }
 
 // getLogLevel verifies the user-provided log level against Zap, returning 0 if the check fails.

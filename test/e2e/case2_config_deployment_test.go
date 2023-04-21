@@ -34,14 +34,14 @@ func verifyConfigPolicyDeployment(
 	)
 	Expect(deploy).NotTo(BeNil())
 
-	Eventually(func() int {
+	Eventually(func() []interface{} {
 		deploy = GetWithTimeout(
 			client, gvrDeployment, case2DeploymentName, namespace, true, 30,
 		)
 		containers, _, _ := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "containers")
 
-		return len(containers)
-	}, 60, 1).Should(Equal(1))
+		return containers
+	}, 60, 1).Should(HaveLen(1))
 
 	if startupProbeInCluster(clusterNum) {
 		By(logPrefix + "verifying all replicas in config-policy-controller deployment are available")
@@ -65,7 +65,7 @@ func verifyConfigPolicyDeployment(
 	}
 
 	By(logPrefix + "verifying a running config-policy-controller pod")
-	Eventually(func() bool {
+	Eventually(func() string {
 		opts := metav1.ListOptions{
 			LabelSelector: case2PodSelector,
 		}
@@ -73,8 +73,8 @@ func verifyConfigPolicyDeployment(
 
 		phase, _, _ := unstructured.NestedString(pods.Items[0].Object, "status", "phase")
 
-		return phase == "Running"
-	}, 60, 1).Should(Equal(true))
+		return phase
+	}, 60, 1).Should(Equal("Running"))
 
 	By(logPrefix + "showing the config-policy-controller managedclusteraddon as available")
 	Eventually(func() bool {
@@ -187,7 +187,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 			err := clientDynamic.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
 				ctx, case2ManagedClusterAddOnName, metav1.DeleteOptions{},
 			)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			deploy := GetWithTimeout(
 				hubClient, gvrDeployment, case2DeploymentName, installNamespace, false, 180,
@@ -237,7 +237,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				err := clientDynamic.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
 					ctx, case2ManagedClusterAddOnName, metav1.DeleteOptions{},
 				)
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(HaveOccurred())
 
 				By(logPrefix +
 					"Verifying controller deployment is removed when the ManagedClusterAddOn CR is removed")
@@ -258,7 +258,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				err = hubClient.Resource(gvrSecret).Namespace(installNamespace).Delete(
 					ctxSec, "external-managed-kubeconfig", metav1.DeleteOptions{},
 				)
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(HaveOccurred())
 
 				ctxNS, cancelNS := context.WithTimeout(context.TODO(), 15*time.Second)
 				defer cancelNS()
@@ -267,7 +267,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				err = hubClient.Resource(gvrNamespace).Delete(
 					ctxNS, installNamespace, metav1.DeleteOptions{},
 				)
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(HaveOccurred())
 
 				namespace = GetWithTimeout(hubClient, gvrNamespace, installNamespace, "", false, 30)
 				Expect(namespace).To(BeNil())
@@ -336,7 +336,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 				g.Expect(phase.(string)).To(Equal("Running"))
 				containerList, _, err := unstructured.NestedSlice(pods.Items[0].Object, "spec", "containers")
-				g.Expect(err).To(BeNil())
+				g.Expect(err).ToNot(HaveOccurred())
 				for _, container := range containerList {
 					containerObj, ok := container.(map[string]interface{})
 					g.Expect(ok).To(BeTrue())
@@ -361,10 +361,10 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				sm, err := cluster.clusterClient.Resource(gvrServiceMonitor).Namespace(addonNamespace).Get(
 					context.TODO(), "ocm-config-policy-controller-"+addonNamespace+"-metrics", metav1.GetOptions{},
 				)
-				g.Expect(err).To(BeNil())
+				g.Expect(err).ToNot(HaveOccurred())
 
 				endpoints, _, _ := unstructured.NestedSlice(sm.Object, "spec", "endpoints")
-				g.Expect(len(endpoints)).ToNot(Equal(0))
+				g.Expect(endpoints).ToNot(BeEmpty())
 				g.Expect(endpoints[0].(map[string]interface{})["scheme"].(string)).To(Equal("http"))
 			}, 60, 3).Should(Succeed())
 
@@ -373,10 +373,10 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				service, err := cluster.clusterClient.Resource(gvrService).Namespace(addonNamespace).Get(
 					context.TODO(), "config-policy-controller-metrics", metav1.GetOptions{},
 				)
-				g.Expect(err).To(BeNil())
+				g.Expect(err).ToNot(HaveOccurred())
 
 				ports, _, _ := unstructured.NestedSlice(service.Object, "spec", "ports")
-				g.Expect(len(ports)).To(Equal(1))
+				g.Expect(ports).To(HaveLen(1))
 				port := ports[0].(map[string]interface{})
 				g.Expect(port["port"].(int64)).To(Equal(int64(8080)))
 				g.Expect(port["targetPort"].(int64)).To(Equal(int64(8383)))
@@ -393,7 +393,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 	})
 
 	It("should create a config-policy-controller deployment with metrics monitoring on OpenShift clusters", func() {
-		Expect(len(managedClusterList)).ToNot(Equal(0))
+		Expect(managedClusterList).ToNot(BeEmpty())
 		hubClient := managedClusterList[0].clusterClient
 
 		for i, cluster := range managedClusterList {
@@ -420,10 +420,10 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				managedCluster, err := hubClient.Resource(gvrManagedCluster).Get(
 					context.TODO(), cluster.clusterName, metav1.GetOptions{},
 				)
-				g.Expect(err).To(BeNil())
+				g.Expect(err).ToNot(HaveOccurred())
 
 				clusterClaims, _, _ := unstructured.NestedSlice(managedCluster.Object, "status", "clusterClaims")
-				g.Expect(len(clusterClaims)).ToNot(Equal(0))
+				g.Expect(clusterClaims).ToNot(BeEmpty())
 
 				var claimValue string
 				for _, clusterClaim := range clusterClaims {
@@ -449,7 +449,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 			By(logPrefix + "verifying that the Deployment has the kube-rbac-proxy")
 			containers, _, _ := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "containers")
-			Expect(len(containers)).To(Equal(2))
+			Expect(containers).To(HaveLen(2))
 			Expect(containers[0].(map[string]interface{})["name"]).To(Equal("kube-rbac-proxy"))
 
 			By(logPrefix + "verifying that the metrics ServiceMonitor exists")
@@ -457,10 +457,10 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				sm, err := cluster.clusterClient.Resource(gvrServiceMonitor).Namespace("openshift-monitoring").Get(
 					context.TODO(), "ocm-config-policy-controller-"+addonNamespace+"-metrics", metav1.GetOptions{},
 				)
-				g.Expect(err).To(BeNil())
+				g.Expect(err).ToNot(HaveOccurred())
 
 				endpoints, _, _ := unstructured.NestedSlice(sm.Object, "spec", "endpoints")
-				g.Expect(len(endpoints)).ToNot(Equal(0))
+				g.Expect(endpoints).ToNot(BeEmpty())
 				g.Expect(endpoints[0].(map[string]interface{})["scheme"].(string)).To(Equal("https"))
 			}, 120, 3).Should(Succeed())
 
@@ -469,10 +469,10 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				service, err := cluster.clusterClient.Resource(gvrService).Namespace(addonNamespace).Get(
 					context.TODO(), "config-policy-controller-metrics", metav1.GetOptions{},
 				)
-				g.Expect(err).To(BeNil())
+				g.Expect(err).ToNot(HaveOccurred())
 
 				ports, _, _ := unstructured.NestedSlice(service.Object, "spec", "ports")
-				g.Expect(len(ports)).To(Equal(1))
+				g.Expect(ports).To(HaveLen(1))
 				port := ports[0].(map[string]interface{})
 				g.Expect(port["port"].(int64)).To(Equal(int64(8443)))
 				g.Expect(port["targetPort"].(int64)).To(Equal(int64(8443)))
@@ -506,10 +506,10 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				managedCluster, err := hubClient.Resource(gvrManagedCluster).Get(
 					context.TODO(), cluster.clusterName, metav1.GetOptions{},
 				)
-				g.Expect(err).To(BeNil())
+				g.Expect(err).ToNot(HaveOccurred())
 
 				clusterClaims, _, _ := unstructured.NestedSlice(managedCluster.Object, "status", "clusterClaims")
-				g.Expect(len(clusterClaims)).To(Equal(0))
+				g.Expect(clusterClaims).To(BeEmpty())
 			}, 60, 1).Should(Succeed())
 		}
 	})
@@ -532,7 +532,7 @@ func setupClusterSecretForHostedMode(
 		context.TODO(), &installNamespaceObject, metav1.CreateOptions{},
 	)
 	if !errors.IsAlreadyExists(err) {
-		Expect(err).To(BeNil())
+		Expect(err).ToNot(HaveOccurred())
 	}
 
 	secret := unstructured.Unstructured{Object: map[string]interface{}{
@@ -548,5 +548,5 @@ func setupClusterSecretForHostedMode(
 	_, err = client.Resource(gvrSecret).Namespace(installNamespace).Create(
 		context.TODO(), &secret, metav1.CreateOptions{},
 	)
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(HaveOccurred())
 }
