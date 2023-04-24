@@ -21,6 +21,8 @@ import (
 const (
 	addonName                       = "config-policy-controller"
 	evaluationConcurrencyAnnotation = "policy-evaluation-concurrency"
+	clientQPSAnnotation             = "client-qps"
+	clientBurstAnnotation           = "client-burst"
 	prometheusEnabledAnnotation     = "prometheus-metrics-enabled"
 )
 
@@ -28,7 +30,9 @@ var log = ctrl.Log.WithName("configpolicy")
 
 type UserArgs struct {
 	policyaddon.UserArgs
-	EvaluationConcurrency uint8 `json:"evaluationConcurrency,"`
+	EvaluationConcurrency uint8 `json:"evaluationConcurrency,omitempty"`
+	ClientQPS             uint8 `json:"clientQPS,omitempty"` //nolint:tagliatelle
+	ClientBurst           uint8 `json:"clientBurst,omitempty"`
 }
 
 type UserValues struct {
@@ -76,7 +80,10 @@ func getValues(cluster *clusterv1.ManagedCluster,
 				LogLevel:    0,
 				PkgLogLevel: -1,
 			},
-			EvaluationConcurrency: 2,
+			// Defaults from `values.yaml` will be used if these stay at 0.
+			EvaluationConcurrency: 0,
+			ClientQPS:             0, // will be set based on concurrency if not explicitly set
+			ClientBurst:           0, // will be set based on concurrency if not explicitly set
 		},
 	}
 
@@ -115,7 +122,38 @@ func getValues(cluster *clusterv1.ManagedCluster,
 		}
 	}
 
-	if val, ok := addon.GetAnnotations()[prometheusEnabledAnnotation]; ok {
+	if val, ok := annotations[clientQPSAnnotation]; ok {
+		value, err := strconv.ParseUint(val, 10, 8)
+		if err != nil {
+			log.Error(err, fmt.Sprintf(
+				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
+				clientQPSAnnotation, val, addonName, userValues.UserArgs.ClientQPS),
+			)
+		} else {
+			// This is safe because we specified the uint8 in ParseUint
+			userValues.UserArgs.ClientQPS = uint8(value)
+		}
+	} else { // not set explicitly
+		userValues.UserArgs.ClientQPS = userValues.UserArgs.EvaluationConcurrency * 15
+	}
+
+	if val, ok := annotations[clientBurstAnnotation]; ok {
+		value, err := strconv.ParseUint(val, 10, 8)
+		if err != nil {
+			log.Error(err, fmt.Sprintf(
+				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
+				clientBurstAnnotation, val, addonName, userValues.UserArgs.ClientBurst),
+			)
+		} else {
+			// This is safe because we specified the uint8 in ParseUint
+			userValues.UserArgs.ClientBurst = uint8(value)
+		}
+	} else if userValues.UserArgs.EvaluationConcurrency != 0 {
+		// only scale with concurrency if concurrency was set.
+		userValues.UserArgs.ClientBurst = userValues.UserArgs.EvaluationConcurrency*22 + 1
+	}
+
+	if val, ok := annotations[prometheusEnabledAnnotation]; ok {
 		valBool, err := strconv.ParseBool(val)
 		if err != nil {
 			log.Error(err, fmt.Sprintf(

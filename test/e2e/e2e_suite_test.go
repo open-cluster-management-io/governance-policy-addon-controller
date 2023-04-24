@@ -25,6 +25,7 @@ const (
 	kubeconfigFilename                   string = "../../policy-addon-ctrl"
 	loggingLevelAnnotation               string = "log-level=8"
 	evaluationConcurrencyAnnotation      string = "policy-evaluation-concurrency=5"
+	clientQPSAnnotation                  string = "client-qps=50"
 	prometheusEnabledAnnotation          string = "prometheus-metrics-enabled=true"
 	addOnDeplomentConfigCR               string = "../resources/addondeploymentconfig.yaml"
 	addOnDeplomentConfigWithCustomVarsCR string = "../resources/addondeploymentconfig_customvars.yaml"

@@ -39,9 +39,9 @@ type GlobalValues struct {
 }
 
 type UserArgs struct {
-	LogEncoder  string `json:"logEncoder,"`
-	LogLevel    int8   `json:"logLevel,"`
-	PkgLogLevel int8   `json:"pkgLogLevel,"`
+	LogEncoder  string `json:"logEncoder,omitempty"`
+	LogLevel    int8   `json:"logLevel,omitempty"`
+	PkgLogLevel int8   `json:"pkgLogLevel,omitempty"`
 }
 
 type UserValues struct {
