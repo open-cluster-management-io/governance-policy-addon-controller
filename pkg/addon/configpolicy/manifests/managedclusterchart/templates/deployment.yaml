@@ -70,6 +70,8 @@ spec:
           - --log-level={{ .Values.args.logLevel }}
           - --v={{ .Values.args.pkgLogLevel }}
           - --evaluation-concurrency={{ .Values.args.evaluationConcurrency }}
+          - --client-max-qps={{ .Values.args.clientQPS }}
+          - --client-burst={{ .Values.args.clientBurst }}
           - --health-probe-bind-address=:8081
           {{- if and .Values.prometheus.enabled (ne .Values.kubernetesDistribution "OpenShift") }}
           - --metrics-bind-address=0.0.0.0:8383

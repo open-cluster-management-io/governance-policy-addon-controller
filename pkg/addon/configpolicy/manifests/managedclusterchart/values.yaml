@@ -10,6 +10,8 @@ args:
   pkgLogLevel: -1
   logEncoder: console
   evaluationConcurrency: 2
+  clientQPS: 30
+  clientBurst: 45
 hubKubeConfigSecret: config-policy-controller-hub-kubeconfig
 
 resources:

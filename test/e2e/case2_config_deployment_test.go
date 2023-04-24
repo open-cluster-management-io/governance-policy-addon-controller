@@ -313,10 +313,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				evaluationConcurrencyAnnotation,
 			)
 
-			By(
-				logPrefix + "annotating the managedclusteraddon with the " + prometheusEnabledAnnotation +
-					" annotation",
-			)
+			By(logPrefix + "annotating the managedclusteraddon with the " + prometheusEnabledAnnotation + " annotation")
 			Kubectl(
 				"annotate",
 				"-n",
@@ -325,6 +322,9 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				case2ManagedClusterAddOnCR,
 				prometheusEnabledAnnotation,
 			)
+
+			By(logPrefix + "annotating the managedclusteraddon with the " + clientQPSAnnotation + " annotation")
+			Kubectl("annotate", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, clientQPSAnnotation)
 
 			By(logPrefix + "verifying the pod has been deployed with a new logging level and concurrency")
 			Eventually(func(g Gomega) {
@@ -350,6 +350,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 						g.Expect(args).To(ContainElement("--log-level=8"))
 						g.Expect(args).To(ContainElement("--v=6"))
 						g.Expect(args).To(ContainElement("--evaluation-concurrency=5"))
+						g.Expect(args).To(ContainElement("--client-max-qps=50"))
 						g.Expect(args).To(ContainElement("--leader-elect=false"))
 					}
 				}
