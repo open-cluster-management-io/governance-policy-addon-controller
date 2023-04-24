@@ -282,11 +282,11 @@ e2e-dependencies: ## Download ginkgo locally if necessary.
 
 .PHONY: e2e-test
 e2e-test: e2e-dependencies ## Run E2E tests.
-	$(GINKGO) -v --label-filter="!hosted-mode" --fail-fast --slow-spec-threshold=10s $(E2E_TEST_ARGS) test/e2e
+	$(GINKGO) -v --label-filter="!hosted-mode" --fail-fast $(E2E_TEST_ARGS) test/e2e
 
 .PHONY: e2e-test-hosted-mode
 e2e-test-hosted-mode: e2e-dependencies
-	$(GINKGO) -v --label-filter="hosted-mode" --fail-fast --slow-spec-threshold=10s test/e2e
+	$(GINKGO) -v --label-filter="hosted-mode" --fail-fast test/e2e
 
 .PHONY: e2e-test-coverage
 e2e-test-coverage: E2E_TEST_ARGS = --json-report=report_e2e.json --output-dir=.
