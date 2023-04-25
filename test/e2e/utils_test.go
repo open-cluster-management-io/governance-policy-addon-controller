@@ -44,10 +44,8 @@ func Kubectl(args ...string) string {
 	err := cmd.Run()
 	if err != nil {
 		// in case of failure, print command output (including error)
-		//nolint:forbidigo
-		fmt.Printf("output\n======\n%s\n", stdout.String())
-		//nolint:forbidigo
-		fmt.Printf("error\n======\n%s\n", stderr.String())
+		GinkgoWriter.Printf("output\n======\n%s\n", stdout.String())
+		GinkgoWriter.Printf("error\n======\n%s\n", stderr.String())
 		Fail(fmt.Sprintf("Error: %v", err))
 	}
 
@@ -68,7 +66,7 @@ func GetWithTimeout(
 	}
 	var obj *unstructured.Unstructured
 
-	Eventually(func() error {
+	EventuallyWithOffset(1, func() error {
 		var err error
 		namespace := client.Resource(gvr).Namespace(namespace)
 		obj, err = namespace.Get(context.TODO(), name, metav1.GetOptions{})
@@ -83,7 +81,7 @@ func GetWithTimeout(
 		}
 
 		return nil
-	}, timeout, 1).Should(BeNil())
+	}, timeout, 1).ShouldNot(HaveOccurred())
 
 	if wantFound {
 		return obj
@@ -106,7 +104,7 @@ func GetWithTimeoutClusterResource(
 	}
 	var obj *unstructured.Unstructured
 
-	Eventually(func() error {
+	EventuallyWithOffset(1, func() error {
 		var err error
 		res := client.Resource(gvr)
 		obj, err = res.Get(context.TODO(), name, metav1.GetOptions{})
@@ -121,7 +119,7 @@ func GetWithTimeoutClusterResource(
 		}
 
 		return nil
-	}, timeout, 1).Should(BeNil())
+	}, timeout, 1).ShouldNot(HaveOccurred())
 
 	if wantFound {
 		return obj
@@ -147,7 +145,7 @@ func ListWithTimeoutByNamespace(
 
 	var list *unstructured.UnstructuredList
 
-	Eventually(func() error {
+	EventuallyWithOffset(1, func() error {
 		var err error
 		list, err = clientHubDynamic.Resource(gvr).Namespace(ns).List(context.TODO(), opts)
 
@@ -160,7 +158,7 @@ func ListWithTimeoutByNamespace(
 		}
 
 		return nil
-	}, timeout, 1).Should(BeNil())
+	}, timeout, 1).ShouldNot(HaveOccurred())
 
 	if wantFound {
 		return list
