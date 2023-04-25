@@ -29,8 +29,6 @@ spec:
         {{- else }}
         - --policy-namespace={{ .Values.clusterName }}
         {{- end }}
-        - --log-encoder={{ .Values.args.logEncoder }}
-        - --log-level={{ .Values.args.logLevel }}
         - --v={{ .Values.args.pkgLogLevel }}
       env:
         {{- if .Values.global.proxyConfig }}
