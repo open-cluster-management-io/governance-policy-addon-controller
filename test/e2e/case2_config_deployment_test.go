@@ -155,7 +155,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 	})
 
 	It("should create the default config-policy-controller deployment in hosted mode", Label("hosted-mode"), func() {
-		for _, cluster := range managedClusterList[1:] {
+		for i, cluster := range managedClusterList[1:] {
 			Expect(cluster.clusterType).To(Equal("managed"))
 
 			cluster = managedClusterConfig{
@@ -175,9 +175,10 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 			installAddonInHostedMode(
 				logPrefix, hubClient, case2ManagedClusterAddOnName,
-				cluster.clusterName, managedClusterList[0].clusterName, installNamespace)
+				cluster.clusterName, hubClusterConfig.clusterName, installNamespace)
 
-			verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, 0)
+			// Use i+1 since the for loop ranges over a slice skipping first index
+			verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, i+1)
 
 			ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second)
 			defer cancel()
@@ -206,7 +207,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 			By("Creating the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
 			Kubectl("apply", "-f", case2ClusterManagementAddOnCR)
 
-			for _, cluster := range managedClusterList[1:] {
+			for i, cluster := range managedClusterList[1:] {
 				Expect(cluster.clusterType).To(Equal("managed"))
 
 				cluster = managedClusterConfig{
@@ -226,9 +227,10 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 				installAddonInHostedMode(
 					logPrefix, hubClient, case2ManagedClusterAddOnName,
-					cluster.clusterName, managedClusterList[0].clusterName, installNamespace)
+					cluster.clusterName, hubClusterConfig.clusterName, installNamespace)
 
-				verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, 0)
+				// Use i+1 since the for loop ranges over a slice skipping first index
+				verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, i+1)
 
 				ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second)
 				defer cancel()
