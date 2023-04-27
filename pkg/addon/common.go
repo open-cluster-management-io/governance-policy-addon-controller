@@ -135,6 +135,7 @@ func NewRegistrationOption(
 }
 
 func GetAndAddAgent(
+	ctx context.Context,
 	mgr addonmanager.AddonManager,
 	addonName string,
 	controllerContext *controllercmd.ControllerContext,
@@ -151,10 +152,11 @@ func GetAndAddAgent(
 	}
 
 	clusterInformers := clusterv1informers.NewSharedInformerFactory(clusterClient, 10*time.Minute)
+	go clusterInformers.Cluster().V1().ManagedClusters().Informer().Run(ctx.Done())
 
-	pa := &PolicyAgentAddon{agentAddon, clusterInformers.Cluster().V1().ManagedClusters().Lister(), nil}
+	agentAddon = &PolicyAgentAddon{agentAddon, clusterInformers.Cluster().V1().ManagedClusters().Lister(), nil}
 
-	err = mgr.AddAgent(pa)
+	err = mgr.AddAgent(agentAddon)
 	if err != nil {
 		return fmt.Errorf("failed adding the %v agent addon to the manager: %w", addonName, err)
 	}
