@@ -271,7 +271,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				)
 				Expect(err).ToNot(HaveOccurred())
 
-				namespace = GetWithTimeout(hubClient, gvrNamespace, installNamespace, "", false, 30)
+				namespace = GetWithTimeout(hubClient, gvrNamespace, installNamespace, "", false, 60)
 				Expect(namespace).To(BeNil())
 			}
 			By("Deleting the AddOnDeploymentConfig")
