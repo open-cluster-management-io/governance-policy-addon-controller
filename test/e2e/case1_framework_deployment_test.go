@@ -40,6 +40,7 @@ var _ = Describe("Test framework deployment", func() {
 			)
 			Expect(deploy).NotTo(BeNil())
 
+			// Use i+1 since the for loop ranges over a slice skipping first index
 			checkContainersAndAvailability(cluster, i+1)
 
 			expectedArgs := []string{"--cluster-namespace=" + cluster.clusterName, "--leader-elect=false"}
@@ -79,6 +80,7 @@ var _ = Describe("Test framework deployment", func() {
 				logPrefix, hubClient, case1ManagedClusterAddOnName,
 				cluster.clusterName, hubClusterConfig.clusterName, installNamespace)
 
+			// Use i+1 since the for loop ranges over a slice skipping first index
 			checkContainersAndAvailability(cluster, i+1)
 
 			checkArgs(
@@ -130,6 +132,7 @@ var _ = Describe("Test framework deployment", func() {
 					logPrefix, hubClient, case1ManagedClusterAddOnName,
 					cluster.clusterName, hubClusterConfig.clusterName, installNamespace)
 
+				// Use i+1 since the for loop ranges over a slice skipping first index
 				checkContainersAndAvailabilityInNamespace(cluster, i+1, installNamespace)
 
 				ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second)
@@ -640,7 +643,7 @@ func startupProbeInCluster(clusterIdx int) bool {
 func installAddonInHostedMode(
 	logPrefix string, hubClient dynamic.Interface, addOnName, clusterName, hostingClusterName, installNamespace string,
 ) {
-	By(logPrefix + "deploying the " + addOnName + "ManagedClusterAddOn in hosted mode")
+	By(logPrefix + "deploying the " + addOnName + " ManagedClusterAddOn in hosted mode")
 
 	addon := unstructured.Unstructured{Object: map[string]interface{}{
 		"apiVersion": "addon.open-cluster-management.io/v1alpha1",
