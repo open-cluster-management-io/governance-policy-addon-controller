@@ -89,15 +89,14 @@ test-coverage: TESTARGS = -json -cover -covermode=atomic -coverprofile=coverage_
 test-coverage: test
 
 GOSEC = $(LOCAL_BIN)/gosec
-GOSEC_VERSION = 2.9.6
 
 .PHONY: gosec
 gosec:
-	$(call go-get-tool,github.com/securego/gosec/v2/cmd/gosec@v2.9.6)
+	$(call go-get-tool,github.com/securego/gosec/v2/cmd/gosec@v2.15.0)
 
 .PHONY: gosec-scan
 gosec-scan: gosec ## Run a gosec scan against the code.
-	$(GOSEC) -fmt sonarqube -out gosec.json -no-fail -exclude-dir=.go ./...
+	$(GOSEC) -fmt sonarqube -out gosec.json -stdout -exclude-dir=.go -exclude-dir=test ./...
 
 ##@ Build
 
