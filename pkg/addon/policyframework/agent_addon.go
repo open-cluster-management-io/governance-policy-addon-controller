@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/blang/semver/v4"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
@@ -134,25 +133,8 @@ func mandateValues(
 ) (addonfactory.Values, error) {
 	values := addonfactory.Values{}
 
-	oldKubernetes := false
-
-	for _, cc := range cluster.Status.ClusterClaims {
-		if cc.Name == "kubeversion.open-cluster-management.io" {
-			k8sVersion, err := semver.ParseTolerant(cc.Value)
-			if err != nil {
-				continue
-			}
-
-			if k8sVersion.Major <= 1 && k8sVersion.Minor < 14 {
-				oldKubernetes = true
-			}
-
-			break
-		}
-	}
-
 	// Don't allow replica overrides for older Kubernetes
-	if oldKubernetes {
+	if policyaddon.IsOldKubernetes(cluster) {
 		values["replicas"] = 1
 	}
 

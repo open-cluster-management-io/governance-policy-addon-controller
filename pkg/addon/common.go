@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/blang/semver/v4"
 	"github.com/openshift/library-go/pkg/assets"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"github.com/openshift/library-go/pkg/operator/events"
@@ -211,4 +212,25 @@ func GetLogLevel(component string, level string) int8 {
 
 	// This is safe because we specified the int8 in ParseInt
 	return int8(logLevel)
+}
+
+// IsOldKubernetes returns a boolean for whether a cluster is running an older Kubernetes that
+// doesn't support current leader election methods.
+func IsOldKubernetes(cluster *clusterv1.ManagedCluster) bool {
+	for _, cc := range cluster.Status.ClusterClaims {
+		if cc.Name == "kubeversion.open-cluster-management.io" {
+			k8sVersion, err := semver.ParseTolerant(cc.Value)
+			if err != nil {
+				continue
+			}
+
+			if k8sVersion.Major <= 1 && k8sVersion.Minor < 14 {
+				return true
+			}
+
+			return false
+		}
+	}
+
+	return false
 }
