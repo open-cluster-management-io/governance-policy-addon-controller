@@ -1,6 +1,5 @@
 # Copyright Contributors to the Open Cluster Management project
 
-{{- if not .Values.onMulticlusterHub }}
 {{- if semverCompare "< 1.16.0" .Capabilities.KubeVersion.Version }}
 
 ---
@@ -484,5 +483,4 @@ status:
     plural: ""
   conditions: []
   storedVersions: []
-{{- end }}
 {{- end }}
