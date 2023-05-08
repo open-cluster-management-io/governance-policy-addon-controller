@@ -3,7 +3,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: ocm:{{ .Release.Namespace }}:{{ include "controller.fullname" . }}
+  name: ocm:{{ .Release.Namespace }}:{{ include "controller.fullname" . }}-0
   labels:
     app: {{ include "controller.fullname" . }}
     chart: {{ include "controller.chart" . }}
