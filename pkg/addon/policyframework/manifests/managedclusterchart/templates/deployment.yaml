@@ -51,6 +51,13 @@ spec:
         - mountPath: "/var/run/metrics-cert"
           name: metrics-cert
           readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
       {{- end }}
       - name: governance-policy-framework-addon
         image: "{{ .Values.global.imageOverrides.governance_policy_framework_addon }}"
