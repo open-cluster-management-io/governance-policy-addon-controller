@@ -51,6 +51,13 @@ spec:
         - mountPath: "/var/run/metrics-cert"
           name: metrics-cert
           readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
       {{- end }}
       - name: {{ .Chart.Name }}
         image: "{{ .Values.global.imageOverrides.config_policy_controller }}"
@@ -131,12 +138,6 @@ spec:
           containerPort: 8383
         {{- end }}
         resources: {{- toYaml .Values.resources | nindent 10 }}
-        allowPrivilegeEscalation: false
-        capabilities:
-          drop:
-          - ALL
-        privileged: false
-        readOnlyRootFilesystem: true
         volumeMounts:
           - name: klusterlet-config
             mountPath: /var/run/klusterlet
@@ -145,6 +146,13 @@ spec:
             name: managed-kubeconfig-secret
             readOnly: true
           {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
       volumes:
         - name: klusterlet-config
           secret:
