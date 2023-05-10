@@ -8,9 +8,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.6.1
-    {{- if .Values.onMulticlusterHub }}
-    "addon.open-cluster-management.io/deletion-orphan": ""
-    {{- end }}
+    {{ if .Values.onMulticlusterHub }}"addon.open-cluster-management.io/deletion-orphan": ""{{ end }}
   creationTimestamp: null
   name: policies.policy.open-cluster-management.io
   labels:
@@ -240,9 +238,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.6.1
-    {{- if .Values.onMulticlusterHub }}
-    "addon.open-cluster-management.io/deletion-orphan": ""
-    {{- end }}
+    {{ if .Values.onMulticlusterHub }}"addon.open-cluster-management.io/deletion-orphan": ""{{ end }}
   creationTimestamp: null
   name: policies.policy.open-cluster-management.io
   labels:
