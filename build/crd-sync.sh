@@ -29,15 +29,21 @@ done
     cp deploy/crds/policy.open-cluster-management.io_policies.yaml ../policy-crd-v1beta1.yaml
 )
 
-addLabelsExpression='.metadata.labels += {"addon.open-cluster-management.io/hosted-manifest-location": "hosting"}'
+addLocationLabel='.metadata.labels += {"addon.open-cluster-management.io/hosted-manifest-location": "hosting"}'
+addTemplateLabel='.metadata.labels += {"policy.open-cluster-management.io/policy-type": "template"}'
+
+# This annotation must *only* be added on the hub cluster. On others, we want the CRD removed. 
+# This kind of condition is not valid YAML on its own, so it has to be hacked in.
+addTempAnnotation='.metadata.annotations += {"SEDTARGET": "SEDTARGET"}'
+replaceAnnotation='s/SEDTARGET: SEDTARGET/{{ if .Values.onMulticlusterHub }}"addon.open-cluster-management.io\/deletion-orphan": ""{{ end }}/g'
 
 cat > pkg/addon/configpolicy/manifests/managedclusterchart/templates/policy.open-cluster-management.io_configurationpolicies_crd.yaml << EOF
 # Copyright Contributors to the Open Cluster Management project
 
 {{- if semverCompare "< 1.16.0" .Capabilities.KubeVersion.Version }}
-$(yq e "$addLabelsExpression" .go/config-policy-crd-v1beta1.yaml)
+$(yq e "$addLocationLabel | $addTemplateLabel" .go/config-policy-crd-v1beta1.yaml)
 {{ else }}
-$(yq e "$addLabelsExpression" .go/config-policy-crd-v1.yaml)
+$(yq e "$addLocationLabel" .go/config-policy-crd-v1.yaml)
 {{- end }}
 EOF
 
@@ -45,9 +51,9 @@ cat > pkg/addon/policyframework/manifests/managedclusterchart/templates/policy.o
 # Copyright Contributors to the Open Cluster Management project
 
 {{- if semverCompare "< 1.16.0" .Capabilities.KubeVersion.Version }}
-$(yq e "$addLabelsExpression" .go/policy-crd-v1beta1.yaml)
+$(yq e "$addTempAnnotation | $addLocationLabel" .go/policy-crd-v1beta1.yaml | sed -E "$replaceAnnotation")
 {{ else }}
-$(yq e "$addLabelsExpression" .go/policy-crd-v1.yaml)
+$(yq e "$addTempAnnotation | $addLocationLabel" .go/policy-crd-v1.yaml | sed -E "$replaceAnnotation")
 {{- end }}
 EOF
 
