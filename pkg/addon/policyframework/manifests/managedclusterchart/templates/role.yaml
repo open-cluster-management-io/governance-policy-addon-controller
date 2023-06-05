@@ -57,3 +57,10 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - policy.open-cluster-management.io
+  resources:
+  # uninstall does a bulk deletion of policies from the cluster namespace
+  - policies
+  verbs:
+  - deletecollection
