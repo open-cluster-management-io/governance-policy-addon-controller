@@ -1,5 +1,8 @@
 #! /bin/bash
 
+set -e
+set -o pipefail
+
 if [[ "${HOSTED_MODE}" == "true" ]]; then
   RUN_MODE=${RUN_MODE:-"create"}
 else
