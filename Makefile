@@ -102,7 +102,7 @@ gosec-scan: gosec ## Run a gosec scan against the code.
 
 .PHONY: build
 build: ## Build manager binary.
-	@build/common/scripts/gobuild.sh build/_output/bin/$(IMG) main.go
+	@go build -o build/_output/bin/$(IMG) main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
