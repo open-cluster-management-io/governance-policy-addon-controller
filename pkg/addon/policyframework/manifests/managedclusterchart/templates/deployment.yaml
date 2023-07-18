@@ -42,7 +42,7 @@ spec:
         - --secure-listen-address=0.0.0.0:8443
         - "--tls-cert-file=/var/run/metrics-cert/tls.crt"
         - "--tls-private-key-file=/var/run/metrics-cert/tls.key"
-        - "--tls-min-version=VersionTLS13"
+        - "--tls-min-version=VersionTLS12"
         ports:
         - name: metrics
           protocol: TCP
