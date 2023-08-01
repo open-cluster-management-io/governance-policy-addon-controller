@@ -88,6 +88,11 @@ func getValues(cluster *clusterv1.ManagedCluster,
 		},
 	}
 
+	// Don't just set it to the value in the label, it might be something like "auto-detect"
+	if cluster.Labels["vendor"] == "OpenShift" {
+		userValues.KubernetesDistribution = "OpenShift"
+	}
+
 	for _, cc := range cluster.Status.ClusterClaims {
 		if cc.Name == "product.open-cluster-management.io" {
 			userValues.KubernetesDistribution = cc.Value
