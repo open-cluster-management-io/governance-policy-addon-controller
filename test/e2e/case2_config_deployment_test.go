@@ -22,6 +22,8 @@ const (
 	case2DeploymentName           string = "config-policy-controller"
 	case2PodSelector              string = "app=config-policy-controller"
 	case2OpenShiftClusterClaim    string = "../resources/openshift_cluster_claim.yaml"
+	policyCrdName                 string = "policies.policy.open-cluster-management.io"
+	deletionOrphanAnnotationKey   string = "addon.open-cluster-management.io/deletion-orphan"
 )
 
 func verifyConfigPolicyDeployment(
@@ -175,7 +177,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 			installAddonInHostedMode(
 				logPrefix, hubClient, case2ManagedClusterAddOnName,
-				cluster.clusterName, hubClusterConfig.clusterName, installNamespace)
+				cluster.clusterName, hubClusterConfig.clusterName, installNamespace, nil)
 
 			// Use i+1 since the for loop ranges over a slice skipping first index
 			verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, i+1)
@@ -227,7 +229,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 				installAddonInHostedMode(
 					logPrefix, hubClient, case2ManagedClusterAddOnName,
-					cluster.clusterName, hubClusterConfig.clusterName, installNamespace)
+					cluster.clusterName, hubClusterConfig.clusterName, installNamespace, nil)
 
 				// Use i+1 since the for loop ranges over a slice skipping first index
 				verifyConfigPolicyDeployment(logPrefix, hubClient, cluster.clusterName, installNamespace, i+1)

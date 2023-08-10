@@ -78,7 +78,9 @@ var _ = Describe("Test framework deployment", func() {
 
 			installAddonInHostedMode(
 				logPrefix, hubClient, case1ManagedClusterAddOnName,
-				cluster.clusterName, hubClusterConfig.clusterName, installNamespace)
+				cluster.clusterName, hubClusterConfig.clusterName, installNamespace, map[string]string{
+					"addon.open-cluster-management.io/on-multicluster-hub": "true",
+				})
 
 			// Use i+1 since the for loop ranges over a slice skipping first index
 			checkContainersAndAvailability(cluster, i+1)
@@ -92,8 +94,16 @@ var _ = Describe("Test framework deployment", func() {
 			ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second)
 			defer cancel()
 
+			By("Test policy crd annotation when management + hub hosted mode")
+			crd, err := clientDynamic.Resource(gvrPolicyCrd).Get(
+				ctx, policyCrdName, metav1.GetOptions{},
+			)
+			Expect(err).ToNot(HaveOccurred())
+			_, ok := crd.GetAnnotations()[deletionOrphanAnnotationKey]
+			Expect(ok).Should(BeTrue())
+
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
-			err := hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
+			err = hubClient.Resource(gvrManagedClusterAddOn).Namespace(cluster.clusterName).Delete(
 				ctx, case1ManagedClusterAddOnName, metav1.DeleteOptions{},
 			)
 			Expect(err).ToNot(HaveOccurred())
@@ -130,7 +140,7 @@ var _ = Describe("Test framework deployment", func() {
 
 				installAddonInHostedMode(
 					logPrefix, hubClient, case1ManagedClusterAddOnName,
-					cluster.clusterName, hubClusterConfig.clusterName, installNamespace)
+					cluster.clusterName, hubClusterConfig.clusterName, installNamespace, nil)
 
 				// Use i+1 since the for loop ranges over a slice skipping first index
 				checkContainersAndAvailabilityInNamespace(cluster, i+1, installNamespace)
@@ -641,7 +651,8 @@ func startupProbeInCluster(clusterIdx int) bool {
 }
 
 func installAddonInHostedMode(
-	logPrefix string, hubClient dynamic.Interface, addOnName, clusterName, hostingClusterName, installNamespace string,
+	logPrefix string, hubClient dynamic.Interface, addOnName, clusterName,
+	hostingClusterName, installNamespace string, moreAnnotations map[string]string,
 ) {
 	By(logPrefix + "deploying the " + addOnName + " ManagedClusterAddOn in hosted mode")
 
@@ -658,6 +669,16 @@ func installAddonInHostedMode(
 			"installNamespace": installNamespace,
 		},
 	}}
+
+	if moreAnnotations != nil {
+		addonAnno := addon.GetAnnotations()
+		for k, v := range moreAnnotations {
+			addonAnno[k] = v
+		}
+
+		addon.SetAnnotations(addonAnno)
+	}
+
 	_, err := hubClient.Resource(gvrManagedClusterAddOn).Namespace(clusterName).Create(
 		context.TODO(), &addon, metav1.CreateOptions{},
 	)

@@ -41,6 +41,7 @@ var (
 	gvrSecret              schema.GroupVersionResource
 	gvrServiceMonitor      schema.GroupVersionResource
 	gvrService             schema.GroupVersionResource
+	gvrPolicyCrd           schema.GroupVersionResource
 	managedClusterList     []managedClusterConfig
 	clientDynamic          dynamic.Interface
 	hubKubeconfigInternal  []byte
@@ -77,6 +78,11 @@ var _ = BeforeSuite(func() {
 		Group: "monitoring.coreos.com", Version: "v1", Resource: "servicemonitors",
 	}
 	gvrService = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}
+	gvrPolicyCrd = schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1",
+		Resource: "customresourcedefinitions",
+	}
 	clientDynamic = NewKubeClientDynamic("", kubeconfigFilename+"1.kubeconfig", "")
 
 	var err error

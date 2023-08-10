@@ -74,8 +74,11 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			PkgLogLevel: -1,
 		},
 	}
+
+	annotations := addon.GetAnnotations()
+	hostingClusterName := annotations[addonapiv1alpha1.HostingClusterNameAnnotationKey]
 	// special case for local-cluster
-	if cluster.Name == "local-cluster" {
+	if cluster.Name == "local-cluster" || hostingClusterName == "local-cluster" {
 		userValues.OnMulticlusterHub = true
 	}
 
@@ -91,8 +94,6 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			break
 		}
 	}
-
-	annotations := addon.GetAnnotations()
 
 	if val, ok := annotations["addon.open-cluster-management.io/on-multicluster-hub"]; ok {
 		if strings.EqualFold(val, "true") {
