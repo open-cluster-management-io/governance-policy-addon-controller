@@ -43,7 +43,7 @@ spec:
           description: ConfigurationPolicySpec defines the desired state of ConfigurationPolicy
           properties:
             evaluationInterval:
-              description: Configures the minimum elapsed time before a ConfigurationPolicy is reevaluated
+              description: Configures the minimum elapsed time before a ConfigurationPolicy is reevaluated. If the policy spec is changed, or if the list of namespaces selected by the policy changes, the policy may be evaluated regardless of the settings here.
               properties:
                 compliant:
                   description: The minimum elapsed time before a ConfigurationPolicy is reevaluated when in the compliant state. Set this to "never" to disable reevaluation when in the compliant state.
@@ -318,7 +318,7 @@ spec:
                     - object-templates-raw
               properties:
                 evaluationInterval:
-                  description: Configures the minimum elapsed time before a ConfigurationPolicy is reevaluated
+                  description: Configures the minimum elapsed time before a ConfigurationPolicy is reevaluated. If the policy spec is changed, or if the list of namespaces selected by the policy changes, the policy may be evaluated regardless of the settings here.
                   properties:
                     compliant:
                       description: The minimum elapsed time before a ConfigurationPolicy is reevaluated when in the compliant state. Set this to "never" to disable reevaluation when in the compliant state.
