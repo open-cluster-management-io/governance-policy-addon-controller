@@ -135,13 +135,17 @@ func getValues(cluster *clusterv1.ManagedCluster,
 // be taken when adding settings to this function.
 func mandateValues(
 	cluster *clusterv1.ManagedCluster,
-	_ *addonapiv1alpha1.ManagedClusterAddOn,
+	mcao *addonapiv1alpha1.ManagedClusterAddOn,
 ) (addonfactory.Values, error) {
 	values := addonfactory.Values{}
 
 	// Don't allow replica overrides for older Kubernetes
 	if policyaddon.IsOldKubernetes(cluster) {
 		values["replicas"] = 1
+	}
+
+	if !mcao.DeletionTimestamp.IsZero() {
+		values["uninstallationAnnotation"] = "true"
 	}
 
 	return values, nil
