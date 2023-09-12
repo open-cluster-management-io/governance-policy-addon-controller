@@ -16,6 +16,7 @@ metadata:
     addon.open-cluster-management.io/addon-pre-delete: ""
 spec:
   restartPolicy: OnFailure
+  terminationGracePeriodSeconds: 0
   containers:
     - name: {{ .Chart.Name }}-uninstall
       image: "{{ .Values.global.imageOverrides.governance_policy_framework_addon }}"

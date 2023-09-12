@@ -13,6 +13,7 @@
 bin/
 vendor/
 build/_output/
+.vscode/
 
 *.kubeconfig
 *.kubeconfig-internal
