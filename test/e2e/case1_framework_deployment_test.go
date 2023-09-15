@@ -45,10 +45,6 @@ var _ = Describe("Test framework deployment", func() {
 
 			expectedArgs := []string{"--cluster-namespace=" + cluster.clusterName, "--leader-elect=false"}
 
-			if cluster.clusterType == "hub" {
-				expectedArgs = append(expectedArgs, "--disable-spec-sync=true")
-			}
-
 			checkArgs(cluster, expectedArgs...)
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
@@ -183,11 +179,7 @@ var _ = Describe("Test framework deployment", func() {
 		for i, cluster := range managedClusterList {
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 			By(logPrefix + "deploying the default framework managedclusteraddon")
-			if cluster.clusterType == "hub" {
-				Kubectl("apply", "-n", cluster.clusterName, "-f", case1hubAnnotationMCAOCR)
-			} else {
-				Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
-			}
+			Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
 
 			deploy := GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
@@ -219,11 +211,7 @@ var _ = Describe("Test framework deployment", func() {
 		for i, cluster := range managedClusterList {
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 			By(logPrefix + "deploying the default framework managedclusteraddon")
-			if cluster.clusterType == "hub" {
-				Kubectl("apply", "-n", cluster.clusterName, "-f", case1hubAnnotationMCAOCR)
-			} else {
-				Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
-			}
+			Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
 
 			deploy := GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
@@ -274,6 +262,20 @@ var _ = Describe("Test framework deployment", func() {
 
 		logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 
+		By(logPrefix + "removing the on-multicluster-hub annotation on the ManagedCluster object")
+		Kubectl(
+			"annotate", "ManagedCluster", cluster.clusterName, "addon.open-cluster-management.io/on-multicluster-hub-",
+		)
+
+		DeferCleanup(
+			Kubectl,
+			"annotate",
+			"ManagedCluster",
+			cluster.clusterName,
+			"--overwrite",
+			"addon.open-cluster-management.io/on-multicluster-hub=true",
+		)
+
 		By(logPrefix + "deploying the annotated framework managedclusteraddon")
 		Kubectl("apply", "-n", cluster.clusterName, "-f", case1hubValuesMCAOCR)
 		deploy := GetWithTimeout(
@@ -282,6 +284,8 @@ var _ = Describe("Test framework deployment", func() {
 		Expect(deploy).NotTo(BeNil())
 
 		checkContainersAndAvailability(cluster, 0)
+
+		checkArgs(cluster, "--disable-spec-sync=true")
 
 		// Adding this annotation and later verifying the cluster namespace is not removed checks
 		// that the helm values annotation and the logging level annotation are stackable.
@@ -303,11 +307,85 @@ var _ = Describe("Test framework deployment", func() {
 		}, 30, 5).Should(Not(BeNil()))
 	})
 
-	It("should use the onManagedClusterHub value set in the custom annotation", func() {
+	It("should use the onMulticlusterHub value set in the custom annotation on the ManagedCluster object", func() {
 		cluster := managedClusterList[0]
 		Expect(cluster.clusterType).To(Equal("hub"))
 
 		logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+
+		By(logPrefix + "relying on the annotated ManagedCluster object")
+		Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+		deploy := GetWithTimeout(
+			cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
+		)
+		Expect(deploy).NotTo(BeNil())
+
+		checkContainersAndAvailability(cluster, 0)
+
+		checkArgs(cluster, "--disable-spec-sync=true")
+
+		By(logPrefix + "forcing the spec sync to be enabled on the hub")
+		Kubectl(
+			"annotate",
+			"ManagedCluster",
+			cluster.clusterName,
+			"policy.open-cluster-management.io/sync-policies-on-multicluster-hub=true",
+		)
+		DeferCleanup(
+			Kubectl,
+			"annotate",
+			"ManagedCluster",
+			cluster.clusterName,
+			"policy.open-cluster-management.io/sync-policies-on-multicluster-hub-",
+		)
+
+		// This is a hack to trigger a reconcile.
+		Kubectl(
+			"-n",
+			cluster.clusterName,
+			"annotate",
+			"ManagedClusterAddOn",
+			case1ManagedClusterAddOnName,
+			"trigger-reconcile="+time.Now().Format(time.RFC3339),
+		)
+
+		Eventually(func(g Gomega) {
+			deploy = GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
+			)
+			g.Expect(deploy).NotTo(BeNil())
+
+			containers, _, _ := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "containers")
+			g.Expect(containers).To(HaveLen(1))
+
+			args, ok := containers[0].(map[string]interface{})["args"].([]interface{})
+			g.Expect(ok).To(BeTrue())
+
+			for _, arg := range args {
+				g.Expect(arg).ToNot(Equal("--disable-spec-sync=true"))
+			}
+		}, 60, 5).Should(Succeed())
+	})
+
+	It("should use the onMulticlusterHub value set in the custom annotation", func() {
+		cluster := managedClusterList[0]
+		Expect(cluster.clusterType).To(Equal("hub"))
+
+		logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+
+		By(logPrefix + "removing the on-multicluster-hub annotation on the ManagedCluster object")
+		Kubectl(
+			"annotate", "ManagedCluster", cluster.clusterName, "addon.open-cluster-management.io/on-multicluster-hub-",
+		)
+
+		DeferCleanup(
+			Kubectl,
+			"annotate",
+			"ManagedCluster",
+			cluster.clusterName,
+			"--overwrite",
+			"addon.open-cluster-management.io/on-multicluster-hub=true",
+		)
 
 		By(logPrefix + "deploying the annotated framework managedclusteraddon")
 		Kubectl("apply", "-n", cluster.clusterName, "-f", case1hubAnnotationMCAOCR)
@@ -317,6 +395,8 @@ var _ = Describe("Test framework deployment", func() {
 		Expect(deploy).NotTo(BeNil())
 
 		checkContainersAndAvailability(cluster, 0)
+
+		checkArgs(cluster, "--disable-spec-sync=true")
 
 		// Adding this annotation and later verifying the cluster namespace is not removed checks
 		// that the multiclusterhub annotation and the logging level annotation are stackable.
@@ -342,11 +422,8 @@ var _ = Describe("Test framework deployment", func() {
 		for _, cluster := range managedClusterList {
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 			By(logPrefix + "deploying the default framework managedclusteraddon")
-			if cluster.clusterType == "hub" {
-				Kubectl("apply", "-n", cluster.clusterName, "-f", case1hubAnnotationMCAOCR)
-			} else {
-				Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
-			}
+			Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+
 			deploy := GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
 			)
@@ -387,11 +464,8 @@ var _ = Describe("Test framework deployment", func() {
 		for _, cluster := range managedClusterList {
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 			By(logPrefix + "deploying the default framework managedclusteraddon")
-			if cluster.clusterType == "hub" {
-				Kubectl("apply", "-n", cluster.clusterName, "-f", case1hubAnnotationMCAOCR)
-			} else {
-				Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
-			}
+			Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+
 			deploy := GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
 			)

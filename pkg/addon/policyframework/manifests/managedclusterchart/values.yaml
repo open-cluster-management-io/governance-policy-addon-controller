@@ -11,6 +11,7 @@ args:
   logLevel: 0
   pkgLogLevel: -1
   logEncoder: console
+  syncPoliciesOnMulticlusterHub: false
 hubKubeConfigSecret: governance-policy-framework-hub-kubeconfig
 
 resources:

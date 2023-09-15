@@ -189,12 +189,8 @@ kind-bootstrap-delete-clusters: ## Delete clusters created from a bootstrap targ
 kind-bootstrap-deploy-addons: ## Deploy addons to bootstrap clusters.
 	RUN_MODE="deploy-addons" ./build/manage-clusters.sh
 
-.PHONY: kind-deploy-addons-hub
-kind-deploy-addons-hub: kind-deploy-addons-managed ## Apply ManagedClusterAddon manifests to hub to deploy governance addons to a managed hub cluster.
-	KUBECONFIG=$(KIND_KUBECONFIG) kubectl annotate ManagedClusterAddon governance-policy-framework addon.open-cluster-management.io/on-multicluster-hub='true' -n $(MANAGED_CLUSTER_NAME)
-
-.PHONY: kind-deploy-addons-managed
-kind-deploy-addons-managed: ## Apply ManagedClusterAddon manifests to hub to deploy governance addons to a managed cluster.
+.PHONY: kind-deploy-addons
+kind-deploy-addons: ## Apply ManagedClusterAddon manifests to hub to deploy governance addons to a managed cluster.
 	@echo "Creating ManagedClusterAddon for managed cluster $(MANAGED_CLUSTER_NAME)"
 	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f test/resources/config_policy_addon_cr.yaml -n $(MANAGED_CLUSTER_NAME)
 	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f test/resources/framework_addon_cr.yaml -n $(MANAGED_CLUSTER_NAME)

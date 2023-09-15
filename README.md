@@ -79,12 +79,16 @@ of that annotation makes it difficult to apply multiple changes - separate `kube
 commands will override each other, as opposed to being merged.
 
 To address this issue, there are some separate annotations that can be applied independently:
+
 - `addon.open-cluster-management.io/on-multicluster-hub` - set to "true" on the
-governance-policy-framework addon when deploying it on a self-managed hub. It has no effect on
-other addons.
+  governance-policy-framework addon when deploying it on a self-managed hub. It has no effect on
+  other addons. Alternatively, this annotation can be set on the hub's ManagedCluster object.
 - `log-level` - set to an integer to adjust the logging levels on the addon. A higher number will
-generate more logs. Note that logs from libraries used by the addon will be 2 levels below this
-setting; to get a `v=5` log message from a library, annotate the addon with `log-level=7`.
+  generate more logs. Note that logs from libraries used by the addon will be 2 levels below this
+  setting; to get a `v=5` log message from a library, annotate the addon with `log-level=7`.
+- `policy.open-cluster-management.io/sync-policies-on-multicluster-hub` - set this to "true" only
+  when the hub is imported by another hub. This is a very advanced use-case and should almost
+  never be used. Alternatively, this annotation can be set on the hub's ManagedCluster object.
 
 ## Getting Started - Development
 

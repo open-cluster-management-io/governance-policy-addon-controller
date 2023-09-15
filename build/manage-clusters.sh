@@ -42,9 +42,14 @@ case ${RUN_MODE} in
     KIND_VERSION="${HUB_KIND_VERSION}" make kind-prep-ocm
     ;;
   deploy-addons)
-    make kind-deploy-addons-hub
+    make kind-deploy-addons
     ;;
 esac
+
+if [[ "${RUN_MODE}" == "create" || "${RUN_MODE}" == "create-dev" ]]; then
+  echo Annotating the ManagedCluster object to indicate it is a hub
+  KUBECONFIG="$PWD/$KIND_NAME.kubeconfig" kubectl annotate ManagedCluster $MANAGED_CLUSTER_NAME --overwrite "addon.open-cluster-management.io/on-multicluster-hub=true"
+fi
 
 # Deploy a variable number of managed clusters starting with cluster2
 for i in $(seq 2 $((MANAGED_CLUSTER_COUNT+1))); do
@@ -72,7 +77,7 @@ for i in $(seq 2 $((MANAGED_CLUSTER_COUNT+1))); do
     deploy-addons)
       # ManagedClusterAddon is applied to the hub
       export KIND_NAME="${KIND_PREFIX}1"
-      make kind-deploy-addons-managed
+      make kind-deploy-addons
       ;;
   esac
 done

@@ -23,6 +23,9 @@ import (
 const (
 	addonName                   = "governance-policy-framework"
 	prometheusEnabledAnnotation = "prometheus-metrics-enabled"
+	onMulticlusterHubAnnotation = "addon.open-cluster-management.io/on-multicluster-hub"
+	// Should only be set when the hub cluster is imported in a global hub
+	syncPoliciesOnMulticlusterHubAnnotation = "policy.open-cluster-management.io/sync-policies-on-multicluster-hub"
 )
 
 var log = ctrl.Log.WithName("policyframework")
@@ -41,12 +44,17 @@ var agentPermissionFiles = []string{
 	"manifests/hubpermissions/rolebinding.yaml",
 }
 
+type UserArgs struct {
+	policyaddon.UserArgs
+	SyncPoliciesOnMulticlusterHub bool `json:"syncPoliciesOnMulticlusterHub,omitempty"`
+}
+
 type userValues struct {
 	OnMulticlusterHub      bool                     `json:"onMulticlusterHub"`
 	GlobalValues           policyaddon.GlobalValues `json:"global"`
 	KubernetesDistribution string                   `json:"kubernetesDistribution"`
 	Prometheus             map[string]interface{}   `json:"prometheus"`
-	UserArgs               policyaddon.UserArgs     `json:"args"`
+	UserArgs               UserArgs                 `json:"args"`
 }
 
 func getValues(cluster *clusterv1.ManagedCluster,
@@ -68,10 +76,13 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			},
 		},
 		Prometheus: map[string]interface{}{},
-		UserArgs: policyaddon.UserArgs{
-			LogEncoder:  "console",
-			LogLevel:    0,
-			PkgLogLevel: -1,
+		UserArgs: UserArgs{
+			UserArgs: policyaddon.UserArgs{
+				LogEncoder:  "console",
+				LogLevel:    0,
+				PkgLogLevel: -1,
+			},
+			SyncPoliciesOnMulticlusterHub: false,
 		},
 	}
 
@@ -95,12 +106,22 @@ func getValues(cluster *clusterv1.ManagedCluster,
 		}
 	}
 
-	if val, ok := annotations["addon.open-cluster-management.io/on-multicluster-hub"]; ok {
-		if strings.EqualFold(val, "true") {
-			userValues.OnMulticlusterHub = true
-		} else if strings.EqualFold(val, "false") {
-			// the special case can still be overridden by this annotation
-			userValues.OnMulticlusterHub = false
+	// The ManagedClusterAddOn's annotation has higher priority, though it'd be quite unusual to set conflicting values.
+	for _, annotations := range []map[string]string{cluster.GetAnnotations(), annotations} {
+		if val, ok := annotations[onMulticlusterHubAnnotation]; ok {
+			if strings.EqualFold(val, "true") {
+				userValues.OnMulticlusterHub = true
+			} else if strings.EqualFold(val, "false") {
+				userValues.OnMulticlusterHub = false
+			}
+		}
+
+		if val, ok := annotations[syncPoliciesOnMulticlusterHubAnnotation]; ok {
+			if strings.EqualFold(val, "true") {
+				userValues.UserArgs.SyncPoliciesOnMulticlusterHub = true
+			} else if strings.EqualFold(val, "false") {
+				userValues.UserArgs.SyncPoliciesOnMulticlusterHub = false
+			}
 		}
 	}
 
