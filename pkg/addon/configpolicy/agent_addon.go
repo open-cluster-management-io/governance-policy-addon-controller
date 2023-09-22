@@ -103,9 +103,6 @@ func getValues(cluster *clusterv1.ManagedCluster,
 
 	// Enable Prometheus metrics by default on OpenShift
 	userValues.Prometheus["enabled"] = userValues.KubernetesDistribution == "OpenShift"
-	if userValues.KubernetesDistribution == "OpenShift" {
-		userValues.Prometheus["serviceMonitor"] = map[string]interface{}{"namespace": "openshift-monitoring"}
-	}
 
 	annotations := addon.GetAnnotations()
 
