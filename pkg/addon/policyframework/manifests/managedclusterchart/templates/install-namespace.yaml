@@ -8,6 +8,9 @@ metadata:
   labels:
     addon.open-cluster-management.io/namespace: "true"
     addon.open-cluster-management.io/hosted-manifest-location: hosting
+    {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+    openshift.io/cluster-monitoring: "true"
+    {{- end }}
   {{- if eq (.Release.Namespace | trimPrefix "klusterlet-") .Values.clusterName }}
   annotations:
     "addon.open-cluster-management.io/deletion-orphan": ""

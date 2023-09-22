@@ -44,7 +44,7 @@ prometheus:
   # This will be automatically enabled if it's an OpenShift cluster.
   enabled: false
   serviceMonitor:
-    # This will be automatically set to openshift-monitoring if it's an OpenShift cluster.
+    # This will be automatically set to the controller's namespace.
     namespace: null
 
 global: 
