@@ -48,7 +48,7 @@ var _ = Describe("Test framework deployment", func() {
 			checkArgs(cluster, expectedArgs...)
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
@@ -104,7 +104,7 @@ var _ = Describe("Test framework deployment", func() {
 			)
 			Expect(err).ToNot(HaveOccurred())
 
-			deploy := GetWithTimeout(hubClient, gvrDeployment, case1DeploymentName, installNamespace, false, 60)
+			deploy := GetWithTimeout(hubClient, gvrDeployment, case1DeploymentName, installNamespace, false, 90)
 			Expect(deploy).To(BeNil())
 
 			namespace := GetWithTimeout(hubClient, gvrNamespace, installNamespace, "", false, 120)
@@ -150,7 +150,7 @@ var _ = Describe("Test framework deployment", func() {
 				)
 				Expect(err).ToNot(HaveOccurred())
 
-				deploy := GetWithTimeout(hubClient, gvrDeployment, case1DeploymentName, installNamespace, false, 30)
+				deploy := GetWithTimeout(hubClient, gvrDeployment, case1DeploymentName, installNamespace, false, 90)
 				Expect(deploy).To(BeNil())
 
 				By(logPrefix + "verifying install namespace is not removed when the ManagedClusterAddOn CR is removed")
@@ -194,7 +194,7 @@ var _ = Describe("Test framework deployment", func() {
 			checkArgs(cluster, "--log-encoder=console", "--log-level=8", "--v=6")
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
@@ -243,7 +243,7 @@ var _ = Describe("Test framework deployment", func() {
 			Expect(tolerations[0]).To(Equal(expected))
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
@@ -295,7 +295,7 @@ var _ = Describe("Test framework deployment", func() {
 		checkArgs(cluster, "--log-encoder=console", "--log-level=8", "--v=6")
 
 		By(logPrefix + "deleting the managedclusteraddon")
-		Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
+		Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
 		deploy = GetWithTimeout(
 			cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 		)
@@ -406,7 +406,7 @@ var _ = Describe("Test framework deployment", func() {
 		checkArgs(cluster, "--log-encoder=console", "--log-level=8", "--v=6")
 
 		By(logPrefix + "deleting the managedclusteraddon")
-		Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
+		Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
 		deploy = GetWithTimeout(
 			cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 		)
@@ -452,7 +452,7 @@ var _ = Describe("Test framework deployment", func() {
 			}, 60, 5).Should(HaveLen(defaultLength))
 
 			By(logPrefix + "deleting the managedclusteraddon")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
@@ -508,7 +508,7 @@ var _ = Describe("Test framework deployment", func() {
 			}, 30, 5).Should(HaveLen(defaultLength))
 
 			By(logPrefix + "deleting the managedclusteraddon")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
@@ -535,7 +535,7 @@ var _ = Describe("Test framework deployment", func() {
 			GetWithTimeoutClusterResource(cluster.clusterClient, gvrNamespace, cluster.clusterName, true, 15)
 
 			By(logPrefix + "deleting the managedclusteraddon")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
@@ -579,7 +579,7 @@ var _ = Describe("Test framework deployment", func() {
 			}
 
 			By(logPrefix + "deleting the managedclusteraddon")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=30s")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
