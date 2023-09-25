@@ -46,7 +46,7 @@ func Kubectl(args ...string) string {
 		// in case of failure, print command output (including error)
 		GinkgoWriter.Printf("output\n======\n%s\n", stdout.String())
 		GinkgoWriter.Printf("error\n======\n%s\n", stderr.String())
-		Fail(fmt.Sprintf("Error: %v", err))
+		Fail(fmt.Sprintf("Error: %v", err), 1)
 	}
 
 	return stdout.String()
