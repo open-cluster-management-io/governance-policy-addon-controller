@@ -1,6 +1,6 @@
 # Copyright Contributors to the Open Cluster Management project
 
-{{- if and (not .Values.onMulticlusterHub) (ne .Values.installMode "Hosted") }}
+{{- if or (and (not .Values.onMulticlusterHub) (ne .Values.installMode "Hosted")) (and .Values.onMulticlusterHub .Values.args.syncPoliciesOnMulticlusterHub) }}
 apiVersion: v1
 kind: Namespace
 metadata:

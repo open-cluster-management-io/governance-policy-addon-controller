@@ -331,13 +331,6 @@ var _ = Describe("Test framework deployment", func() {
 			cluster.clusterName,
 			"policy.open-cluster-management.io/sync-policies-on-multicluster-hub=true",
 		)
-		DeferCleanup(
-			Kubectl,
-			"annotate",
-			"ManagedCluster",
-			cluster.clusterName,
-			"policy.open-cluster-management.io/sync-policies-on-multicluster-hub-",
-		)
 
 		// This is a hack to trigger a reconcile.
 		Kubectl(
@@ -347,7 +340,10 @@ var _ = Describe("Test framework deployment", func() {
 			"ManagedClusterAddOn",
 			case1ManagedClusterAddOnName,
 			"trigger-reconcile="+time.Now().Format(time.RFC3339),
+			"--overwrite",
 		)
+
+		By(logPrefix + "verifying that the spec sync is not disabled")
 
 		Eventually(func(g Gomega) {
 			deploy = GetWithTimeout(
@@ -365,6 +361,52 @@ var _ = Describe("Test framework deployment", func() {
 				g.Expect(arg).ToNot(Equal("--disable-spec-sync=true"))
 			}
 		}, 60, 5).Should(Succeed())
+
+		By(logPrefix + "cleaning up")
+
+		Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "policy-addon-pause=true")
+
+		// This is hacky but this sets the ManifestWork to orphan everything so that we can remove the
+		// policy.open-cluster-management.io/sync-policies-on-multicluster-hub annotation and not have it delete
+		// the cluster namespace. This will get reset to SelectivelyOrphan when the addon controller is reconciled
+		// below.
+		Eventually(func(g Gomega) {
+			mw := GetWithTimeout(clientDynamic, gvrManifestWork, case1MWName, cluster.clusterName, true, 15)
+
+			err := unstructured.SetNestedField(mw.Object, "Orphan", "spec", "deleteOption", "propagationPolicy")
+			g.Expect(err).ToNot(HaveOccurred())
+
+			_, err = cluster.clusterClient.Resource(gvrManifestWork).Namespace(cluster.clusterName).Update(
+				context.TODO(), mw, metav1.UpdateOptions{},
+			)
+			g.Expect(err).ToNot(HaveOccurred())
+		}, 30, 5).Should(Succeed())
+
+		Kubectl(
+			"annotate",
+			"ManagedCluster",
+			cluster.clusterName,
+			"policy.open-cluster-management.io/sync-policies-on-multicluster-hub-",
+		)
+
+		Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "policy-addon-pause-")
+
+		// Wait for the ManifestWork to be updated to not reference the cluster namespace.
+		Eventually(func(g Gomega) {
+			mw := GetWithTimeout(clientDynamic, gvrManifestWork, case1MWName, cluster.clusterName, true, 15)
+			manifests, _, _ := unstructured.NestedSlice(mw.Object, "spec", "workload", "manifests")
+
+			for _, manifest := range manifests {
+				g.Expect(manifest.(map[string]interface{})["kind"]).ToNot(Equal("Namespace"))
+			}
+		}, 30, 5).Should(Succeed())
+
+		By(logPrefix + "deleting the managedclusteraddon")
+		Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
+		deploy = GetWithTimeout(
+			cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
+		)
+		Expect(deploy).To(BeNil())
 	})
 
 	It("should use the onMulticlusterHub value set in the custom annotation", func() {
