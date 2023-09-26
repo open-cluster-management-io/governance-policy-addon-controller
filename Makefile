@@ -65,6 +65,7 @@ clean: ## Clean up generated files.
 	-rm *.kubeconfig
 	-rm *.kubeconfig-internal
 	-rm -r vendor/
+	-rm -rf .go/*
 
 ##@ Development
 
