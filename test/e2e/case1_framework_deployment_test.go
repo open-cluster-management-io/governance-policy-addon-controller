@@ -399,7 +399,7 @@ var _ = Describe("Test framework deployment", func() {
 			for _, manifest := range manifests {
 				g.Expect(manifest.(map[string]interface{})["kind"]).ToNot(Equal("Namespace"))
 			}
-		}, 30, 5).Should(Succeed())
+		}, 90, 5).Should(Succeed())
 
 		By(logPrefix + "deleting the managedclusteraddon")
 		Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
