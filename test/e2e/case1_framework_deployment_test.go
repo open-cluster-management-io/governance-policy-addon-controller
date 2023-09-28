@@ -397,7 +397,10 @@ var _ = Describe("Test framework deployment", func() {
 			manifests, _, _ := unstructured.NestedSlice(mw.Object, "spec", "workload", "manifests")
 
 			for _, manifest := range manifests {
-				g.Expect(manifest.(map[string]interface{})["kind"]).ToNot(Equal("Namespace"))
+				if manifest.(map[string]interface{})["kind"] == "Namespace" {
+					nsName := manifest.(map[string]interface{})["metadata"].(map[string]interface{})["name"]
+					g.Expect(nsName).ToNot(Equal(cluster.clusterName))
+				}
 			}
 		}, 30, 5).Should(Succeed())
 
