@@ -43,7 +43,10 @@ var _ = Describe("Test framework deployment", func() {
 			// Use i+1 since the for loop ranges over a slice skipping first index
 			checkContainersAndAvailability(cluster, i+1)
 
-			expectedArgs := []string{"--cluster-namespace=" + cluster.clusterName, "--leader-elect=false"}
+			expectedArgs := []string{
+				"--cluster-namespace=" + cluster.clusterName, "--leader-elect=false",
+				"--evaluation-concurrency=2", "--client-max-qps=30", "--client-burst=45",
+			}
 
 			checkArgs(cluster, expectedArgs...)
 
@@ -175,7 +178,7 @@ var _ = Describe("Test framework deployment", func() {
 			Kubectl("delete", "-f", case1ClusterManagementAddOnCR, "--timeout=15s")
 		})
 
-	It("should create a framework deployment with custom logging levels", func() {
+	It("should create a framework deployment with customizations", func() {
 		for i, cluster := range managedClusterList {
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 			By(logPrefix + "deploying the default framework managedclusteraddon")
@@ -191,7 +194,18 @@ var _ = Describe("Test framework deployment", func() {
 			By(logPrefix + "annotating the managedclusteraddon with the " + loggingLevelAnnotation + " annotation")
 			Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, loggingLevelAnnotation)
 
-			checkArgs(cluster, "--log-encoder=console", "--log-level=8", "--v=6")
+			By(
+				logPrefix + "annotating the managedclusteraddon with the " + evaluationConcurrencyAnnotation +
+					" annotation",
+			)
+			Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR,
+				evaluationConcurrencyAnnotation)
+
+			By(logPrefix + "annotating the managedclusteraddon with the " + clientQPSAnnotation + " annotation")
+			Kubectl("annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, clientQPSAnnotation)
+
+			checkArgs(cluster, "--log-encoder=console", "--log-level=8", "--v=6",
+				"--evaluation-concurrency=5", "--client-max-qps=50")
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
 			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")

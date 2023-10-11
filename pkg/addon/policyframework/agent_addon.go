@@ -21,9 +21,12 @@ import (
 )
 
 const (
-	addonName                   = "governance-policy-framework"
-	prometheusEnabledAnnotation = "prometheus-metrics-enabled"
-	onMulticlusterHubAnnotation = "addon.open-cluster-management.io/on-multicluster-hub"
+	addonName                       = "governance-policy-framework"
+	evaluationConcurrencyAnnotation = "policy-evaluation-concurrency"
+	clientQPSAnnotation             = "client-qps"
+	clientBurstAnnotation           = "client-burst"
+	prometheusEnabledAnnotation     = "prometheus-metrics-enabled"
+	onMulticlusterHubAnnotation     = "addon.open-cluster-management.io/on-multicluster-hub"
 	// Should only be set when the hub cluster is imported in a global hub
 	syncPoliciesOnMulticlusterHubAnnotation = "policy.open-cluster-management.io/sync-policies-on-multicluster-hub"
 )
@@ -46,7 +49,10 @@ var agentPermissionFiles = []string{
 
 type UserArgs struct {
 	policyaddon.UserArgs
-	SyncPoliciesOnMulticlusterHub bool `json:"syncPoliciesOnMulticlusterHub,omitempty"`
+	SyncPoliciesOnMulticlusterHub bool  `json:"syncPoliciesOnMulticlusterHub,omitempty"`
+	EvaluationConcurrency         uint8 `json:"evaluationConcurrency,omitempty"`
+	ClientQPS                     uint8 `json:"clientQPS,omitempty"` //nolint:tagliatelle
+	ClientBurst                   uint8 `json:"clientBurst,omitempty"`
 }
 
 type userValues struct {
@@ -83,6 +89,10 @@ func getValues(cluster *clusterv1.ManagedCluster,
 				PkgLogLevel: -1,
 			},
 			SyncPoliciesOnMulticlusterHub: false,
+			// Defaults from `values.yaml` will be used if these stay at 0.
+			EvaluationConcurrency: 0,
+			ClientQPS:             0,
+			ClientBurst:           0,
 		},
 	}
 
@@ -129,6 +139,50 @@ func getValues(cluster *clusterv1.ManagedCluster,
 		logLevel := policyaddon.GetLogLevel(addonName, val)
 		userValues.UserArgs.LogLevel = logLevel
 		userValues.UserArgs.PkgLogLevel = logLevel - 2
+	}
+
+	if val, ok := annotations[evaluationConcurrencyAnnotation]; ok {
+		value, err := strconv.ParseUint(val, 10, 8)
+		if err != nil {
+			log.Error(err, fmt.Sprintf(
+				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
+				evaluationConcurrencyAnnotation, val, addonName, userValues.UserArgs.EvaluationConcurrency),
+			)
+		} else {
+			// This is safe because we specified the uint8 in ParseUint
+			userValues.UserArgs.EvaluationConcurrency = uint8(value)
+		}
+	}
+
+	if val, ok := annotations[clientQPSAnnotation]; ok {
+		value, err := strconv.ParseUint(val, 10, 8)
+		if err != nil {
+			log.Error(err, fmt.Sprintf(
+				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
+				clientQPSAnnotation, val, addonName, userValues.UserArgs.ClientQPS),
+			)
+		} else {
+			// This is safe because we specified the uint8 in ParseUint
+			userValues.UserArgs.ClientQPS = uint8(value)
+		}
+	} else { // not set explicitly
+		userValues.UserArgs.ClientQPS = userValues.UserArgs.EvaluationConcurrency * 15
+	}
+
+	if val, ok := annotations[clientBurstAnnotation]; ok {
+		value, err := strconv.ParseUint(val, 10, 8)
+		if err != nil {
+			log.Error(err, fmt.Sprintf(
+				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
+				clientBurstAnnotation, val, addonName, userValues.UserArgs.ClientBurst),
+			)
+		} else {
+			// This is safe because we specified the uint8 in ParseUint
+			userValues.UserArgs.ClientBurst = uint8(value)
+		}
+	} else if userValues.UserArgs.EvaluationConcurrency != 0 {
+		// only scale with concurrency if concurrency was set.
+		userValues.UserArgs.ClientBurst = userValues.UserArgs.EvaluationConcurrency*22 + 1
 	}
 
 	// Enable Prometheus metrics by default on OpenShift
