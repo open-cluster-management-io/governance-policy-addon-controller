@@ -74,6 +74,9 @@ spec:
           - --log-encoder={{ .Values.args.logEncoder }}
           - --log-level={{ .Values.args.logLevel }}
           - --v={{ .Values.args.pkgLogLevel }}
+          - --evaluation-concurrency={{ .Values.args.evaluationConcurrency }}
+          - --client-max-qps={{ .Values.args.clientQPS }}
+          - --client-burst={{ .Values.args.clientBurst }}
           {{- if and .Values.onMulticlusterHub (ne .Values.installMode "Hosted") (not .Values.args.syncPoliciesOnMulticlusterHub) }}
           - --disable-spec-sync=true
           {{- end }}

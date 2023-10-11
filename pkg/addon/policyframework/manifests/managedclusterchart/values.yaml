@@ -11,6 +11,9 @@ args:
   logLevel: 0
   pkgLogLevel: -1
   logEncoder: console
+  evaluationConcurrency: 2
+  clientQPS: 30
+  clientBurst: 45
   syncPoliciesOnMulticlusterHub: false
 hubKubeConfigSecret: governance-policy-framework-hub-kubeconfig
 
