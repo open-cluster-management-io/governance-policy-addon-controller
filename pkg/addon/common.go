@@ -200,8 +200,12 @@ func (pa *PolicyAgentAddon) Manifests(
 func GetLogLevel(component string, level string) int8 {
 	logDefault := int8(0)
 
+	if level == "error" {
+		return int8(-1)
+	}
+
 	logLevel, err := strconv.ParseInt(level, 10, 8)
-	if err != nil || logLevel < 0 {
+	if err != nil || logLevel < -1 {
 		log.Error(err, fmt.Sprintf(
 			"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
 			PolicyLogLevelAnnotation, level, component, logDefault),

@@ -72,7 +72,7 @@ spec:
           - '--leader-elect=false'
           {{- end }}
           - --log-encoder={{ .Values.args.logEncoder }}
-          - --log-level={{ .Values.args.logLevel }}
+          - --log-level={{ if eq (toString .Values.args.logLevel) "-1" }}error{{ else }}{{ .Values.args.logLevel }}{{end}}
           - --v={{ .Values.args.pkgLogLevel }}
           {{- if and .Values.onMulticlusterHub (ne .Values.installMode "Hosted") (not .Values.args.syncPoliciesOnMulticlusterHub) }}
           - --disable-spec-sync=true
