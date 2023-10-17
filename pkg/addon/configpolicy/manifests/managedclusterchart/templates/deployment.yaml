@@ -73,7 +73,7 @@ spec:
           - '--leader-elect=false'
           {{- end }}
           - --log-encoder={{ .Values.args.logEncoder }}
-          - --log-level={{ .Values.args.logLevel }}
+          - --log-level={{ if eq (toString .Values.args.logLevel) "-1" }}error{{ else }}{{ .Values.args.logLevel }}{{end}}
           - --v={{ .Values.args.pkgLogLevel }}
           - --evaluation-concurrency={{ .Values.args.evaluationConcurrency }}
           - --client-max-qps={{ .Values.args.clientQPS }}
