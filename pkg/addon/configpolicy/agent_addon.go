@@ -11,6 +11,7 @@ import (
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
+	"open-cluster-management.io/addon-framework/pkg/utils"
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	addonv1alpha1client "open-cluster-management.io/api/client/addon/clientset/versioned"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
@@ -204,7 +205,7 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 	}
 
 	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
-		WithConfigGVRs(addonfactory.AddOnDeploymentConfigGVR).
+		WithConfigGVRs(utils.AddOnDeploymentConfigGVR).
 		WithGetValuesFuncs(
 			addonfactory.GetAddOnDeploymentConfigValues(
 				addonfactory.NewAddOnDeploymentConfigGetter(addonClient),

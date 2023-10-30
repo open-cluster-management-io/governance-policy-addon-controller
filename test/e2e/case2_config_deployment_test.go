@@ -16,14 +16,15 @@ import (
 )
 
 const (
-	case2ManagedClusterAddOnName  string = "config-policy-controller"
-	case2ManagedClusterAddOnCR    string = "../resources/config_policy_addon_cr.yaml"
-	case2ClusterManagementAddOnCR string = "../resources/config_policy_clustermanagementaddon.yaml"
-	case2DeploymentName           string = "config-policy-controller"
-	case2PodSelector              string = "app=config-policy-controller"
-	case2OpenShiftClusterClaim    string = "../resources/openshift_cluster_claim.yaml"
-	policyCrdName                 string = "policies.policy.open-cluster-management.io"
-	deletionOrphanAnnotationKey   string = "addon.open-cluster-management.io/deletion-orphan"
+	case2ManagedClusterAddOnName         string = "config-policy-controller"
+	case2ManagedClusterAddOnCR           string = "../resources/config_policy_addon_cr.yaml"
+	case2ClusterManagementAddOnCRDefault string = "../resources/config_policy_clustermanagementaddon.yaml"
+	case2ClusterManagementAddOnCR        string = "../resources/config_policy_clustermanagementaddon_config.yaml"
+	case2DeploymentName                  string = "config-policy-controller"
+	case2PodSelector                     string = "app=config-policy-controller"
+	case2OpenShiftClusterClaim           string = "../resources/openshift_cluster_claim.yaml"
+	policyCrdName                        string = "policies.policy.open-cluster-management.io"
+	deletionOrphanAnnotationKey          string = "addon.open-cluster-management.io/deletion-orphan"
 )
 
 func verifyConfigPolicyDeployment(
@@ -88,7 +89,17 @@ func verifyConfigPolicyDeployment(
 	}, 240, 1).Should(Equal(true))
 }
 
-var _ = Describe("Test config-policy-controller deployment", func() {
+var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
+	BeforeAll(func() {
+		By("Deploying the default config-policy-controller ClusterManagementAddon to the hub cluster")
+		Kubectl("apply", "-f", case2ClusterManagementAddOnCRDefault)
+	})
+
+	AfterAll(func() {
+		By("Deleting the default config-policy-controller ClusterManagementAddon from the hub cluster")
+		Kubectl("delete", "-f", case2ClusterManagementAddOnCRDefault)
+	})
+
 	It("should create the default config-policy-controller deployment on the managed cluster", func() {
 		for i, cluster := range managedClusterList {
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
@@ -115,8 +126,8 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 	It("should create a config-policy-controller deployment with node selector on the managed cluster", func() {
 		By("Creating the AddOnDeploymentConfig")
-		Kubectl("apply", "-f", addOnDeplomentConfigCR)
-		By("Creating the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
+		Kubectl("apply", "-f", addOnDeploymentConfigCR)
+		By("Applying the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
 		Kubectl("apply", "-f", case2ClusterManagementAddOnCR)
 
 		for i, cluster := range managedClusterList {
@@ -157,9 +168,9 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 		}
 
 		By("Deleting the AddOnDeploymentConfig")
-		Kubectl("delete", "-f", addOnDeplomentConfigCR, "--timeout=15s")
-		By("Deleting the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
-		Kubectl("delete", "-f", case2ClusterManagementAddOnCR, "--timeout=15s")
+		Kubectl("delete", "-f", addOnDeploymentConfigCR, "--timeout=15s")
+		By("Restoring the default config-policy-controller ClusterManagementAddOn")
+		Kubectl("apply", "-f", case2ClusterManagementAddOnCRDefault)
 	})
 
 	It("should create the default config-policy-controller deployment in hosted mode", Label("hosted-mode"), func() {
@@ -213,8 +224,8 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 	It("should create the default config-policy-controller deployment in hosted mode in klusterlet agent namespace",
 		Label("hosted-mode"), func() {
 			By("Creating the AddOnDeploymentConfig")
-			Kubectl("apply", "-f", addOnDeplomentConfigWithCustomVarsCR)
-			By("Creating the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
+			Kubectl("apply", "-f", addOnDeploymentConfigWithCustomVarsCR)
+			By("Applying the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
 			Kubectl("apply", "-f", case2ClusterManagementAddOnCR)
 
 			for i, cluster := range managedClusterList[1:] {
@@ -286,9 +297,9 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				Expect(namespace).To(BeNil())
 			}
 			By("Deleting the AddOnDeploymentConfig")
-			Kubectl("delete", "-f", addOnDeplomentConfigWithCustomVarsCR, "--timeout=15s")
-			By("Deleting the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
-			Kubectl("delete", "-f", case2ClusterManagementAddOnCR, "--timeout=15s")
+			Kubectl("delete", "-f", addOnDeploymentConfigWithCustomVarsCR, "--timeout=15s")
+			By("Restoring the default config-policy-controller ClusterManagementAddOn")
+			Kubectl("apply", "-f", case2ClusterManagementAddOnCRDefault)
 		})
 
 	It("should create a config-policy-controller deployment with customizations", func() {
