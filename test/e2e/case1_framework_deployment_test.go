@@ -16,18 +16,29 @@ import (
 )
 
 const (
-	case1ManagedClusterAddOnName  string = "governance-policy-framework"
-	case1ManagedClusterAddOnCR    string = "../resources/framework_addon_cr.yaml"
-	case1ClusterManagementAddOnCR string = "../resources/framework_clustermanagementaddon.yaml"
-	case1hubAnnotationMCAOCR      string = "../resources/framework_hub_annotation_addon_cr.yaml"
-	case1hubValuesMCAOCR          string = "../resources/framework_hub_values_addon_cr.yaml"
-	case1DeploymentName           string = "governance-policy-framework"
-	case1PodSelector              string = "app=governance-policy-framework"
-	case1MWName                   string = "addon-governance-policy-framework-deploy-0"
-	case1MWPatch                  string = "../resources/manifestwork_add_patch.json"
+	case1ManagedClusterAddOnName         string = "governance-policy-framework"
+	case1ManagedClusterAddOnCR           string = "../resources/framework_addon_cr.yaml"
+	case1ClusterManagementAddOnCRDefault string = "../resources/framework_clustermanagementaddon.yaml"
+	case1ClusterManagementAddOnCR        string = "../resources/framework_clustermanagementaddon_config.yaml"
+	case1hubAnnotationMCAOCR             string = "../resources/framework_hub_annotation_addon_cr.yaml"
+	case1hubValuesMCAOCR                 string = "../resources/framework_hub_values_addon_cr.yaml"
+	case1DeploymentName                  string = "governance-policy-framework"
+	case1PodSelector                     string = "app=governance-policy-framework"
+	case1MWName                          string = "addon-governance-policy-framework-deploy-0"
+	case1MWPatch                         string = "../resources/manifestwork_add_patch.json"
 )
 
-var _ = Describe("Test framework deployment", func() {
+var _ = Describe("Test framework deployment", Ordered, func() {
+	BeforeAll(func() {
+		By("Deploying the default governance-policy-framework ClusterManagementAddon to the hub cluster")
+		Kubectl("apply", "-f", case1ClusterManagementAddOnCRDefault)
+	})
+
+	AfterAll(func() {
+		By("Deleting the default governance-policy-framework ClusterManagementAddon from the hub cluster")
+		Kubectl("delete", "-f", case1ClusterManagementAddOnCRDefault)
+	})
+
 	It("should create the default framework deployment on separate managed clusters", func() {
 		for i, cluster := range managedClusterList[1:] {
 			Expect(cluster.clusterType).To(Equal("managed"))
@@ -118,8 +129,8 @@ var _ = Describe("Test framework deployment", func() {
 	It("should create the default framework deployment in hosted mode in klusterlet agent namespace",
 		Label("hosted-mode"), func() {
 			By("Creating the AddOnDeploymentConfig")
-			Kubectl("apply", "-f", addOnDeplomentConfigWithCustomVarsCR)
-			By("Creating the governance-policy-framework ClusterManagementAddOn to use the AddOnDeploymentConfig")
+			Kubectl("apply", "-f", addOnDeploymentConfigWithCustomVarsCR)
+			By("Applying the governance-policy-framework ClusterManagementAddOn to use the AddOnDeploymentConfig")
 			Kubectl("apply", "-f", case1ClusterManagementAddOnCR)
 
 			for i, cluster := range managedClusterList[1:] {
@@ -173,9 +184,9 @@ var _ = Describe("Test framework deployment", func() {
 				Expect(namespace).To(BeNil())
 			}
 			By("Deleting the AddOnDeploymentConfig")
-			Kubectl("delete", "-f", addOnDeplomentConfigWithCustomVarsCR, "--timeout=15s")
-			By("Deleting the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
-			Kubectl("delete", "-f", case1ClusterManagementAddOnCR, "--timeout=15s")
+			Kubectl("delete", "-f", addOnDeploymentConfigWithCustomVarsCR, "--timeout=15s")
+			By("Restoring the governance-policy-framework ClusterManagementAddOn")
+			Kubectl("apply", "-f", case1ClusterManagementAddOnCRDefault)
 		})
 
 	It("should create a framework deployment with customizations", func() {
@@ -218,8 +229,8 @@ var _ = Describe("Test framework deployment", func() {
 
 	It("should create a framework deployment with node selector on the managed cluster", func() {
 		By("Creating the AddOnDeploymentConfig")
-		Kubectl("apply", "-f", addOnDeplomentConfigCR)
-		By("Creating the governance-policy-framework ClusterManagementAddOn to use the AddOnDeploymentConfig")
+		Kubectl("apply", "-f", addOnDeploymentConfigCR)
+		By("Applying the governance-policy-framework ClusterManagementAddOn to use the AddOnDeploymentConfig")
 		Kubectl("apply", "-f", case1ClusterManagementAddOnCR)
 
 		for i, cluster := range managedClusterList {
@@ -265,9 +276,9 @@ var _ = Describe("Test framework deployment", func() {
 		}
 
 		By("Deleting the AddOnDeploymentConfig")
-		Kubectl("delete", "-f", addOnDeplomentConfigCR, "--timeout=15s")
-		By("Deleting the governance-policy-framework ClusterManagementAddOn to use the AddOnDeploymentConfig")
-		Kubectl("delete", "-f", case1ClusterManagementAddOnCR, "--timeout=15s")
+		Kubectl("delete", "-f", addOnDeploymentConfigCR, "--timeout=15s")
+		By("Restoring the governance-policy-framework ClusterManagementAddOn")
+		Kubectl("apply", "-f", case1ClusterManagementAddOnCRDefault)
 	})
 
 	It("should use the onManagedClusterHub value set in helm values annotation", func() {
