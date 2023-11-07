@@ -414,7 +414,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				"apply",
 				"-f",
 				case2OpenShiftClusterClaim,
-				fmt.Sprintf("--kubeconfig=%s%d.kubeconfig", kubeconfigFilename, i+1),
+				fmt.Sprintf("--kubeconfig=%s%d_e2e", kubeconfigFilename, i+1),
 			)
 
 			By(logPrefix + "waiting for the ClusterClaim to be in the ManagedCluster status")
@@ -495,7 +495,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				"delete",
 				"-f",
 				case2OpenShiftClusterClaim,
-				fmt.Sprintf("--kubeconfig=%s%d.kubeconfig", kubeconfigFilename, i+1),
+				fmt.Sprintf("--kubeconfig=%s%d_e2e", kubeconfigFilename, i+1),
 				"--timeout=15s",
 			)
 

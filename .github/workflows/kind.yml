@@ -47,6 +47,11 @@ jobs:
       run: |
         ./build/manage-clusters.sh
 
+    - name: Ensure Service Account kubeconfig
+      run: |
+        make kind-controller-kubeconfig
+        make kind-ensure-sa
+
     - if: matrix.hosted_mode == 'false'
       name: E2E tests
       run: |

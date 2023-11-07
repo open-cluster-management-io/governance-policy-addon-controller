@@ -22,7 +22,7 @@ import (
 
 const (
 	addonNamespace                       string = "open-cluster-management-agent-addon"
-	kubeconfigFilename                   string = "../../policy-addon-ctrl"
+	kubeconfigFilename                   string = "../../kubeconfig_cluster"
 	loggingLevelAnnotation               string = "log-level=8"
 	evaluationConcurrencyAnnotation      string = "policy-evaluation-concurrency=5"
 	clientQPSAnnotation                  string = "client-qps=50"
@@ -83,10 +83,10 @@ var _ = BeforeSuite(func() {
 		Version:  "v1",
 		Resource: "customresourcedefinitions",
 	}
-	clientDynamic = NewKubeClientDynamic("", kubeconfigFilename+"1.kubeconfig", "")
+	clientDynamic = NewKubeClientDynamic("", kubeconfigFilename+"1_e2e", "")
 
 	var err error
-	hubKubeconfigInternal, err = os.ReadFile(kubeconfigFilename + "1.kubeconfig-internal")
+	hubKubeconfigInternal, err = os.ReadFile(kubeconfigFilename + "1_e2e-internal")
 	Expect(err).ToNot(HaveOccurred())
 
 	managedClusterList = getManagedClusters(clientDynamic)
@@ -106,7 +106,7 @@ func getManagedClusters(client dynamic.Interface) []managedClusterConfig {
 			panic(err)
 		}
 
-		clusterClient := NewKubeClientDynamic("", fmt.Sprintf("%s%d.kubeconfig", kubeconfigFilename, i+1), "")
+		clusterClient := NewKubeClientDynamic("", fmt.Sprintf("%s%d_e2e", kubeconfigFilename, i+1), "")
 
 		var clusterType string
 		if i == 0 {

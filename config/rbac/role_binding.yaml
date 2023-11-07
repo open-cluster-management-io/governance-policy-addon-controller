@@ -1,12 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: manager-rolebinding
+  name: governance-policy-addon-controller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: manager-role
+  name: governance-policy-addon-controller
 subjects:
 - kind: ServiceAccount
-  name: controller-manager
+  name: governance-policy-addon-controller
   namespace: system

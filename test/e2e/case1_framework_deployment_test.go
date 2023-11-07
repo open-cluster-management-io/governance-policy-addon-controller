@@ -765,7 +765,7 @@ func startupProbeInCluster(clusterIdx int) bool {
 	versionJSON := Kubectl(
 		"version",
 		"-o=json",
-		fmt.Sprintf("--kubeconfig=%s%d.kubeconfig", kubeconfigFilename, clusterIdx+1),
+		fmt.Sprintf("--kubeconfig=%s%d_e2e", kubeconfigFilename, clusterIdx+1),
 	)
 
 	version := struct {

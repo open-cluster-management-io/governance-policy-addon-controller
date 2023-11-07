@@ -32,7 +32,7 @@ func Kubectl(args ...string) string {
 	}
 
 	if !skipKubeconfig {
-		args = append(args, "--kubeconfig="+kubeconfigFilename+"1.kubeconfig")
+		args = append(args, "--kubeconfig="+kubeconfigFilename+"1_e2e")
 	}
 
 	cmd := exec.Command("kubectl", args...)

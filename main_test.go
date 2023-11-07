@@ -20,7 +20,7 @@ func TestRunMain(t *testing.T) {
 	os.Args = append([]string{
 		"governance-policy-addon-controller",
 		"controller",
-		"--namespace=governance-policy-addon-controller-system",
+		"--namespace=open-cluster-management",
 	}, os.Args[1:]...)
 
 	// Run main in a separate goroutine
