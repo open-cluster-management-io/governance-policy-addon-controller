@@ -1,9 +1,10 @@
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: manager-role
+  name: governance-policy-addon-controller
 rules:
 - apiGroups:
   - addon.open-cluster-management.io

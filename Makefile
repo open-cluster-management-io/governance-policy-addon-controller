@@ -6,15 +6,16 @@ GOOS = $(shell go env GOOS)
 TESTARGS_DEFAULT := -v
 TESTARGS ?= $(TESTARGS_DEFAULT)
 CONTROLLER_NAME = $(shell cat COMPONENT_NAME 2> /dev/null)
-CONTROLLER_NAMESPACE ?= governance-policy-addon-controller-system
+CONTROLLER_NAMESPACE ?= open-cluster-management
 # Handle KinD configuration
 KIND_NAME ?= policy-addon-ctrl1
-KIND_KUBECONFIG ?= $(PWD)/$(KIND_NAME).kubeconfig
-KIND_KUBECONFIG_INTERNAL ?= $(PWD)/$(KIND_NAME).kubeconfig-internal
-HUB_KUBECONFIG ?= $(PWD)/policy-addon-ctrl1.kubeconfig
-HUB_KUBECONFIG_INTERNAL ?= $(PWD)/policy-addon-ctrl1.kubeconfig-internal
-HUB_CLUSTER_NAME ?= policy-addon-ctrl1
-MANAGED_CLUSTER_NAME ?= cluster1
+CLUSTER_NAME ?= cluster1
+KIND_KUBECONFIG ?= $(PWD)/kubeconfig_$(CLUSTER_NAME)_e2e
+KIND_KUBECONFIG_INTERNAL ?= $(PWD)/kubeconfig_$(CLUSTER_NAME)_e2e-internal
+KIND_KUBECONFIG_SA ?= $(PWD)/kubeconfig_$(CLUSTER_NAME)
+HUB_CLUSTER_NAME ?= cluster1
+HUB_KUBECONFIG ?= $(PWD)/kubeconfig_$(HUB_CLUSTER_NAME)_e2e
+HUB_KUBECONFIG_INTERNAL ?= $(HUB_KUBECONFIG)-internal
 KUSTOMIZE_VERSION ?= 5.0.1
 
 # Image URL to use all building/pushing image targets;
@@ -24,6 +25,12 @@ REGISTRY ?= quay.io/open-cluster-management
 TAG ?= latest
 VERSION ?= $(shell cat COMPONENT_VERSION 2> /dev/null)
 IMAGE_NAME_AND_VERSION ?= $(REGISTRY)/$(IMG)
+
+# Fix sed issues on mac by using GSED
+SED="sed"
+ifeq ($(GOOS), darwin)
+  SED="gsed"
+endif
 
 include build/common/Makefile.common.mk
 
@@ -85,8 +92,7 @@ clean: ## Clean up generated files.
 	-rm bin/*
 	-rm build/_output/bin/*
 	-rm coverage*.out
-	-rm *.kubeconfig
-	-rm *.kubeconfig-internal
+	-rm kubeconfig_*
 	-rm -r vendor/
 	-rm -rf .go/*
 
@@ -96,7 +102,7 @@ clean: ## Clean up generated files.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) rbac:roleName=governance-policy-addon-controller crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -143,9 +149,9 @@ kind-bootstrap-deploy-addons: ## Deploy addons to bootstrap clusters.
 
 .PHONY: kind-deploy-addons
 kind-deploy-addons: ## Apply ManagedClusterAddon manifests to hub to deploy governance addons to a managed cluster.
-	@echo "Creating ManagedClusterAddon for managed cluster $(MANAGED_CLUSTER_NAME)"
-	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f test/resources/config_policy_addon_cr.yaml -n $(MANAGED_CLUSTER_NAME)
-	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f test/resources/framework_addon_cr.yaml -n $(MANAGED_CLUSTER_NAME)
+	@echo "Creating ManagedClusterAddon for managed cluster $(CLUSTER_NAME)"
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f test/resources/config_policy_addon_cr.yaml -n $(CLUSTER_NAME)
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f test/resources/framework_addon_cr.yaml -n $(CLUSTER_NAME)
 
 .PHONY: kind-create-cluster
 kind-create-cluster: $(KIND_KUBECONFIG) ## Create a kind cluster.
@@ -160,6 +166,7 @@ $(KIND_KUBECONFIG):
 .PHONY: kind-delete-cluster
 kind-delete-cluster: ## Delete a kind cluster.
 	-kind delete cluster --name $(KIND_NAME)
+	-rm $(KIND_KUBECONFIG_SA)
 	-rm $(KIND_KUBECONFIG)
 	-rm $(KIND_KUBECONFIG_INTERNAL)
 
@@ -179,19 +186,19 @@ kind-deploy-registration-operator-hub: $(OCM_REPO) $(KIND_KUBECONFIG) ## Deploy 
 
 .PHONY: kind-deploy-registration-operator-managed
 kind-deploy-registration-operator-managed: $(OCM_REPO) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster.
-	cd $(OCM_REPO) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(MANAGED_CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION) make deploy-spoke-operator
-	cd $(OCM_REPO) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(MANAGED_CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION) make apply-spoke-cr
+	cd $(OCM_REPO) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION) make deploy-spoke-operator
+	cd $(OCM_REPO) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION) make apply-spoke-cr
 
 .PHONY: kind-deploy-registration-operator-managed-hosted
 kind-deploy-registration-operator-managed-hosted: $(OCM_REPO) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster in hosted mode.
-	cd $(OCM_REPO) && KUBECONFIG=$(HUB_KUBECONFIG) MANAGED_CLUSTER_NAME=$(MANAGED_CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) HOSTED_CLUSTER_MANAGER_NAME=$(HUB_CLUSTER_NAME) EXTERNAL_MANAGED_KUBECONFIG=$(KIND_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION) make deploy-spoke-hosted
+	cd $(OCM_REPO) && KUBECONFIG=$(HUB_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) HOSTED_CLUSTER_MANAGER_NAME=$(HUB_CLUSTER_NAME) EXTERNAL_MANAGED_KUBECONFIG=$(KIND_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION) make deploy-spoke-hosted
 
 .PHONY: kind-approve-cluster
 kind-approve-cluster: $(KIND_KUBECONFIG) ## Approve managed cluster in the kind cluster.
-	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r "csr -l open-cluster-management.io/cluster-name=$(MANAGED_CLUSTER_NAME)" -m 120
-	KUBECONFIG=$(KIND_KUBECONFIG) kubectl certificate approve "$$(KUBECONFIG=$(KIND_KUBECONFIG) kubectl get csr -l open-cluster-management.io/cluster-name=$(MANAGED_CLUSTER_NAME) -o name)"
-	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r managedcluster/$(MANAGED_CLUSTER_NAME) -n open-cluster-management -m 60
-	KUBECONFIG=$(KIND_KUBECONFIG) kubectl patch managedcluster $(MANAGED_CLUSTER_NAME) -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
+	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r "csr -l open-cluster-management.io/cluster-name=$(CLUSTER_NAME)" -m 120
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl certificate approve "$$(KUBECONFIG=$(KIND_KUBECONFIG) kubectl get csr -l open-cluster-management.io/cluster-name=$(CLUSTER_NAME) -o name)"
+	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r managedcluster/$(CLUSTER_NAME) -n open-cluster-management -m 60
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl patch managedcluster $(CLUSTER_NAME) -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
 
 .PHONY: wait-for-work-agent
 wait-for-work-agent: $(KIND_KUBECONFIG) ## Wait for the klusterlet work agent to start.
@@ -210,7 +217,7 @@ kind-load-image: build-images $(KIND_KUBECONFIG) ## Build and load the docker im
 kind-regenerate-controller: manifests generate kustomize $(KIND_KUBECONFIG) ## Refresh (or initially deploy) the policy-addon-controller.
 	cp config/default/kustomization.yaml config/default/kustomization.yaml.tmp
 	cd config/default && $(KUSTOMIZE) edit set image policy-addon-image=$(IMAGE_NAME_AND_VERSION)
-	$(KUSTOMIZE) build config/default | sed -E "s/(value\: .+)(:latest)$$/\1:$(TAG)/g" | KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f -
+	$(KUSTOMIZE) build config/default | $(SED) -E "s/(value\: .+)(:latest)$$/\1:$(TAG)/g" | KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f -
 	mv config/default/kustomization.yaml.tmp config/default/kustomization.yaml
 	KUBECONFIG=$(KIND_KUBECONFIG) kubectl delete -n $(CONTROLLER_NAMESPACE) pods -l=app=governance-policy-addon-controller
 
@@ -250,7 +257,7 @@ e2e-run-instrumented: e2e-build-instrumented
 	  KUBE_RBAC_PROXY_IMAGE="registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.10" \
 	  GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE="$(REGISTRY)/governance-policy-framework-addon:$(TAG)" \
 	  ./build/_output/bin/$(IMG)-instrumented -test.v -test.run="^TestRunMain$$" -test.coverprofile=$(COVERAGE_E2E_OUT) \
-	  --kubeconfig="$(KIND_KUBECONFIG)" $(LOG_REDIRECT) &
+	  --kubeconfig="$(KIND_KUBECONFIG_SA)" $(LOG_REDIRECT) &
 
 .PHONY: e2e-stop-instrumented
 e2e-stop-instrumented:
@@ -284,6 +291,19 @@ e2e-debug: ## Collect debug logs from deployed clusters.
 			KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon logs $${POD}; \
 		done; \
 	done
+
+.PHONY: install-resources
+install-resources: kustomize
+	@echo creating namespace
+	-kubectl create ns $(CONTROLLER_NAMESPACE)
+	# deploying roles and service account
+	kustomize build config/rbac | $(SED) "s/namespace: system/namespace: open-cluster-management/g" | kubectl -n $(CONTROLLER_NAMESPACE) apply -f -
+
+.PHONY: kind-ensure-sa
+kind-ensure-sa: export KUBECONFIG=$(KIND_KUBECONFIG_SA)
+
+.PHONY: kind-controller-kubeconfig
+kind-controller-kubeconfig: export CLUSTER_NAME=$(HUB_CLUSTER_NAME)
 
 ############################################################
 # test coverage

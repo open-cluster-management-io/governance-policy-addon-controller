@@ -15,8 +15,7 @@ vendor/
 build/_output/
 .vscode/
 
-*.kubeconfig
-*.kubeconfig-internal
+kubeconfig_*
 coverage*.out
 report_e2e.json
 gosec.json

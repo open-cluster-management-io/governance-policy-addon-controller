@@ -8,7 +8,7 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-manager
+  name: governance-policy-addon-controller
   namespace: system
   labels:
     control-plane: controller-manager
@@ -56,5 +56,5 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-      serviceAccountName: controller-manager
+      serviceAccountName: governance-policy-addon-controller
       terminationGracePeriodSeconds: 10
