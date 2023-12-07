@@ -7,7 +7,7 @@ metadata:
   name: {{ include "controller.fullname" . }}-uninstall
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ include "controller.fullname" . }}
+    app: {{ include "controller.fullname" . }}-uninstall
     chart: {{ include "controller.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
