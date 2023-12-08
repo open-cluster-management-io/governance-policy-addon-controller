@@ -171,7 +171,9 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				clusterName:   cluster.clusterName,
 				clusterType:   cluster.clusterType,
 				hostedOnHub:   true,
+				kubeconfig:    cluster.kubeconfig,
 			}
+
 			hubClusterConfig := managedClusterList[0]
 			hubClient := hubClusterConfig.clusterClient
 			installNamespace := fmt.Sprintf("%s-hosted", cluster.clusterName)
@@ -179,7 +181,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 			setupClusterSecretForHostedMode(
 				logPrefix, hubClient, "config-policy-controller-managed-kubeconfig",
-				string(hubKubeconfigInternal), installNamespace)
+				string(cluster.kubeconfig), installNamespace)
 
 			installAddonInHostedMode(
 				logPrefix, hubClient, case2ManagedClusterAddOnName,
@@ -223,6 +225,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 					clusterName:   cluster.clusterName,
 					clusterType:   cluster.clusterType,
 					hostedOnHub:   true,
+					kubeconfig:    cluster.kubeconfig,
 				}
 				hubClusterConfig := managedClusterList[0]
 				hubClient := hubClusterConfig.clusterClient
@@ -231,7 +234,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 				setupClusterSecretForHostedMode(
 					logPrefix, hubClient, "external-managed-kubeconfig",
-					string(hubKubeconfigInternal), installNamespace)
+					string(cluster.kubeconfig), installNamespace)
 
 				installAddonInHostedMode(
 					logPrefix, hubClient, case2ManagedClusterAddOnName,
