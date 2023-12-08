@@ -53,6 +53,7 @@ type managedClusterConfig struct {
 	clusterType   string
 	// Only relevant for hosted mode tests.
 	hostedOnHub bool
+	kubeconfig  []byte
 }
 
 func TestE2e(t *testing.T) {
@@ -106,7 +107,14 @@ func getManagedClusters(client dynamic.Interface) []managedClusterConfig {
 			panic(err)
 		}
 
-		clusterClient := NewKubeClientDynamic("", fmt.Sprintf("%s%d_e2e", kubeconfigFilename, i+1), "")
+		kubeconfigPath := fmt.Sprintf("%s%d_e2e", kubeconfigFilename, i+1)
+
+		clusterClient := NewKubeClientDynamic("", kubeconfigPath, "")
+
+		kubeconfigContents, err := os.ReadFile(kubeconfigPath + "-internal")
+		if err != nil {
+			panic(err)
+		}
 
 		var clusterType string
 		if i == 0 {
@@ -120,6 +128,7 @@ func getManagedClusters(client dynamic.Interface) []managedClusterConfig {
 			clusterClient,
 			clusterType,
 			false,
+			kubeconfigContents,
 		}
 		clusters = append(clusters, newCluster)
 	}
