@@ -13,8 +13,8 @@ require (
 	k8s.io/apimachinery v0.26.10
 	k8s.io/client-go v0.26.10
 	k8s.io/component-base v0.26.10
-	open-cluster-management.io/addon-framework v0.8.0
-	open-cluster-management.io/api v0.12.0
+	open-cluster-management.io/addon-framework v0.8.1-0.20231213143721-34f78ece0a09
+	open-cluster-management.io/api v0.12.1-0.20231027024433-bab1208e6889
 	sigs.k8s.io/controller-runtime v0.14.6
 )
 
