@@ -85,6 +85,9 @@ spec:
           {{- if eq .Values.installMode "Hosted" }}
           - --target-kubeconfig-path=/var/run/managed-kubeconfig/kubeconfig
           {{- end }}
+          {{- if not .Values.operatorPolicy.disabled }}
+          - --enable-operator-policy=true
+          {{- end }}
         env:
           - name: WATCH_NAMESPACE
             {{- if eq .Values.installMode "Hosted" }}

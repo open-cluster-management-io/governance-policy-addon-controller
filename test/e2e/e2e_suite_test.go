@@ -27,6 +27,7 @@ const (
 	evaluationConcurrencyAnnotation       string = "policy-evaluation-concurrency=5"
 	clientQPSAnnotation                   string = "client-qps=50"
 	prometheusEnabledAnnotation           string = "prometheus-metrics-enabled=true"
+	opPolicyEnabledAnnotation             string = "operator-policy-disabled=false"
 	addOnDeploymentConfigCR               string = "../resources/addondeploymentconfig.yaml"
 	addOnDeploymentConfigWithCustomVarsCR string = "../resources/addondeploymentconfig_customvars.yaml"
 )

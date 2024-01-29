@@ -18,6 +18,7 @@ done
 (
     cd .go/config-policy-controller
     cp deploy/crds/policy.open-cluster-management.io_configurationpolicies.yaml ../config-policy-crd-v1.yaml
+    cp deploy/crds/policy.open-cluster-management.io_operatorpolicies.yaml ../operator-policy-crd-v1.yaml
     CRD_OPTIONS="crd:trivialVersions=true,crdVersions=v1beta1" make manifests
     cp deploy/crds/policy.open-cluster-management.io_configurationpolicies.yaml ../config-policy-crd-v1beta1.yaml
 )
@@ -44,6 +45,14 @@ cat > pkg/addon/configpolicy/manifests/managedclusterchart/templates/policy.open
 $(yq e "$addLocationLabel | $addTemplateLabel" .go/config-policy-crd-v1beta1.yaml)
 {{ else }}
 $(yq e "$addLocationLabel" .go/config-policy-crd-v1.yaml)
+{{- end }}
+EOF
+
+cat > pkg/addon/configpolicy/manifests/managedclusterchart/templates/policy.open-cluster-management.io_operatorpolicies_crd.yaml << EOF
+# Copyright Contributors to the Open Cluster Management project
+
+{{- if semverCompare "> 1.16.0" .Capabilities.KubeVersion.Version }}
+$(yq e "$addLocationLabel" .go/operator-policy-crd-v1.yaml)
 {{- end }}
 EOF
 

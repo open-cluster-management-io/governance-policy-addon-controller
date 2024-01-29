@@ -21,11 +21,12 @@ import (
 )
 
 const (
-	addonName                       = "config-policy-controller"
-	evaluationConcurrencyAnnotation = "policy-evaluation-concurrency"
-	clientQPSAnnotation             = "client-qps"
-	clientBurstAnnotation           = "client-burst"
-	prometheusEnabledAnnotation     = "prometheus-metrics-enabled"
+	addonName                        = "config-policy-controller"
+	evaluationConcurrencyAnnotation  = "policy-evaluation-concurrency"
+	clientQPSAnnotation              = "client-qps"
+	clientBurstAnnotation            = "client-burst"
+	prometheusEnabledAnnotation      = "prometheus-metrics-enabled"
+	operatorPolicyDisabledAnnotation = "operator-policy-disabled"
 )
 
 var log = ctrl.Log.WithName("configpolicy")
@@ -41,6 +42,7 @@ type UserValues struct {
 	GlobalValues           policyaddon.GlobalValues `json:"global,"`
 	KubernetesDistribution string                   `json:"kubernetesDistribution"`
 	Prometheus             map[string]interface{}   `json:"prometheus"`
+	OperatorPolicy         map[string]interface{}   `json:"operatorPolicy"`
 	UserArgs               UserArgs                 `json:"args,"`
 }
 
@@ -75,7 +77,8 @@ func getValues(cluster *clusterv1.ManagedCluster,
 				"NO_PROXY":    "",
 			},
 		},
-		Prometheus: map[string]interface{}{},
+		Prometheus:     map[string]interface{}{},
+		OperatorPolicy: map[string]interface{}{},
 		UserArgs: UserArgs{
 			UserArgs: policyaddon.UserArgs{
 				LogEncoder:  "console",
@@ -104,6 +107,9 @@ func getValues(cluster *clusterv1.ManagedCluster,
 
 	// Enable Prometheus metrics by default on OpenShift
 	userValues.Prometheus["enabled"] = userValues.KubernetesDistribution == "OpenShift"
+
+	// Disable OperatorPolicy if the cluster is not on OpenShift version 4.y
+	userValues.OperatorPolicy["disabled"] = cluster.Labels["openshiftVersion-major"] != "4"
 
 	annotations := addon.GetAnnotations()
 
@@ -166,6 +172,18 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			)
 		} else {
 			userValues.Prometheus["enabled"] = valBool
+		}
+	}
+
+	if val, ok := annotations[operatorPolicyDisabledAnnotation]; ok {
+		valBool, err := strconv.ParseBool(val)
+		if err != nil {
+			log.Error(err, fmt.Sprintf(
+				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %v)",
+				operatorPolicyDisabledAnnotation, val, addonName, userValues.OperatorPolicy["disabled"]),
+			)
+		} else {
+			userValues.OperatorPolicy["disabled"] = valBool
 		}
 	}
 
