@@ -312,6 +312,34 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 			)
 			Expect(deploy).NotTo(BeNil())
 
+			By(logPrefix + "verifying the pod has been deployed with some default options")
+			Eventually(func(g Gomega) {
+				opts := metav1.ListOptions{
+					LabelSelector: case2PodSelector,
+				}
+				pods := ListWithTimeoutByNamespace(cluster.clusterClient, gvrPod, opts, addonNamespace, 1, true, 120)
+				phase := pods.Items[0].Object["status"].(map[string]interface{})["phase"]
+
+				g.Expect(phase.(string)).To(Equal("Running"))
+				containerList, _, err := unstructured.NestedSlice(pods.Items[0].Object, "spec", "containers")
+				g.Expect(err).ToNot(HaveOccurred())
+				for _, container := range containerList {
+					containerObj, ok := container.(map[string]interface{})
+					g.Expect(ok).To(BeTrue())
+
+					if g.Expect(containerObj).To(HaveKey("name")) && containerObj["name"] != case2DeploymentName {
+						continue
+					}
+					if g.Expect(containerObj).To(HaveKey("args")) {
+						args := containerObj["args"]
+						g.Expect(args).To(ContainElement("--log-encoder=console"))
+						g.Expect(args).To(ContainElement("--evaluation-concurrency=2"))
+						g.Expect(args).To(ContainElement("--client-max-qps=30"))
+						g.Expect(args).NotTo(ContainElement("--enable-operator-policy=true"))
+					}
+				}
+			}, 180, 10).Should(Succeed())
+
 			By(logPrefix + "showing the config-policy-controller managedclusteraddon as available")
 			Eventually(func() bool {
 				addon := GetWithTimeout(
@@ -350,7 +378,17 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 			By(logPrefix + "annotating the managedclusteraddon with the " + clientQPSAnnotation + " annotation")
 			Kubectl("annotate", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, clientQPSAnnotation)
 
-			By(logPrefix + "verifying the pod has been deployed with a new logging level and concurrency")
+			By(logPrefix + "annotating the managedclusteraddon with the " + opPolicyEnabledAnnotation + " annotation")
+			Kubectl(
+				"annotate",
+				"-n",
+				cluster.clusterName,
+				"-f",
+				case2ManagedClusterAddOnCR,
+				opPolicyEnabledAnnotation,
+			)
+
+			By(logPrefix + "verifying the pod has been deployed with a new configuration")
 			Eventually(func(g Gomega) {
 				opts := metav1.ListOptions{
 					LabelSelector: case2PodSelector,
@@ -376,6 +414,7 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 						g.Expect(args).To(ContainElement("--evaluation-concurrency=5"))
 						g.Expect(args).To(ContainElement("--client-max-qps=50"))
 						g.Expect(args).To(ContainElement("--leader-elect=false"))
+						g.Expect(args).To(ContainElement("--enable-operator-policy=true"))
 					}
 				}
 			}, 180, 10).Should(Succeed())
