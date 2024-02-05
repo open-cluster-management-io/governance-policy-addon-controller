@@ -16,7 +16,6 @@ KIND_KUBECONFIG_SA ?= $(PWD)/kubeconfig_$(CLUSTER_NAME)
 HUB_CLUSTER_NAME ?= cluster1
 HUB_KUBECONFIG ?= $(PWD)/kubeconfig_$(HUB_CLUSTER_NAME)_e2e
 HUB_KUBECONFIG_INTERNAL ?= $(HUB_KUBECONFIG)-internal
-KUSTOMIZE_VERSION ?= 5.0.1
 
 # Image URL to use all building/pushing image targets;
 # Use your own docker registry and image name for dev/test by overridding the IMG and REGISTRY environment variable.
@@ -33,6 +32,9 @@ ifeq ($(GOOS), darwin)
 endif
 
 include build/common/Makefile.common.mk
+
+# Strip v prefix from common Makefile version for OCM repo
+KUSTOMIZE_VERSION_CLEAN := $(KUSTOMIZE_VERSION:v%=%)
 
 ############################################################
 # Lint
@@ -175,7 +177,7 @@ $(OCM_REPO):
 
 .PHONY: kind-deploy-registration-operator-hub
 kind-deploy-registration-operator-hub: $(OCM_REPO) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster.
-	cd $(OCM_REPO) && KUBECONFIG=$(KIND_KUBECONFIG) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION) make deploy-hub
+	cd $(OCM_REPO) && KUBECONFIG=$(KIND_KUBECONFIG) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION_CLEAN) make deploy-hub
 	@printf "\n*** Pausing and waiting to let everything deploy ***\n\n"
 	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r deploy/cluster-manager -n open-cluster-management -c condition=Available -m 90
 	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r deploy/cluster-manager-placement-controller -n open-cluster-management-hub -c condition=Available -m 90
@@ -184,12 +186,12 @@ kind-deploy-registration-operator-hub: $(OCM_REPO) $(KIND_KUBECONFIG) ## Deploy 
 
 .PHONY: kind-deploy-registration-operator-managed
 kind-deploy-registration-operator-managed: $(OCM_REPO) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster.
-	cd $(OCM_REPO) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION) make deploy-spoke-operator
-	cd $(OCM_REPO) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION) make apply-spoke-cr
+	cd $(OCM_REPO) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION_CLEAN) make deploy-spoke-operator
+	cd $(OCM_REPO) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION_CLEAN) make apply-spoke-cr
 
 .PHONY: kind-deploy-registration-operator-managed-hosted
 kind-deploy-registration-operator-managed-hosted: $(OCM_REPO) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster in hosted mode.
-	cd $(OCM_REPO) && KUBECONFIG=$(HUB_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) HOSTED_CLUSTER_MANAGER_NAME=$(HUB_CLUSTER_NAME) EXTERNAL_MANAGED_KUBECONFIG=$(KIND_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION) make deploy-spoke-hosted
+	cd $(OCM_REPO) && KUBECONFIG=$(HUB_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) HOSTED_CLUSTER_MANAGER_NAME=$(HUB_CLUSTER_NAME) EXTERNAL_MANAGED_KUBECONFIG=$(KIND_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION_CLEAN) make deploy-spoke-hosted
 
 .PHONY: kind-approve-cluster
 kind-approve-cluster: $(KIND_KUBECONFIG) ## Approve managed cluster in the kind cluster.

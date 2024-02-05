@@ -148,7 +148,6 @@ func ListWithTimeoutByNamespace(
 	EventuallyWithOffset(1, func() error {
 		var err error
 		list, err = clientHubDynamic.Resource(gvr).Namespace(ns).List(context.TODO(), opts)
-
 		if err != nil {
 			return err
 		}
