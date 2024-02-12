@@ -16,12 +16,12 @@ jobs:
     name: CRD Sync Validation
     steps:
     - name: Checkout 
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: governance-policy-addon-controller
 
     - name: Set up Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v5
       with:
         go-version-file: governance-policy-addon-controller/go.mod
 
