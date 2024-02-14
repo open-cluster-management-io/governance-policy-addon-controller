@@ -144,7 +144,7 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 				}
 				hubClusterConfig := managedClusterList[0]
 				hubClient := hubClusterConfig.clusterClient
-				installNamespace := fmt.Sprintf("klusterlet-%s", cluster.clusterName)
+				installNamespace := fmt.Sprintf("%s-hosted", cluster.clusterName)
 
 				logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 
@@ -154,6 +154,9 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 
 				// Use i+1 since the for loop ranges over a slice skipping first index
 				checkContainersAndAvailabilityInNamespace(cluster, i+1, installNamespace)
+
+				By(logPrefix + "verifying the --compliance-api-url argument was set")
+				checkArgs(cluster, "--compliance-api-url=http://127.0.0.1:8080")
 
 				ctx, cancel := context.WithTimeout(context.TODO(), 15*time.Second)
 				defer cancel()

@@ -22,6 +22,7 @@ import (
 
 const (
 	addonNamespace                        string = "open-cluster-management-agent-addon"
+	controllerNamespace                   string = "open-cluster-management"
 	kubeconfigFilename                    string = "../../kubeconfig_cluster"
 	loggingLevelAnnotation                string = "log-level=8"
 	evaluationConcurrencyAnnotation       string = "policy-evaluation-concurrency=5"

@@ -21,18 +21,27 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	k8sdepwatches "github.com/stolostron/kubernetes-dependency-watches/client"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/version"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	utilflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/logs"
+	"k8s.io/klog/v2"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
-	ctrl "sigs.k8s.io/controller-runtime"
 
 	"open-cluster-management.io/governance-policy-addon-controller/pkg/addon/configpolicy"
 	"open-cluster-management.io/governance-policy-addon-controller/pkg/addon/policyframework"
+	"open-cluster-management.io/governance-policy-addon-controller/pkg/controllers/complianceapi"
 )
 
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=get;create
@@ -69,15 +78,15 @@ import (
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policies,verbs=create;delete;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policies/finalizers,verbs=update
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policies/status,verbs=get;patch;update
-//+kubebuilder:rbac:groups=core,resources=secrets,resourceNames=policy-encryption-key,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=secrets,resourceNames=policy-encryption-key;governance-policy-database,verbs=get;list;watch
+//+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=clusterclaims,resourceNames=id.k8s.io,verbs=get
+//+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=create
+//+kubebuilder:rbac:groups=route.openshift.io,resources=routes,resourceNames=governance-history-api,verbs=get;list;watch;update;delete
 //+kubebuilder:rbac:groups=core,resources=events,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch
 
-var (
-	setupLog    = ctrl.Log.WithName("setup")
-	ctrlVersion = version.Info{}
-)
+var ctrlVersion = version.Info{}
 
 const (
 	ctrlName = "governance-policy-addon-controller"
@@ -119,7 +128,7 @@ func main() {
 func runController(ctx context.Context, controllerContext *controllercmd.ControllerContext) error {
 	mgr, err := addonmanager.New(controllerContext.KubeConfig)
 	if err != nil {
-		setupLog.Error(err, "unable to create new addon manager")
+		klog.Error(err, "unable to create new addon manager")
 		os.Exit(1)
 	}
 
@@ -128,25 +137,137 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 		configpolicy.GetAndAddAgent,
 	}
 
-	// Define a background parent context for agents to use
-	managerCtx, managerCancel := context.WithCancel(context.Background())
-	defer managerCancel()
+	wg := sync.WaitGroup{}
+
+	runSecretReconciler, err := isOpenShift(controllerContext.KubeConfig)
+	if err != nil {
+		klog.Error(err, "Failed to detect if this is running on OpenShift. Assuming it's not.")
+	}
+
+	// The Compliance API DB Secret reconciler is responsible for creating/deleting OpenShift routes for the compliance
+	// history API. If it's not OpenShift, then don't run this.
+	if runSecretReconciler {
+		klog.Info("Starting the compliance events database secret reconciler")
+
+		controllerNamespace := getControllerNamespace()
+
+		dynamicClient := dynamic.NewForConfigOrDie(controllerContext.KubeConfig)
+		reconciler := complianceapi.ComplianceDBSecretReconciler{DynamicClient: dynamicClient}
+
+		dynamicWatcher, err := k8sdepwatches.New(
+			controllerContext.KubeConfig, &reconciler, &k8sdepwatches.Options{
+				EnableCache: true,
+				ObjectCacheOptions: k8sdepwatches.ObjectCacheOptions{
+					// Cache the GVKToGVR for 24 hours since we are using it for stable things like determining if
+					// this is an OpenShift cluster by seeing if the cluster has a Route CRD or querying for a Secret.
+					GVKToGVRCacheTTL:           24 * time.Hour,
+					MissingAPIResourceCacheTTL: 24 * time.Hour,
+				},
+			},
+		)
+		if err != nil {
+			klog.Error(
+				err, "Failed to instantiate the dynamic watcher for the compliance events database secret reconciler",
+			)
+			os.Exit(1)
+		}
+
+		reconciler.DynamicWatcher = dynamicWatcher
+
+		wg.Add(1)
+
+		go func() {
+			err := dynamicWatcher.Start(ctx)
+			if err != nil {
+				klog.Error(
+					err, "Unable to start the dynamic watcher for the compliance events database secret reconciler",
+				)
+				os.Exit(1)
+			}
+
+			wg.Done()
+		}()
+
+		klog.Info("Waiting for the dynamic watcher to start")
+		<-dynamicWatcher.Started()
+
+		watcherSecret := k8sdepwatches.ObjectIdentifier{
+			Version:   "v1",
+			Kind:      "Secret",
+			Namespace: controllerNamespace,
+			Name:      complianceapi.DBSecretName,
+		}
+		if err := dynamicWatcher.AddWatcher(watcherSecret, watcherSecret); err != nil {
+			klog.Error(err, "Unable to start the compliance events database secret watcher")
+			os.Exit(1)
+		}
+
+		route := k8sdepwatches.ObjectIdentifier{
+			Group:     "route.openshift.io",
+			Kind:      "Route",
+			Version:   "v1",
+			Namespace: controllerNamespace,
+			Name:      complianceapi.RouteName,
+		}
+		if err := dynamicWatcher.AddWatcher(watcherSecret, route); err != nil {
+			klog.Error(err, "Unable to start the compliance events database secret watcher")
+			os.Exit(1)
+		}
+	} else {
+		klog.Info("Not running on OpenShift so not starting the compliance events database secret reconciler")
+	}
 
 	for _, f := range agentFuncs {
-		err := f(managerCtx, mgr, controllerContext)
+		err := f(ctx, mgr, controllerContext)
 		if err != nil {
-			setupLog.Error(err, "unable to get or add agent addon")
+			klog.Error(err, "unable to get or add agent addon")
 			os.Exit(1)
 		}
 	}
 
-	err = mgr.Start(ctx)
-	if err != nil {
-		setupLog.Error(err, "problem starting manager")
-		os.Exit(1)
-	}
+	wg.Add(1)
 
-	<-ctx.Done()
+	go func() {
+		err = mgr.Start(ctx)
+		if err != nil {
+			klog.Error(err, "problem starting manager")
+			os.Exit(1)
+		}
+
+		wg.Done()
+	}()
+
+	wg.Wait()
 
 	return nil
+}
+
+// getControllerNamespace returns the namespace the controller is running in. It defaults to open-cluster-management.
+func getControllerNamespace() string {
+	nsBytes, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		return "open-cluster-management"
+	}
+
+	ns := strings.TrimSpace(string(nsBytes))
+
+	return ns
+}
+
+func isOpenShift(kubeconfig *rest.Config) (bool, error) {
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(kubeconfig)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = discoveryClient.ServerResourcesForGroupVersion(complianceapi.RouteGVR.GroupVersion().String())
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
 }

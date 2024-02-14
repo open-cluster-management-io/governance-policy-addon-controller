@@ -162,6 +162,7 @@ $(KIND_KUBECONFIG):
 	kind get kubeconfig --name $(KIND_NAME) > $(KIND_KUBECONFIG)
 	kind get kubeconfig --name $(KIND_NAME) --internal > $(KIND_KUBECONFIG_INTERNAL)
 	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.64.1/example/prometheus-operator-crd-full/monitoring.coreos.com_servicemonitors.yaml
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl create -f https://raw.githubusercontent.com/openshift/api/release-4.12/route/v1/route.crd.yaml
 
 .PHONY: kind-delete-cluster
 kind-delete-cluster: ## Delete a kind cluster.
