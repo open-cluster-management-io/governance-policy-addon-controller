@@ -95,6 +95,14 @@ rules:
   - approve
 - apiGroups:
   - cluster.open-cluster-management.io
+  resourceNames:
+  - id.k8s.io
+  resources:
+  - clusterclaims
+  verbs:
+  - get
+- apiGroups:
+  - cluster.open-cluster-management.io
   resources:
   - managedclusters
   verbs:
@@ -150,6 +158,7 @@ rules:
 - apiGroups:
   - ""
   resourceNames:
+  - governance-policy-database
   - policy-encryption-key
   resources:
   - secrets
@@ -219,6 +228,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  verbs:
+  - create
+- apiGroups:
+  - route.openshift.io
+  resourceNames:
+  - governance-history-api
+  resources:
+  - routes
+  verbs:
+  - delete
+  - get
+  - list
+  - update
+  - watch
 - apiGroups:
   - work.open-cluster-management.io
   resources:
