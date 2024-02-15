@@ -87,6 +87,9 @@ spec:
           {{- end }}
           {{- if not .Values.operatorPolicy.disabled }}
           - --enable-operator-policy=true
+          {{- if ne .Values.operatorPolicy.defaultNamespace "" }}
+          - --operator-policy-default-namespace={{ .Values.operatorPolicy.defaultNamespace }}
+          {{- end }}
           {{- end }}
         env:
           - name: WATCH_NAMESPACE

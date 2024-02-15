@@ -415,6 +415,7 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 						g.Expect(args).To(ContainElement("--client-max-qps=50"))
 						g.Expect(args).To(ContainElement("--leader-elect=false"))
 						g.Expect(args).To(ContainElement("--enable-operator-policy=true"))
+						g.Expect(args).ToNot(ContainElement(ContainSubstring("operator-policy-default-namespace")))
 					}
 				}
 			}, 180, 10).Should(Succeed())

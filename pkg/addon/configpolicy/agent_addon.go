@@ -111,6 +111,11 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	// Disable OperatorPolicy if the cluster is not on OpenShift version 4.y
 	userValues.OperatorPolicy["disabled"] = cluster.Labels["openshiftVersion-major"] != "4"
 
+	// Set the default namespace for OperatorPolicy for OpenShift 4
+	if cluster.Labels["openshiftVersion-major"] == "4" {
+		userValues.OperatorPolicy["default-namespace"] = "openshift-operators"
+	}
+
 	annotations := addon.GetAnnotations()
 
 	if val, ok := annotations[policyaddon.PolicyLogLevelAnnotation]; ok {

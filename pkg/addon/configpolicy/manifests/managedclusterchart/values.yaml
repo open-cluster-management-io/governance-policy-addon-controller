@@ -16,6 +16,7 @@ hubKubeConfigSecret: config-policy-controller-hub-kubeconfig
 
 operatorPolicy:
   disabled: false
+  defaultNamespace: ""
 
 resources:
   requests:
