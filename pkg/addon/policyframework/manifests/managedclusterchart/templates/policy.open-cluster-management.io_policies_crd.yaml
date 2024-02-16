@@ -1,15 +1,13 @@
 # Copyright Contributors to the Open Cluster Management project
 
 {{- if semverCompare "< 1.16.0" .Capabilities.KubeVersion.Version }}
-
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.1
+    controller-gen.kubebuilder.io/version: v0.14.0
     {{ if .Values.onMulticlusterHub }}"addon.open-cluster-management.io/deletion-orphan": ""{{ end }}
-  creationTimestamp: null
   name: policies.policy.open-cluster-management.io
   labels:
     addon.open-cluster-management.io/hosted-manifest-location: hosting
@@ -33,17 +31,24 @@ spec:
       - plc
     singular: policy
   scope: Namespaced
-  subresources:
-    status: {}
   validation:
     openAPIV3Schema:
       description: Policy is the Schema for the policies API
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: |-
+            APIVersion defines the versioned schema of this representation of an object.
+            Servers should convert recognized schemas to the latest internal value, and
+            may reject unrecognized values.
+            More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: |-
+            Kind is a string value representing the REST resource this object represents.
+            Servers may infer this from the endpoint the client submits requests to.
+            Cannot be updated.
+            In CamelCase.
+            More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
           type: string
         metadata:
           type: object
@@ -51,15 +56,24 @@ spec:
           description: PolicySpec defines the desired state of Policy
           properties:
             copyPolicyMetadata:
-              description: If set to true (default), all the policy's labels and annotations will be copied to the replicated policy. If set to false, only the policy framework specific policy labels and annotations will be copied to the replicated policy.
+              description: |-
+                If set to true (default), all the policy's labels and annotations will be copied to the replicated policy.
+                If set to false, only the policy framework specific policy labels and annotations will be copied to the
+                replicated policy.
               type: boolean
             dependencies:
               description: PolicyDependencies that apply to each template in this Policy
               items:
-                description: Each PolicyDependency defines an object reference which must be in a certain compliance state before the policy should be created.
+                description: |-
+                  Each PolicyDependency defines an object reference which must be in a certain compliance
+                  state before the policy should be created.
                 properties:
                   apiVersion:
-                    description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    description: |-
+                      APIVersion defines the versioned schema of this representation of an object.
+                      Servers should convert recognized schemas to the latest internal value, and
+                      may reject unrecognized values.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
                     type: string
                   compliance:
                     description: The ComplianceState (at path .status.compliant) required before the policy should be created
@@ -69,7 +83,12 @@ spec:
                       - NonCompliant
                     type: string
                   kind:
-                    description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    description: |-
+                      Kind is a string value representing the REST resource this object represents.
+                      Servers may infer this from the endpoint the client submits requests to.
+                      Cannot be updated.
+                      In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                     type: string
                   name:
                     description: The name of the object to be checked
@@ -93,10 +112,16 @@ spec:
                   extraDependencies:
                     description: Additional PolicyDependencies that only apply to this template
                     items:
-                      description: Each PolicyDependency defines an object reference which must be in a certain compliance state before the policy should be created.
+                      description: |-
+                        Each PolicyDependency defines an object reference which must be in a certain compliance
+                        state before the policy should be created.
                       properties:
                         apiVersion:
-                          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                          description: |-
+                            APIVersion defines the versioned schema of this representation of an object.
+                            Servers should convert recognized schemas to the latest internal value, and
+                            may reject unrecognized values.
+                            More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
                           type: string
                         compliance:
                           description: The ComplianceState (at path .status.compliant) required before the policy should be created
@@ -106,7 +131,12 @@ spec:
                             - NonCompliant
                           type: string
                         kind:
-                          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                          description: |-
+                            Kind is a string value representing the REST resource this object represents.
+                            Servers may infer this from the endpoint the client submits requests to.
+                            Cannot be updated.
+                            In CamelCase.
+                            More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                           type: string
                         name:
                           description: The name of the object to be checked
@@ -224,22 +254,14 @@ spec:
     - name: v1
       served: true
       storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
 {{ else }}
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.1
+    controller-gen.kubebuilder.io/version: v0.14.0
     {{ if .Values.onMulticlusterHub }}"addon.open-cluster-management.io/deletion-orphan": ""{{ end }}
-  creationTimestamp: null
   name: policies.policy.open-cluster-management.io
   labels:
     addon.open-cluster-management.io/hosted-manifest-location: hosting
@@ -270,10 +292,19 @@ spec:
           description: Policy is the Schema for the policies API
           properties:
             apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -281,12 +312,17 @@ spec:
               description: PolicySpec defines the desired state of Policy
               properties:
                 copyPolicyMetadata:
-                  description: If set to true (default), all the policy's labels and annotations will be copied to the replicated policy. If set to false, only the policy framework specific policy labels and annotations will be copied to the replicated policy.
+                  description: |-
+                    If set to true (default), all the policy's labels and annotations will be copied to the replicated policy.
+                    If set to false, only the policy framework specific policy labels and annotations will be copied to the
+                    replicated policy.
                   type: boolean
                 dependencies:
                   description: PolicyDependencies that apply to each template in this Policy
                   items:
-                    description: Each PolicyDependency defines an object reference which must be in a certain compliance state before the policy should be created.
+                    description: |-
+                      Each PolicyDependency defines an object reference which must be in a certain compliance
+                      state before the policy should be created.
                     oneOf:
                       - properties:
                           kind:
@@ -302,7 +338,11 @@ spec:
                               pattern: ^(?:(?:Certificate|Configuration|Iam)Policy)$
                     properties:
                       apiVersion:
-                        description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                        description: |-
+                          APIVersion defines the versioned schema of this representation of an object.
+                          Servers should convert recognized schemas to the latest internal value, and
+                          may reject unrecognized values.
+                          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
                         type: string
                       compliance:
                         description: The ComplianceState (at path .status.compliant) required before the policy should be created
@@ -312,7 +352,12 @@ spec:
                           - NonCompliant
                         type: string
                       kind:
-                        description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                        description: |-
+                          Kind is a string value representing the REST resource this object represents.
+                          Servers may infer this from the endpoint the client submits requests to.
+                          Cannot be updated.
+                          In CamelCase.
+                          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                         type: string
                       name:
                         description: The name of the object to be checked
@@ -336,7 +381,9 @@ spec:
                       extraDependencies:
                         description: Additional PolicyDependencies that only apply to this template
                         items:
-                          description: Each PolicyDependency defines an object reference which must be in a certain compliance state before the policy should be created.
+                          description: |-
+                            Each PolicyDependency defines an object reference which must be in a certain compliance
+                            state before the policy should be created.
                           oneOf:
                             - properties:
                                 kind:
@@ -352,7 +399,11 @@ spec:
                                     pattern: ^(?:(?:Certificate|Configuration|Iam)Policy)$
                           properties:
                             apiVersion:
-                              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                              description: |-
+                                APIVersion defines the versioned schema of this representation of an object.
+                                Servers should convert recognized schemas to the latest internal value, and
+                                may reject unrecognized values.
+                                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
                               type: string
                             compliance:
                               description: The ComplianceState (at path .status.compliant) required before the policy should be created
@@ -362,7 +413,12 @@ spec:
                                 - NonCompliant
                               type: string
                             kind:
-                              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                              description: |-
+                                Kind is a string value representing the REST resource this object represents.
+                                Servers may infer this from the endpoint the client submits requests to.
+                                Cannot be updated.
+                                In CamelCase.
+                                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                               type: string
                             name:
                               description: The name of the object to be checked
@@ -479,10 +535,4 @@ spec:
       storage: true
       subresources:
         status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
 {{- end }}
