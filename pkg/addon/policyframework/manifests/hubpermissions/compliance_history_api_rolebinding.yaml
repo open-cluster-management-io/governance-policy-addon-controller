@@ -1,0 +1,13 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: open-cluster-management:compliance-history-api-recorder
+  namespace: "{{ .ClusterName }}"
+roleRef:
+  kind: ClusterRole
+  name: open-cluster-management:compliance-history-api-recorder
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: open-cluster-management-compliance-history-api-recorder
+    namespace: "{{ .ClusterName }}"

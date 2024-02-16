@@ -56,9 +56,13 @@ import (
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;patch;update,resourceNames=governance-policy-framework;config-policy-controller
 
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=create
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework-hub";"open-cluster-management:config-policy-controller-hub"
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework-hub";"open-cluster-management:config-policy-controller-hub";"open-cluster-management:compliance-history-api-recorder"
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=create
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework-hub";"open-cluster-management:config-policy-controller-hub"
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;update;patch;delete,resourceNames="open-cluster-management:policy-framework-hub";"open-cluster-management:config-policy-controller-hub";"open-cluster-management:compliance-history-api-recorder"
+//+kubebuilder:rbac:groups=core,resources=serviceaccounts,verbs=create
+//+kubebuilder:rbac:groups=core,resources=serviceaccounts,verbs=get;update;patch;delete,resourceNames="open-cluster-management-compliance-history-api-recorder"
+//+kubebuilder:rbac:groups=core,resources=secrets,verbs=create
+//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;update;patch;delete;watch;list,resourceNames="open-cluster-management-compliance-history-api-recorder"
 
 // Cannot limit based on resourceNames because the name is dynamic in hosted mode.
 //+kubebuilder:rbac:groups=work.open-cluster-management.io,resources=manifestworks,verbs=create;delete;get;list;patch;update;watch

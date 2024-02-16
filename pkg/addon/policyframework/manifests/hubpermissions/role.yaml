@@ -49,13 +49,14 @@ rules:
   - get
   - patch
   - update
-# Rule for secret-sync
+# Rule for secret-sync and compliance history API service account token
 - apiGroups:
   - ""
   resources:
   - secrets
   resourceNames:
   - policy-encryption-key
+  - open-cluster-management-compliance-history-api-recorder
   verbs:
   - get
   - list

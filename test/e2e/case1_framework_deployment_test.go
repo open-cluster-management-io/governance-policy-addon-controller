@@ -39,7 +39,10 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 		Kubectl("delete", "-f", case1ClusterManagementAddOnCRDefault)
 	})
 
-	It("should create the default framework deployment on separate managed clusters", func() {
+	It("should create the default framework deployment on separate managed clusters", func(ctx context.Context) {
+		hubClusterConfig := managedClusterList[0]
+		hubClient := hubClusterConfig.clusterClient
+
 		for i, cluster := range managedClusterList[1:] {
 			Expect(cluster.clusterType).To(Equal("managed"))
 
@@ -60,6 +63,24 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 			}
 
 			checkArgs(cluster, expectedArgs...)
+
+			By(logPrefix + "checking if the hub service account and permissions were created")
+			_, err := hubClient.Resource(gvrServiceAccount).Namespace(cluster.clusterName).Get(
+				ctx, "open-cluster-management-compliance-history-api-recorder", metav1.GetOptions{},
+			)
+			Expect(err).ToNot(HaveOccurred())
+			_, err = hubClient.Resource(gvrClusterRole).Get(
+				ctx, "open-cluster-management:compliance-history-api-recorder", metav1.GetOptions{},
+			)
+			Expect(err).ToNot(HaveOccurred())
+			_, err = hubClient.Resource(gvrRoleBinding).Namespace(cluster.clusterName).Get(
+				ctx, "open-cluster-management:compliance-history-api-recorder", metav1.GetOptions{},
+			)
+			Expect(err).ToNot(HaveOccurred())
+			_, err = hubClient.Resource(gvrSecret).Namespace(cluster.clusterName).Get(
+				ctx, "open-cluster-management-compliance-history-api-recorder", metav1.GetOptions{},
+			)
+			Expect(err).ToNot(HaveOccurred())
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
 			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")

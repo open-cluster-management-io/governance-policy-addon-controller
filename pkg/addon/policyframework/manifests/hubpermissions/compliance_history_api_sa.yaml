@@ -1,0 +1,5 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: open-cluster-management-compliance-history-api-recorder
+  namespace: "{{ .ClusterName }}"
