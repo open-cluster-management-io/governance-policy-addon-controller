@@ -43,6 +43,9 @@ var (
 	gvrSecret              schema.GroupVersionResource
 	gvrServiceMonitor      schema.GroupVersionResource
 	gvrService             schema.GroupVersionResource
+	gvrServiceAccount      schema.GroupVersionResource
+	gvrClusterRole         schema.GroupVersionResource
+	gvrRoleBinding         schema.GroupVersionResource
 	gvrPolicyCrd           schema.GroupVersionResource
 	managedClusterList     []managedClusterConfig
 	clientDynamic          dynamic.Interface
@@ -81,6 +84,13 @@ var _ = BeforeSuite(func() {
 		Group: "monitoring.coreos.com", Version: "v1", Resource: "servicemonitors",
 	}
 	gvrService = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}
+	gvrServiceAccount = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "serviceaccounts"}
+	gvrClusterRole = schema.GroupVersionResource{
+		Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterroles",
+	}
+	gvrRoleBinding = schema.GroupVersionResource{
+		Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "rolebindings",
+	}
 	gvrPolicyCrd = schema.GroupVersionResource{
 		Group:    "apiextensions.k8s.io",
 		Version:  "v1",

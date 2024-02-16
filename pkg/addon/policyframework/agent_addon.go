@@ -46,6 +46,11 @@ var agentPermissionFiles = []string{
 	"manifests/hubpermissions/role.yaml",
 	// rolebinding to bind the above role to a certain user group
 	"manifests/hubpermissions/rolebinding.yaml",
+	// a service account with minimal access for recording compliance events in the compliance history API
+	"manifests/hubpermissions/compliance_history_api_role.yaml",
+	"manifests/hubpermissions/compliance_history_api_rolebinding.yaml",
+	"manifests/hubpermissions/compliance_history_api_sa.yaml",
+	"manifests/hubpermissions/compliance_history_api_sa_secret.yaml",
 }
 
 type UserArgs struct {
