@@ -15,28 +15,36 @@ do
     || git clone -b main --depth 1 https://github.com/open-cluster-management-io/${REPO}.git .go/${REPO}
 done
 
+generate_v1beta1() {
+    CRD_PATH=${1}
+    yq '.apiVersion += "beta1"' -i ${CRD_PATH}
+    yq '.spec.version = "v1"' -i ${CRD_PATH}
+    yq '.spec.additionalPrinterColumns = .spec.versions[].additionalPrinterColumns' -i ${CRD_PATH}
+    yq '.spec.additionalPrinterColumns[] |= .JSONPath = .jsonPath' -i ${CRD_PATH}
+    yq 'del(.spec.additionalPrinterColumns[].jsonPath)' -i ${CRD_PATH}
+    yq '.spec.validation = .spec.versions[].schema' -i ${CRD_PATH}
+    yq '.spec.versions = [{"name": "v1", "served": true, "storage": true}]' -i ${CRD_PATH}
+    yq 'del(.. | select(has("default")).default)' -i ${CRD_PATH}
+    yq 'del(.. | select(has("oneOf")).oneOf)' -i ${CRD_PATH}
+    yq 'sort_keys(..)' -i ${CRD_PATH}
+}
+
 (
     cd .go/config-policy-controller
+    # ConfigurationPolicy CRD
     cp deploy/crds/policy.open-cluster-management.io_configurationpolicies.yaml ../config-policy-crd-v1.yaml
-    cp deploy/crds/policy.open-cluster-management.io_operatorpolicies.yaml ../operator-policy-crd-v1.yaml
-    CRD_OPTIONS="crd:trivialVersions=true,crdVersions=v1beta1" make manifests
     cp deploy/crds/policy.open-cluster-management.io_configurationpolicies.yaml ../config-policy-crd-v1beta1.yaml
+    generate_v1beta1 ../config-policy-crd-v1beta1.yaml
+    # OperatorPolicy CRD (v1beta1 not required since it's not supported on earlier K8s)
+    cp deploy/crds/policy.open-cluster-management.io_operatorpolicies.yaml ../operator-policy-crd-v1.yaml
 )
 
 (
     cd .go/governance-policy-propagator
-    #### Workaround to use controller-gen v0.6.1 until an alternative solution is merged
-    SED="sed"; if [[ "$(go env GOOS)" == "darwin" ]]; then SED="gsed"; fi
-    ${SED} -i 's%\(manifests: kustomize\) controller-gen%\1%' Makefile
-    ${SED} -i 's%$(CONTROLLER_GEN) crd%'${PWD}'/../config-policy-controller/bin/controller-gen crd%' Makefile
-    make manifests
-    #####
+    # Policy CRD
     cp deploy/crds/policy.open-cluster-management.io_policies.yaml ../policy-crd-v1.yaml
-    #### Workaround to use controller-gen v0.6.1 until an alternative solution is merged
-    ${SED} -i 's% crd % crd:trivialVersions=true,crdVersions=v1beta1 %' Makefile
-    make manifests
-    ####
     cp deploy/crds/policy.open-cluster-management.io_policies.yaml ../policy-crd-v1beta1.yaml
+    generate_v1beta1 ../policy-crd-v1beta1.yaml
 )
 
 addLocationLabel='.metadata.labels += {"addon.open-cluster-management.io/hosted-manifest-location": "hosting"}'
