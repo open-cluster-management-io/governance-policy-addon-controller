@@ -25,8 +25,17 @@ done
 
 (
     cd .go/governance-policy-propagator
+    #### Workaround to use controller-gen v0.6.1 until an alternative solution is merged
+    SED="sed"; if [[ "$(go env GOOS)" == "darwin" ]]; then SED="gsed"; fi
+    ${SED} -i 's%\(manifests: kustomize\) controller-gen%\1%' Makefile
+    ${SED} -i 's%$(CONTROLLER_GEN) crd%'${PWD}'/../config-policy-controller/bin/controller-gen crd%' Makefile
+    make manifests
+    #####
     cp deploy/crds/policy.open-cluster-management.io_policies.yaml ../policy-crd-v1.yaml
-    CRD_OPTIONS="crd:trivialVersions=true,crdVersions=v1beta1" make manifests
+    #### Workaround to use controller-gen v0.6.1 until an alternative solution is merged
+    ${SED} -i 's% crd % crd:trivialVersions=true,crdVersions=v1beta1 %' Makefile
+    make manifests
+    ####
     cp deploy/crds/policy.open-cluster-management.io_policies.yaml ../policy-crd-v1beta1.yaml
 )
 
