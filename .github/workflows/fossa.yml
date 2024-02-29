@@ -1,18 +1,18 @@
-# Copyright Contributors to the Open Cluster Management project
-name: FOSSA License Scan
+name: FOSSA
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch: {}
 
 jobs:
   fossa-scan:
+    name: License and Security Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+
       - name: Run FOSSA Scan
         uses: fossas/fossa-action@v1
         with:
