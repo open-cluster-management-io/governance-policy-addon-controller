@@ -113,7 +113,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 
 	// Set the default namespace for OperatorPolicy for OpenShift 4
 	if cluster.Labels["openshiftVersion-major"] == "4" {
-		userValues.OperatorPolicy["default-namespace"] = "openshift-operators"
+		userValues.OperatorPolicy["defaultNamespace"] = "openshift-operators"
 	}
 
 	annotations := addon.GetAnnotations()
