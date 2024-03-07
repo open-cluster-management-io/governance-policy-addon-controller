@@ -203,7 +203,7 @@ kind-approve-cluster: $(KIND_KUBECONFIG) ## Approve managed cluster in the kind 
 
 .PHONY: wait-for-work-agent
 wait-for-work-agent: $(KIND_KUBECONFIG) ## Wait for the klusterlet work agent to start.
-	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r "pod -l=app=klusterlet-manifestwork-agent" -n open-cluster-management-agent -c condition=Ready -m 360
+	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r "pod -l=app=klusterlet-agent" -n open-cluster-management-agent -c condition=Ready -m 360
 
 .PHONY: kind-run-local
 kind-run-local: manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-addon-controller locally against the kind cluster.
