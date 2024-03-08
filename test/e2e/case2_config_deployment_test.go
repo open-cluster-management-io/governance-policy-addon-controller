@@ -94,6 +94,10 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 	})
 
 	AfterAll(func() {
+		if CurrentSpecReport().Failed() {
+			debugCollection(case2PodSelector)
+		}
+
 		By("Deleting the default config-policy-controller ClusterManagementAddon from the hub cluster")
 		Kubectl("delete", "-f", case2ClusterManagementAddOnCRDefault)
 	})
