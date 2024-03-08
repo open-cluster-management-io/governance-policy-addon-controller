@@ -35,6 +35,10 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 	})
 
 	AfterAll(func() {
+		if CurrentSpecReport().Failed() {
+			debugCollection(case1PodSelector)
+		}
+
 		By("Deleting the default governance-policy-framework ClusterManagementAddon from the hub cluster")
 		Kubectl("delete", "-f", case1ClusterManagementAddOnCRDefault)
 	})

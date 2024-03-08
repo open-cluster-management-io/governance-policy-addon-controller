@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"slices"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -178,4 +179,58 @@ func getAddonStatus(addon *unstructured.Unstructured) bool {
 	}
 
 	return false
+}
+
+func debugCollection(podSelector string) {
+	namespaceSuffix := []string{""}
+
+	if slices.Contains(CurrentSpecReport().Labels(), "hosted-mode") {
+		namespaceSuffix = append(namespaceSuffix, "-hosted")
+	}
+
+	By("Recording debug logs")
+
+	output := "===\n"
+
+	for i, cluster := range managedClusterList {
+		targetKubeconfig := fmt.Sprintf("--kubeconfig=%s%d_e2e", kubeconfigFilename, i+1)
+		targetCluster := cluster.clusterName
+		clusterNs := []string{cluster.clusterName}
+
+		if cluster.clusterName == "cluster1" {
+			for _, cluster := range managedClusterList[1:] {
+				clusterNs = append(clusterNs, cluster.clusterName)
+			}
+		}
+
+		for _, namespace := range clusterNs {
+			for _, suffix := range namespaceSuffix {
+				namespace += suffix
+				output += fmt.Sprintf("Cluster %s: All objects in namespace %s:\n", targetCluster, namespace)
+				output += Kubectl("get", "all", "-n", namespace, targetKubeconfig)
+				output += "===\n"
+				output += fmt.Sprintf(
+					"Cluster %s: Pod logs for label %s in namespace %s:\n",
+					targetCluster, podSelector, namespace,
+				)
+				output += Kubectl("describe", "pod", "-n", namespace, "-l", podSelector, targetKubeconfig)
+				output += Kubectl("logs", "-n", namespace, "-l", podSelector, "--ignore-errors", targetKubeconfig)
+				output += "===\n"
+			}
+		}
+
+		output += fmt.Sprintf("Cluster %s: All objects in namespace %s:\n", targetCluster, addonNamespace)
+		output += Kubectl("get", "all", "-n", addonNamespace, targetKubeconfig)
+		output += "===\n"
+		output += fmt.Sprintf("Cluster %s: Pod logs for label %s in namespace %s for cluster %s:\n",
+			targetCluster, podSelector, addonNamespace, cluster.clusterName)
+		output += Kubectl(
+			"describe", "pod", "-n", addonNamespace, "-l", podSelector, targetKubeconfig,
+		)
+		output += Kubectl(
+			"logs", "-n", addonNamespace, "-l", podSelector, "--ignore-errors", targetKubeconfig,
+		)
+	}
+
+	GinkgoWriter.Print(output)
 }

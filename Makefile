@@ -269,11 +269,11 @@ e2e-stop-instrumented:
 .PHONY: e2e-debug
 e2e-debug: ## Collect debug logs from deployed clusters.
 	@echo "##### Gathering information from $(KIND_NAME) #####"
+	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl get managedclusters
 	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl get managedclusteraddons --all-namespaces
-	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) get deployments
-	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) get pods
-	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon get deployments
-	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon get pods
+	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) get all
+	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent get all
+	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon get all
 	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl get manifestwork --all-namespaces -o yaml
 	
 	@echo "* Local controller log:"
