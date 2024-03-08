@@ -145,19 +145,12 @@ func ListWithTimeoutByNamespace(
 
 	var list *unstructured.UnstructuredList
 
-	EventuallyWithOffset(1, func() error {
+	EventuallyWithOffset(1, func(g Gomega) {
 		var err error
 		list, err = clientHubDynamic.Resource(gvr).Namespace(ns).List(context.TODO(), opts)
-		if err != nil {
-			return err
-		}
-
-		if len(list.Items) != size {
-			return fmt.Errorf("list size doesn't match, expected %d actual %d", size, len(list.Items))
-		}
-
-		return nil
-	}, timeout, 1).ShouldNot(HaveOccurred())
+		g.Expect(err).ToNot(HaveOccurred())
+		g.Expect(list.Items).To(HaveLen(size))
+	}, timeout, 1).Should(Succeed())
 
 	if wantFound {
 		return list

@@ -48,23 +48,21 @@ func verifyConfigPolicyDeployment(
 
 	if startupProbeInCluster(clusterNum) {
 		By(logPrefix + "verifying all replicas in config-policy-controller deployment are available")
-		Eventually(func() bool {
+		Eventually(func(g Gomega) {
 			deploy = GetWithTimeout(
 				client, gvrDeployment, case2DeploymentName, namespace, true, 30,
 			)
 
 			replicas, found, err := unstructured.NestedInt64(deploy.Object, "status", "replicas")
-			if !found || err != nil {
-				return false
-			}
+			g.Expect(found).To(BeTrue(), "status.replicas should exist in the deployment")
+			g.Expect(err).ToNot(HaveOccurred())
 
 			available, found, err := unstructured.NestedInt64(deploy.Object, "status", "availableReplicas")
-			if !found || err != nil {
-				return false
-			}
+			g.Expect(found).To(BeTrue(), "status.availableReplicas should exist in the deployment")
+			g.Expect(err).ToNot(HaveOccurred())
 
-			return available == replicas
-		}, 240, 1).Should(Equal(true))
+			g.Expect(available).To(Equal(replicas), "available replicas should equal expected replicas")
+		}, 240, 1).Should(Succeed())
 	}
 
 	By(logPrefix + "verifying a running config-policy-controller pod")
