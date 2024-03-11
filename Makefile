@@ -161,8 +161,10 @@ $(KIND_KUBECONFIG):
 	kind create cluster --name $(KIND_NAME) $(KIND_ARGS)
 	kind get kubeconfig --name $(KIND_NAME) > $(KIND_KUBECONFIG)
 	kind get kubeconfig --name $(KIND_NAME) --internal > $(KIND_KUBECONFIG_INTERNAL)
-	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.64.1/example/prometheus-operator-crd-full/monitoring.coreos.com_servicemonitors.yaml
-	KUBECONFIG=$(KIND_KUBECONFIG) kubectl create -f https://raw.githubusercontent.com/openshift/api/release-4.12/route/v1/route.crd.yaml
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f \
+		https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.64.1/example/prometheus-operator-crd-full/monitoring.coreos.com_servicemonitors.yaml
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl create -f \
+		https://raw.githubusercontent.com/openshift/api/release-4.12/route/v1/route.crd.yaml
 
 .PHONY: kind-delete-cluster
 kind-delete-cluster: ## Delete a kind cluster.
@@ -183,16 +185,24 @@ kind-deploy-registration-operator-hub: $(OCM_REPO) $(KIND_KUBECONFIG) ## Deploy 
 	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r deploy/cluster-manager -n open-cluster-management -c condition=Available -m 90
 	KUBECONFIG=$(KIND_KUBECONFIG) $(KUBEWAIT) -r deploy/cluster-manager-placement-controller -n open-cluster-management-hub -c condition=Available -m 90
 	@echo installing Policy CRD on hub
-	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f https://raw.githubusercontent.com/open-cluster-management-io/governance-policy-propagator/main/deploy/crds/policy.open-cluster-management.io_policies.yaml
+	KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f \
+		https://raw.githubusercontent.com/open-cluster-management-io/governance-policy-propagator/main/deploy/crds/policy.open-cluster-management.io_policies.yaml
 
 .PHONY: kind-deploy-registration-operator-managed
 kind-deploy-registration-operator-managed: $(OCM_REPO) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster.
-	cd $(OCM_REPO) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION_CLEAN) make deploy-spoke-operator
-	cd $(OCM_REPO) && KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION_CLEAN) make apply-spoke-cr
+	cd $(OCM_REPO) && \
+	KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) \
+	KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION_CLEAN) make deploy-spoke-operator
+	cd $(OCM_REPO) && \
+	KUBECONFIG=$(KIND_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) \
+	KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION_CLEAN) make apply-spoke-cr
 
 .PHONY: kind-deploy-registration-operator-managed-hosted
 kind-deploy-registration-operator-managed-hosted: $(OCM_REPO) $(KIND_KUBECONFIG) ## Deploy the ocm registration operator to the kind cluster in hosted mode.
-	cd $(OCM_REPO) && KUBECONFIG=$(HUB_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) HOSTED_CLUSTER_MANAGER_NAME=$(HUB_CLUSTER_NAME) EXTERNAL_MANAGED_KUBECONFIG=$(KIND_KUBECONFIG_INTERNAL) KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION_CLEAN) make deploy-spoke-hosted
+	cd $(OCM_REPO) && \
+	KUBECONFIG=$(HUB_KUBECONFIG) MANAGED_CLUSTER_NAME=$(CLUSTER_NAME) HUB_KUBECONFIG=$(HUB_KUBECONFIG_INTERNAL) \
+	HOSTED_CLUSTER_MANAGER_NAME=$(HUB_CLUSTER_NAME) EXTERNAL_MANAGED_KUBECONFIG=$(KIND_KUBECONFIG_INTERNAL) \
+	KUSTOMIZE_VERSION=$(KUSTOMIZE_VERSION_CLEAN) make deploy-spoke-hosted
 
 .PHONY: kind-approve-cluster
 kind-approve-cluster: $(KIND_KUBECONFIG) ## Approve managed cluster in the kind cluster.
@@ -268,7 +278,7 @@ e2e-stop-instrumented:
 
 .PHONY: e2e-debug
 e2e-debug: ## Collect debug logs from deployed clusters.
-	@echo "##### Gathering information from $(KIND_NAME) #####"
+	##### Gathering information from $(KIND_NAME) #####
 	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl get managedclusters
 	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl get managedclusteraddons --all-namespaces
 	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) get all
@@ -276,19 +286,19 @@ e2e-debug: ## Collect debug logs from deployed clusters.
 	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon get all
 	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl get manifestwork --all-namespaces -o yaml
 	
-	@echo "* Local controller log:"
+	## Local controller log:
 	-cat build/_output/controller.log
-	@echo "* Container logs in namespace $(CONTROLLER_NAMESPACE):"
+	## Container logs in namespace $(CONTROLLER_NAMESPACE):
 	-@for POD in $(shell KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) get pods -o name); do \
 		for CONTAINER in $$(KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) get $${POD} -o jsonpath={.spec.containers[*].name}); do \
-			echo "* Logs for pod $${POD} from container $${CONTAINER} in namespace $(CONTROLLER_NAMESPACE)"; \
+			echo "## Logs for pod $${POD} from container $${CONTAINER} in namespace $(CONTROLLER_NAMESPACE)"; \
 			KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n $(CONTROLLER_NAMESPACE) logs $${POD}; \
 		done; \
 	done
-	@echo "* Container logs in namespace open-cluster-management-agent-addon:"
+	## Container logs in namespace open-cluster-management-agent-addon:
 	-@for POD in $(shell KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon get pods -o name); do \
 		for CONTAINER in $$(KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon get $${POD} -o jsonpath={.spec.containers[*].name}); do \
-			echo "* Logs for pod $${POD} from container $${CONTAINER} in namespace open-cluster-management-agent-addon"; \
+			echo "## Logs for pod $${POD} from container $${CONTAINER} in namespace open-cluster-management-agent-addon"; \
 			KUBECONFIG=$(KIND_KUBECONFIG) kubectl -n open-cluster-management-agent-addon logs $${POD}; \
 		done; \
 	done
