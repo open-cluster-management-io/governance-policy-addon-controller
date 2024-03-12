@@ -143,4 +143,5 @@ replace (
 	github.com/imdario/mergo => github.com/imdario/mergo v0.3.16 // Replaced so that 'go get -u' works. Remove/bump when upgrading.
 	golang.org/x/net => golang.org/x/net v0.17.0 // CVE-2023-39325
 	golang.org/x/text => golang.org/x/text v0.13.0 // CVE-2022-32149
+	google.golang.org/protobuf => google.golang.org/protobuf v1.33.0 // CVE-2024-24786; >=v1.33.0
 )
