@@ -18,13 +18,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/addon-framework/pkg/utils"
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	clusterv1client "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	clusterv1informers "open-cluster-management.io/api/client/cluster/informers/externalversions"
-	clusterlister "open-cluster-management.io/api/client/cluster/listers/cluster/v1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -140,22 +140,14 @@ func GetAndAddAgent(
 	mgr addonmanager.AddonManager,
 	addonName string,
 	controllerContext *controllercmd.ControllerContext,
-	getAgent func(*controllercmd.ControllerContext) (agent.AgentAddon, error),
+	getAgent func(context.Context, *controllercmd.ControllerContext) (agent.AgentAddon, error),
 ) error {
-	agentAddon, err := getAgent(controllerContext)
+	agentAddon, err := getAgent(ctx, controllerContext)
 	if err != nil {
 		return fmt.Errorf("failed getting the %v agent addon: %w", addonName, err)
 	}
 
-	clusterClient, err := clusterv1client.NewForConfig(controllerContext.KubeConfig)
-	if err != nil {
-		return err
-	}
-
-	clusterInformers := clusterv1informers.NewSharedInformerFactory(clusterClient, 10*time.Minute)
-	go clusterInformers.Cluster().V1().ManagedClusters().Informer().Run(ctx.Done())
-
-	agentAddon = &PolicyAgentAddon{agentAddon, clusterInformers.Cluster().V1().ManagedClusters().Lister(), nil}
+	agentAddon = &PolicyAgentAddon{agentAddon}
 
 	err = mgr.AddAgent(agentAddon)
 	if err != nil {
@@ -165,11 +157,21 @@ func GetAndAddAgent(
 	return nil
 }
 
+func GetManagedClusterClient(ctx context.Context, kubeConfig *rest.Config) (*clusterv1client.Clientset, error) {
+	clusterClient, err := clusterv1client.NewForConfig(kubeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterInformers := clusterv1informers.NewSharedInformerFactory(clusterClient, 10*time.Minute)
+	go clusterInformers.Cluster().V1().ManagedClusters().Informer().Run(ctx.Done())
+
+	return clusterClient, nil
+}
+
 // PolicyAgentAddon wraps the AgentAddon created from the addonfactory to override some behavior
 type PolicyAgentAddon struct {
 	agent.AgentAddon
-	clusterLister  clusterlister.ManagedClusterLister
-	hostingCluster *clusterv1.ManagedCluster
 }
 
 func (pa *PolicyAgentAddon) Manifests(
@@ -180,17 +182,6 @@ func (pa *PolicyAgentAddon) Manifests(
 	pauseAnnotation := addon.GetAnnotations()[PolicyAddonPauseAnnotation]
 	if pauseAnnotation == "true" {
 		return nil, errors.New("the Policy Addon controller is paused due to the policy-addon-pause annotation")
-	}
-
-	// Fetch ManagedCluster for hosting cluster in hosted mode
-	hostingClusterName := addon.Annotations[addonapiv1alpha1.HostingClusterNameAnnotationKey]
-	if pa.GetAgentAddonOptions().HostedModeEnabled && hostingClusterName != "" {
-		hostingCluster, err := pa.clusterLister.Get(hostingClusterName)
-		if err != nil {
-			return nil, err
-		}
-
-		pa.hostingCluster = hostingCluster
 	}
 
 	return pa.AgentAddon.Manifests(cluster, addon)
