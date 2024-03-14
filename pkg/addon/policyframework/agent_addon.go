@@ -229,7 +229,7 @@ func mandateValues(
 	return values, nil
 }
 
-func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {
+func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {
 	registrationOption := policyaddon.NewRegistrationOption(
 		controllerContext,
 		addonName,
@@ -239,6 +239,11 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 	addonClient, err := addonv1alpha1client.NewForConfig(controllerContext.KubeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve addon client: %w", err)
+	}
+
+	clusterClient, err := policyaddon.GetManagedClusterClient(ctx, controllerContext.KubeConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize a managed cluster client: %w", err)
 	}
 
 	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
@@ -253,6 +258,7 @@ func GetAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 			addonfactory.GetValuesFromAddonAnnotation,
 			mandateValues,
 		).
+		WithManagedClusterClient(clusterClient).
 		WithAgentRegistrationOption(registrationOption).
 		WithScheme(policyaddon.Scheme).
 		WithAgentHostedModeEnabledOption().

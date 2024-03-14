@@ -118,7 +118,7 @@ spec:
             port: 8080
           failureThreshold: 3
           periodSeconds: 10
-          {{- if semverCompare "< 1.20.0" .Capabilities.KubeVersion.Version }}
+          {{- if semverCompare "< 1.20.0" (.Values.hostingClusterCapabilities.KubeVersion.Version | default .Capabilities.KubeVersion.Version) }}
           initialDelaySeconds: 300
           {{- end }}
         readinessProbe:
@@ -127,10 +127,10 @@ spec:
             port: 8080
           failureThreshold: 3
           periodSeconds: 10
-          {{- if semverCompare "< 1.20.0" .Capabilities.KubeVersion.Version }}
+          {{- if semverCompare "< 1.20.0" (.Values.hostingClusterCapabilities.KubeVersion.Version | default .Capabilities.KubeVersion.Version) }}
           initialDelaySeconds: 300
           {{- end }}
-        {{- if semverCompare ">= 1.20.0" .Capabilities.KubeVersion.Version }}
+        {{- if semverCompare ">= 1.20.0" (.Values.hostingClusterCapabilities.KubeVersion.Version | default .Capabilities.KubeVersion.Version) }}
         {{- /* startupProbe became stable in k8s 1.20 */}}
         startupProbe:
           httpGet:
