@@ -65,7 +65,7 @@ spec:
   serviceAccount: {{ include "controller.serviceAccountName" . }}
   securityContext:
     runAsNonRoot: true
-    {{- if semverCompare ">= 1.25.0" .Capabilities.KubeVersion.Version }}
+    {{- if semverCompare ">= 1.25.0" (.Values.hostingClusterCapabilities.KubeVersion.Version | default .Capabilities.KubeVersion.Version) }}
     {{- /* newer OpenShift (4.12+) versions might require this to be explicitly set */}}
     {{- /* but not all older kubernetes versions can handle when it is set */}}
     seccompProfile:
