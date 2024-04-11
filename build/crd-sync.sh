@@ -47,6 +47,10 @@ generate_v1beta1() {
     generate_v1beta1 ../policy-crd-v1beta1.yaml
 )
 
+crdPrefix='# Copyright Contributors to the Open Cluster Management project
+
+{{- if semverCompare "< 1.16.0" (.Values.hostingClusterCapabilities.KubeVersion.Version | default .Capabilities.KubeVersion.Version) }}'
+
 addLocationLabel='.metadata.labels += {"addon.open-cluster-management.io/hosted-manifest-location": "hosting"}'
 addTemplateLabel='.metadata.labels += {"policy.open-cluster-management.io/policy-type": "template"}'
 
@@ -56,9 +60,7 @@ addTempAnnotation='.metadata.annotations += {"SEDTARGET": "SEDTARGET"}'
 replaceAnnotation='s/SEDTARGET: SEDTARGET/{{ if .Values.onMulticlusterHub }}"addon.open-cluster-management.io\/deletion-orphan": ""{{ end }}/g'
 
 cat > pkg/addon/configpolicy/manifests/managedclusterchart/templates/policy.open-cluster-management.io_configurationpolicies_crd.yaml << EOF
-# Copyright Contributors to the Open Cluster Management project
-
-{{- if semverCompare "< 1.16.0" .Capabilities.KubeVersion.Version }}
+${crdPrefix}
 $(yq e "$addLocationLabel | $addTemplateLabel" .go/config-policy-crd-v1beta1.yaml)
 {{ else }}
 $(yq e "$addLocationLabel" .go/config-policy-crd-v1.yaml)
@@ -66,17 +68,13 @@ $(yq e "$addLocationLabel" .go/config-policy-crd-v1.yaml)
 EOF
 
 cat > pkg/addon/configpolicy/manifests/managedclusterchart/templates/policy.open-cluster-management.io_operatorpolicies_crd.yaml << EOF
-# Copyright Contributors to the Open Cluster Management project
-
-{{- if semverCompare "> 1.16.0" .Capabilities.KubeVersion.Version }}
+$(echo "${crdPrefix}" | sed 's/</>/')
 $(yq e "$addLocationLabel" .go/operator-policy-crd-v1.yaml)
 {{- end }}
 EOF
 
 cat > pkg/addon/policyframework/manifests/managedclusterchart/templates/policy.open-cluster-management.io_policies_crd.yaml << EOF
-# Copyright Contributors to the Open Cluster Management project
-
-{{- if semverCompare "< 1.16.0" .Capabilities.KubeVersion.Version }}
+${crdPrefix}
 $(yq e "$addTempAnnotation | $addLocationLabel" .go/policy-crd-v1beta1.yaml | sed -E "$replaceAnnotation")
 {{ else }}
 $(yq e "$addTempAnnotation | $addLocationLabel" .go/policy-crd-v1.yaml | sed -E "$replaceAnnotation")
