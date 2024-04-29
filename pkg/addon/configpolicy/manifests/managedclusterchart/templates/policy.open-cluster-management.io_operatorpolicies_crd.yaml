@@ -89,23 +89,13 @@ spec:
                         - Keep
                         - Delete
                       type: string
-                    installPlans:
-                      default: Keep
-                      description: |-
-                        Specifies whether to delete any InstallPlans associated with the operator; defaults
-                        to 'Keep' because those objects are only for history
-                      enum:
-                        - Keep
-                        - Delete
-                      type: string
                     operatorGroups:
                       default: DeleteIfUnused
                       description: |-
                         Specifies whether to delete the OperatorGroup; defaults to 'DeleteIfUnused' which
-                        will only delete the OperatorGroup if there is not another Subscription using it.
+                        will only delete the OperatorGroup if there is not another resource using it.
                       enum:
                         - Keep
-                        - Delete
                         - DeleteIfUnused
                       type: string
                     subscriptions:

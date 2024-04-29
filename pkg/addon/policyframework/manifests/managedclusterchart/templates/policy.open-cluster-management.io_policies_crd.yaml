@@ -412,13 +412,12 @@ spec:
                             enum:
                               - CertificatePolicy
                               - ConfigurationPolicy
-                              - IamPolicy
                           namespace:
                             maxLength: 0
                       - not:
                           properties:
                             kind:
-                              pattern: ^(?:(?:Certificate|Configuration|Iam)Policy)$
+                              pattern: ^(?:(?:Certificate|Configuration)Policy)$
                     properties:
                       apiVersion:
                         description: |-
@@ -485,13 +484,12 @@ spec:
                                   enum:
                                     - CertificatePolicy
                                     - ConfigurationPolicy
-                                    - IamPolicy
                                 namespace:
                                   maxLength: 0
                             - not:
                                 properties:
                                   kind:
-                                    pattern: ^(?:(?:Certificate|Configuration|Iam)Policy)$
+                                    pattern: ^(?:(?:Certificate|Configuration)Policy)$
                           properties:
                             apiVersion:
                               description: |-
