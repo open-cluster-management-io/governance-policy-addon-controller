@@ -23,6 +23,7 @@ generate_v1beta1() {
     yq '.spec.additionalPrinterColumns[] |= .JSONPath = .jsonPath' -i ${CRD_PATH}
     yq 'del(.spec.additionalPrinterColumns[].jsonPath)' -i ${CRD_PATH}
     yq '.spec.validation = .spec.versions[].schema' -i ${CRD_PATH}
+    yq '.spec.subresources.status = {}' -i ${CRD_PATH}
     yq '.spec.versions = [{"name": "v1", "served": true, "storage": true}]' -i ${CRD_PATH}
     yq 'del(.. | select(has("default")).default)' -i ${CRD_PATH}
     yq 'del(.. | select(has("oneOf")).oneOf)' -i ${CRD_PATH}
