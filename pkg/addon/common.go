@@ -229,3 +229,34 @@ func IsOldKubernetes(cluster *clusterv1.ManagedCluster) bool {
 
 	return false
 }
+
+func CommonAgentInstallNamespaceFromDeploymentConfigFunc(
+	adcgetter utils.AddOnDeploymentConfigGetter,
+) func(*addonapiv1alpha1.ManagedClusterAddOn) string {
+	return func(addon *addonapiv1alpha1.ManagedClusterAddOn) string {
+		if addon == nil {
+			log.Info("failed to get addon install namespace, addon is nil")
+
+			return ""
+		}
+
+		hostingClusterName := addon.Annotations["addon.open-cluster-management.io/hosting-cluster-name"]
+		// Check it is hosted mode
+		if hostingClusterName != "" && addon.Spec.InstallNamespace != "" {
+			return addon.Spec.InstallNamespace
+		}
+
+		config, err := utils.GetDesiredAddOnDeploymentConfig(addon, adcgetter)
+		if err != nil {
+			log.Error(err, fmt.Sprintf("failed to get deployment config for addon %s: ", addon.Name))
+
+			return ""
+		}
+
+		if config == nil {
+			return ""
+		}
+
+		return config.Spec.AgentInstallNamespace
+	}
+}

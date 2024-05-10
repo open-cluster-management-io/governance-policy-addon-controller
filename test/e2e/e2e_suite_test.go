@@ -21,16 +21,18 @@ import (
 )
 
 const (
-	addonNamespace                        string = "open-cluster-management-agent-addon"
-	controllerNamespace                   string = "open-cluster-management"
-	kubeconfigFilename                    string = "../../kubeconfig_cluster"
-	loggingLevelAnnotation                string = "log-level=8"
-	evaluationConcurrencyAnnotation       string = "policy-evaluation-concurrency=5"
-	clientQPSAnnotation                   string = "client-qps=50"
-	prometheusEnabledAnnotation           string = "prometheus-metrics-enabled=true"
-	opPolicyEnabledAnnotation             string = "operator-policy-disabled=false"
-	addOnDeploymentConfigCR               string = "../resources/addondeploymentconfig.yaml"
-	addOnDeploymentConfigWithCustomVarsCR string = "../resources/addondeploymentconfig_customvars.yaml"
+	addonNamespace                          string = "open-cluster-management-agent-addon"
+	controllerNamespace                     string = "open-cluster-management"
+	kubeconfigFilename                      string = "../../kubeconfig_cluster"
+	loggingLevelAnnotation                  string = "log-level=8"
+	evaluationConcurrencyAnnotation         string = "policy-evaluation-concurrency=5"
+	clientQPSAnnotation                     string = "client-qps=50"
+	prometheusEnabledAnnotation             string = "prometheus-metrics-enabled=true"
+	opPolicyEnabledAnnotation               string = "operator-policy-disabled=false"
+	addOnDeploymentConfigCR                 string = "../resources/addondeploymentconfig.yaml"
+	addOnDeploymentConfigWithCustomVarsCR   string = "../resources/addondeploymentconfig_customvars.yaml"
+	addOnDeploymentConfigWithAgentInstallNs string = "../resources/addondeploymentconfig_agentInstallNs.yaml"
+	agentInstallNs                          string = "test-install-ns"
 )
 
 var (

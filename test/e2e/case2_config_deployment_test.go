@@ -20,6 +20,7 @@ const (
 	case2ManagedClusterAddOnCR           string = "../resources/config_policy_addon_cr.yaml"
 	case2ClusterManagementAddOnCRDefault string = "../resources/config_policy_clustermanagementaddon.yaml"
 	case2ClusterManagementAddOnCR        string = "../resources/config_policy_clustermanagementaddon_config.yaml"
+	case2CMAAddonWithInstallNs           string = "../resources/config_policy_cma_config_agentInstallNs.yaml"
 	case2DeploymentName                  string = "config-policy-controller"
 	case2PodSelector                     string = "app=config-policy-controller"
 	case2OpenShiftClusterClaim           string = "../resources/openshift_cluster_claim.yaml"
@@ -100,6 +101,44 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 
 		By("Deleting the default config-policy-controller ClusterManagementAddon from the hub cluster")
 		Kubectl("delete", "-f", case2ClusterManagementAddOnCRDefault)
+	})
+	It("should create the config-policy-controller deployment in hosted mode in user's custom namespace", func() {
+		By("Creating the AddOnDeploymentConfig")
+		Kubectl("apply", "-f", addOnDeploymentConfigWithAgentInstallNs)
+		DeferCleanup(func() {
+			By("Delete the AddOnDeploymentConfig")
+			Kubectl("delete", "-f", addOnDeploymentConfigWithAgentInstallNs)
+		})
+
+		By("Applying the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
+		Kubectl("apply", "-f", case2CMAAddonWithInstallNs)
+		DeferCleanup(func() {
+			By("Apply Default ClusterManagementAdd")
+			Kubectl("apply", "-f", case2ClusterManagementAddOnCRDefault)
+		})
+
+		for i, cluster := range managedClusterList[1:] {
+			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+			By(logPrefix + "deploying the default config-policy-controller managedclusteraddon")
+			Kubectl("apply", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
+			By("Addon should be installed in " + agentInstallNs)
+			// Use i+1 since the for loop ranges over a slice skipping first index
+			verifyConfigPolicyDeployment(logPrefix, cluster.clusterClient, cluster.clusterName, agentInstallNs, i+1)
+
+			By(logPrefix +
+				"removing the config-policy-controller deployment when the ManagedClusterAddOn CR is removed")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, "--timeout=90s")
+			deploy := GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case2DeploymentName, agentInstallNs, false, 180,
+			)
+			Expect(deploy).To(BeNil())
+
+			opts := metav1.ListOptions{
+				LabelSelector: case2PodSelector,
+			}
+			pods := ListWithTimeoutByNamespace(cluster.clusterClient, gvrPod, opts, agentInstallNs, 0, false, 180)
+			Expect(pods).To(BeNil())
+		}
 	})
 
 	It("should create the default config-policy-controller deployment on the managed cluster", func() {
@@ -608,5 +647,8 @@ func setupClusterSecretForHostedMode(
 	_, err = client.Resource(gvrSecret).Namespace(installNamespace).Create(
 		context.TODO(), &secret, metav1.CreateOptions{},
 	)
-	Expect(err).ToNot(HaveOccurred())
+
+	if !errors.IsAlreadyExists(err) {
+		Expect(err).ToNot(HaveOccurred())
+	}
 }
