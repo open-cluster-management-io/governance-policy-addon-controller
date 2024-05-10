@@ -20,6 +20,7 @@ const (
 	case1ManagedClusterAddOnCR           string = "../resources/framework_addon_cr.yaml"
 	case1ClusterManagementAddOnCRDefault string = "../resources/framework_clustermanagementaddon.yaml"
 	case1ClusterManagementAddOnCR        string = "../resources/framework_clustermanagementaddon_config.yaml"
+	case1CMAAddonWithInstallNs           string = "../resources/framework_cma_config_agentInstallNs.yaml"
 	case1hubAnnotationMCAOCR             string = "../resources/framework_hub_annotation_addon_cr.yaml"
 	case1hubValuesMCAOCR                 string = "../resources/framework_hub_values_addon_cr.yaml"
 	case1DeploymentName                  string = "governance-policy-framework"
@@ -41,6 +42,48 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 
 		By("Deleting the default governance-policy-framework ClusterManagementAddon from the hub cluster")
 		Kubectl("delete", "-f", case1ClusterManagementAddOnCRDefault)
+	})
+
+	It("should create the framework deployment in hosted mode in user's custom namespace", func() {
+		By("Creating the AddOnDeploymentConfig")
+		Kubectl("apply", "-f", addOnDeploymentConfigWithAgentInstallNs)
+		DeferCleanup(func() {
+			By("Delete the AddOnDeploymentConfig")
+			Kubectl("delete", "-f", addOnDeploymentConfigWithAgentInstallNs)
+		})
+
+		By("Applying the framework ClusterManagementAddOn to use the AddOnDeploymentConfig")
+		Kubectl("apply", "-f", case1CMAAddonWithInstallNs)
+		DeferCleanup(func() {
+			By("Apply Default ClusterManagementAdd")
+			Kubectl("apply", "-f", case1ClusterManagementAddOnCRDefault)
+		})
+
+		for _, cluster := range managedClusterList[1:] {
+			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+			By(logPrefix + "deploying the default framework managedclusteraddon")
+			Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+
+			By("Addon should be installed in " + agentInstallNs)
+			deploy := GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, agentInstallNs, true, 60,
+			)
+			Expect(deploy).NotTo(BeNil())
+
+			By(logPrefix +
+				"removing the framework deployment when the ManagedClusterAddOn CR is removed")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
+			deploy = GetWithTimeout(
+				cluster.clusterClient, gvrDeployment, case1DeploymentName, agentInstallNs, false, 180,
+			)
+			Expect(deploy).To(BeNil())
+
+			opts := metav1.ListOptions{
+				LabelSelector: case1PodSelector,
+			}
+			pods := ListWithTimeoutByNamespace(cluster.clusterClient, gvrPod, opts, agentInstallNs, 0, false, 180)
+			Expect(pods).To(BeNil())
+		}
 	})
 
 	It("should create the default framework deployment on separate managed clusters", func(ctx context.Context) {

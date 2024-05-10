@@ -1,0 +1,7 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnDeploymentConfig
+metadata:
+  name: addon-namespace-placement
+  namespace: open-cluster-management
+spec:
+  agentInstallNamespace: test-install-ns

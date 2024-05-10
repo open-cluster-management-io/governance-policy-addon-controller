@@ -260,6 +260,10 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 		).
 		WithManagedClusterClient(clusterClient).
 		WithAgentRegistrationOption(registrationOption).
+		WithAgentInstallNamespace(
+			policyaddon.
+				CommonAgentInstallNamespaceFromDeploymentConfigFunc(utils.NewAddOnDeploymentConfigGetter(addonClient)),
+		).
 		WithScheme(policyaddon.Scheme).
 		WithAgentHostedModeEnabledOption().
 		BuildHelmAgentAddon()
