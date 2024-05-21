@@ -163,9 +163,11 @@ spec:
                   recordDiff:
                     description: |-
                       RecordDiff specifies whether (and where) to log the diff between the object on the
-                      cluster and the objectDefinition in the policy. Defaults to "None".
+                      cluster and the objectDefinition in the policy. Defaults to "None" when the object kind is
+                      ConfigMap, OAuthAccessToken, OAuthAuthorizeTokens, Route, or Secret. Defaults to "InStatus" otherwise.
                     enum:
                       - Log
+                      - InStatus
                       - None
                     type: string
                 required:
@@ -305,6 +307,8 @@ spec:
                       createdByPolicy:
                         description: Whether the object was created by the parent policy
                         type: boolean
+                      diff:
+                        type: string
                       uid:
                         description: Store object UID to help track object ownership for deletion
                         type: string
@@ -488,9 +492,11 @@ spec:
                       recordDiff:
                         description: |-
                           RecordDiff specifies whether (and where) to log the diff between the object on the
-                          cluster and the objectDefinition in the policy. Defaults to "None".
+                          cluster and the objectDefinition in the policy. Defaults to "None" when the object kind is
+                          ConfigMap, OAuthAccessToken, OAuthAuthorizeTokens, Route, or Secret. Defaults to "InStatus" otherwise.
                         enum:
                           - Log
+                          - InStatus
                           - None
                         type: string
                     required:
@@ -631,6 +637,8 @@ spec:
                           createdByPolicy:
                             description: Whether the object was created by the parent policy
                             type: boolean
+                          diff:
+                            type: string
                           uid:
                             description: Store object UID to help track object ownership for deletion
                             type: string
