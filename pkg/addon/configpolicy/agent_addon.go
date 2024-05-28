@@ -120,8 +120,8 @@ func getValues(cluster *clusterv1.ManagedCluster,
 
 	if val, ok := annotations[policyaddon.PolicyLogLevelAnnotation]; ok {
 		logLevel := policyaddon.GetLogLevel(addonName, val)
-		userValues.UserArgs.LogLevel = logLevel
-		userValues.UserArgs.PkgLogLevel = logLevel - 2
+		userValues.UserArgs.UserArgs.LogLevel = logLevel
+		userValues.UserArgs.UserArgs.PkgLogLevel = logLevel - 2
 	}
 
 	if val, ok := annotations[evaluationConcurrencyAnnotation]; ok {
