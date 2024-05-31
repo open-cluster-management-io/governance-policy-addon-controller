@@ -53,6 +53,7 @@ rules:
   - policy.open-cluster-management.io
   resources:
   - configurationpolicies
+  - operatorpolicies
   verbs:
   - get
   - list
@@ -63,6 +64,7 @@ rules:
   - policy.open-cluster-management.io
   resources:
   - configurationpolicies/status
+  - operatorpolicies/status
   verbs:
   - get
   - patch
