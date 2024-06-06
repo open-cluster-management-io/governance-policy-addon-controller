@@ -56,7 +56,6 @@ global:
   imagePullSecret: open-cluster-management-image-pull-credentials
   imageOverrides: 
     governance_policy_framework_addon: quay.io/open-cluster-management/governance-policy-framework-addon:latest
-    kube_rbac_proxy: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.10
   nodeSelector: {}
   proxyConfig:
     HTTP_PROXY: null

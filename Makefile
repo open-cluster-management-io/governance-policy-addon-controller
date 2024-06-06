@@ -265,7 +265,6 @@ LOG_REDIRECT ?= &>build/_output/controller.log
 e2e-run-instrumented: e2e-build-instrumented
 	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl create ns $(CONTROLLER_NAMESPACE)
 	CONFIG_POLICY_CONTROLLER_IMAGE="$(REGISTRY)/config-policy-controller:$(TAG)" \
-	  KUBE_RBAC_PROXY_IMAGE="registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.10" \
 	  GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE="$(REGISTRY)/governance-policy-framework-addon:$(TAG)" \
 	  ./build/_output/bin/$(IMG)-instrumented -test.v -test.run="^TestRunMain$$" -test.coverprofile=$(COVERAGE_E2E_OUT) \
 	  --kubeconfig="$(KIND_KUBECONFIG_SA)" $(LOG_REDIRECT) &
