@@ -4,21 +4,26 @@
 
 {{- if and (eq .Values.installMode "Hosted") .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: ClusterRole
 metadata:
-  name: ocm-{{ .Release.Namespace }}:{{ include "controller.fullname" . }}-kube-rbac-proxy
+  name: open-cluster-management:{{ include "controller.fullname" . }}-auth
   labels:
       app: {{ include "controller.fullname" . }}
       chart: {{ include "controller.chart" . }}
       release: {{ .Release.Name }}
       heritage: {{ .Release.Service }}
       addon.open-cluster-management.io/hosted-manifest-location: hosting
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: open-cluster-management:{{ include "controller.fullname" . }}-kube-rbac-proxy
-subjects:
-- kind: ServiceAccount
-  name: {{ include "controller.serviceAccountName" . }}
-  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
 {{- end }}

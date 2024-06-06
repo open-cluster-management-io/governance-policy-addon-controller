@@ -1,14 +1,12 @@
 # Copyright Contributors to the Open Cluster Management project
+# Note that this only needs to be created in hosted mode since the controller has all permissions on the managed
+# cluster.
 
-{{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+{{- if and (eq .Values.installMode "Hosted") .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  {{- if eq .Values.installMode "Hosted" }}
-  name: ocm-{{ .Release.Namespace }}:{{ include "controller.fullname" . }}-kube-rbac-proxy
-  {{- else }}
-  name: open-cluster-management:{{ include "controller.fullname" . }}-kube-rbac-proxy
-  {{- end }}
+  name: ocm-{{ .Release.Namespace }}:{{ include "controller.fullname" . }}-auth
   labels:
       app: {{ include "controller.fullname" . }}
       chart: {{ include "controller.chart" . }}
@@ -18,7 +16,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: open-cluster-management:{{ include "controller.fullname" . }}-kube-rbac-proxy
+  name: open-cluster-management:{{ include "controller.fullname" . }}-auth
 subjects:
 - kind: ServiceAccount
   name: {{ include "controller.serviceAccountName" . }}
