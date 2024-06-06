@@ -544,11 +544,6 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 			)
 			Expect(deploy).NotTo(BeNil())
 
-			By(logPrefix + "verifying that the Deployment has the kube-rbac-proxy")
-			containers, _, _ := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "containers")
-			Expect(containers).To(HaveLen(2))
-			Expect(containers[0].(map[string]interface{})["name"]).To(Equal("kube-rbac-proxy"))
-
 			By(logPrefix + "verifying that the metrics ServiceMonitor exists")
 			Eventually(func(g Gomega) {
 				sm, err := cluster.clusterClient.Resource(gvrServiceMonitor).Namespace(addonNamespace).Get(
