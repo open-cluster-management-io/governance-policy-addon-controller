@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/addon-framework/pkg/utils"
@@ -26,10 +27,7 @@ import (
 	clusterv1client "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	clusterv1informers "open-cluster-management.io/api/client/cluster/informers/externalversions"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
-
-var log = ctrl.Log.WithName("common")
 
 const (
 	PolicyAddonPauseAnnotation = "policy-addon-pause"
@@ -59,13 +57,13 @@ var Scheme = runtime.NewScheme()
 func init() {
 	err := scheme.AddToScheme(Scheme)
 	if err != nil {
-		log.Error(err, "Failed to add to scheme")
+		klog.Error(err, "Failed to add to scheme")
 		os.Exit(1)
 	}
 
 	err = prometheusv1.AddToScheme(Scheme)
 	if err != nil {
-		log.Error(err, "Failed to add the Prometheus scheme to scheme")
+		klog.Error(err, "Failed to add the Prometheus scheme to scheme")
 		os.Exit(1)
 	}
 }
@@ -197,7 +195,7 @@ func GetLogLevel(component string, level string) int8 {
 
 	logLevel, err := strconv.ParseInt(level, 10, 8)
 	if err != nil || logLevel < -1 {
-		log.Error(err, fmt.Sprintf(
+		klog.Error(err, fmt.Sprintf(
 			"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
 			PolicyLogLevelAnnotation, level, component, logDefault),
 		)
@@ -235,7 +233,7 @@ func CommonAgentInstallNamespaceFromDeploymentConfigFunc(
 ) func(*addonapiv1alpha1.ManagedClusterAddOn) (string, error) {
 	return func(addon *addonapiv1alpha1.ManagedClusterAddOn) (string, error) {
 		if addon == nil {
-			log.Info("failed to get addon install namespace, addon is nil")
+			klog.Info("failed to get addon install namespace, addon is nil")
 
 			return "", nil
 		}
@@ -248,7 +246,7 @@ func CommonAgentInstallNamespaceFromDeploymentConfigFunc(
 
 		config, err := utils.GetDesiredAddOnDeploymentConfig(addon, adcgetter)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("failed to get deployment config for addon %s: ", addon.Name))
+			klog.Error(err, fmt.Sprintf("failed to get deployment config for addon %s: ", addon.Name))
 
 			return "", err
 		}

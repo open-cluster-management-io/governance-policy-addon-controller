@@ -8,6 +8,9 @@ import (
 	"strconv"
 
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/klog"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
@@ -15,7 +18,6 @@ import (
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	addonv1alpha1client "open-cluster-management.io/api/client/addon/clientset/versioned"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 
 	policyaddon "open-cluster-management.io/governance-policy-addon-controller/pkg/addon"
 )
@@ -28,8 +30,6 @@ const (
 	prometheusEnabledAnnotation      = "prometheus-metrics-enabled"
 	operatorPolicyDisabledAnnotation = "operator-policy-disabled"
 )
-
-var log = ctrl.Log.WithName("configpolicy")
 
 type UserArgs struct {
 	policyaddon.UserArgs
@@ -127,7 +127,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	if val, ok := annotations[evaluationConcurrencyAnnotation]; ok {
 		value, err := strconv.ParseUint(val, 10, 8)
 		if err != nil {
-			log.Error(err, fmt.Sprintf(
+			klog.Error(err, fmt.Sprintf(
 				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
 				evaluationConcurrencyAnnotation, val, addonName, userValues.UserArgs.EvaluationConcurrency),
 			)
@@ -140,7 +140,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	if val, ok := annotations[clientQPSAnnotation]; ok {
 		value, err := strconv.ParseUint(val, 10, 8)
 		if err != nil {
-			log.Error(err, fmt.Sprintf(
+			klog.Error(err, fmt.Sprintf(
 				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
 				clientQPSAnnotation, val, addonName, userValues.UserArgs.ClientQPS),
 			)
@@ -155,7 +155,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	if val, ok := annotations[clientBurstAnnotation]; ok {
 		value, err := strconv.ParseUint(val, 10, 8)
 		if err != nil {
-			log.Error(err, fmt.Sprintf(
+			klog.Error(err, fmt.Sprintf(
 				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
 				clientBurstAnnotation, val, addonName, userValues.UserArgs.ClientBurst),
 			)
@@ -171,7 +171,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	if val, ok := annotations[prometheusEnabledAnnotation]; ok {
 		valBool, err := strconv.ParseBool(val)
 		if err != nil {
-			log.Error(err, fmt.Sprintf(
+			klog.Error(err, fmt.Sprintf(
 				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %v)",
 				prometheusEnabledAnnotation, val, addonName, userValues.Prometheus["enabled"]),
 			)
@@ -183,7 +183,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	if val, ok := annotations[operatorPolicyDisabledAnnotation]; ok {
 		valBool, err := strconv.ParseBool(val)
 		if err != nil {
-			log.Error(err, fmt.Sprintf(
+			klog.Error(err, fmt.Sprintf(
 				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %v)",
 				operatorPolicyDisabledAnnotation, val, addonName, userValues.OperatorPolicy["disabled"]),
 			)
@@ -193,6 +193,98 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	}
 
 	return addonfactory.JsonStructToValues(userValues)
+}
+
+func toAddonResources(config addonapiv1alpha1.AddOnDeploymentConfig) (addonfactory.Values, error) {
+	defaultRequestMem, err := resource.ParseQuantity("128Mi")
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse default memory request: %w", err)
+	}
+
+	defaultLimitMem, err := resource.ParseQuantity("512Mi")
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse default memory limit: %w", err)
+	}
+
+	jsonStruct := struct {
+		Resources corev1.ResourceRequirements `json:"resources"`
+	}{
+		Resources: corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: defaultRequestMem,
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: defaultLimitMem,
+			},
+		},
+	}
+
+	var newRequestMem, newLimitMem resource.Quantity
+
+	for _, variable := range config.Spec.CustomizedVariables {
+		switch variable.Name {
+		case "RequestsMemory":
+			newRequestMem, err = resource.ParseQuantity(variable.Value)
+			if err != nil {
+				klog.Info(fmt.Sprintf(
+					"Failed to parse configured memory request '%s'. Falling back to the default %s.",
+					variable.Value, defaultRequestMem.String(),
+				))
+
+				continue
+			} else if newRequestMem.Cmp(defaultRequestMem) == -1 {
+				klog.Info(fmt.Sprintf(
+					"Refusing to set lower configured memory request '%s'. Falling back to the default %s.",
+					newRequestMem.String(), defaultRequestMem.String(),
+				))
+
+				continue
+			}
+
+			jsonStruct.Resources.Requests = corev1.ResourceList{
+				corev1.ResourceMemory: newRequestMem,
+			}
+		case "LimitsMemory":
+			newLimitMem, err = resource.ParseQuantity(variable.Value)
+			if err != nil {
+				klog.Info(fmt.Sprintf(
+					"Failed to parse configured memory limit '%s'. Falling back to the default %s.",
+					variable.Value, defaultLimitMem.String(),
+				))
+
+				continue
+			}
+
+			if newLimitMem.Cmp(defaultLimitMem) == -1 {
+				klog.Info(fmt.Sprintf(
+					"Refusing to set a lower configured memory limit '%s'. Falling back to the default %s.",
+					newLimitMem.String(), defaultLimitMem.String(),
+				))
+
+				continue
+			}
+
+			jsonStruct.Resources.Limits = corev1.ResourceList{
+				corev1.ResourceMemory: newLimitMem,
+			}
+		}
+	}
+
+	if newRequestMem.Cmp(newLimitMem) == 1 {
+		klog.Error(fmt.Sprintf("Configured request memory '%s' may not exceed configured limit '%s'. "+
+			"Setting request equal to limit.", newRequestMem.String(), newLimitMem.String()))
+
+		jsonStruct.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceMemory: newLimitMem,
+		}
+	}
+
+	values, err := addonfactory.JsonStructToValues(jsonStruct)
+	if err != nil {
+		return nil, err
+	}
+
+	return values, nil
 }
 
 // mandateValues sets deployment variables regardless of user overrides. As a result, caution should
@@ -239,6 +331,7 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 				addonfactory.NewAddOnDeploymentConfigGetter(addonClient),
 				addonfactory.ToAddOnNodePlacementValues,
 				addonfactory.ToAddOnCustomizedVariableValues,
+				toAddonResources,
 			),
 			getValues,
 			addonfactory.GetValuesFromAddonAnnotation,
