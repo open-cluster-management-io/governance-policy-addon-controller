@@ -45,6 +45,7 @@ rules:
   - get
   - list
   - update
+  - watch
 - apiGroups:
   - policy.open-cluster-management.io
   resources:
