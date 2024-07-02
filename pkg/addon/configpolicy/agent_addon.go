@@ -69,7 +69,6 @@ func getValues(cluster *clusterv1.ManagedCluster,
 			ImagePullSecret: "open-cluster-management-image-pull-credentials",
 			ImageOverrides: map[string]string{
 				"config_policy_controller": os.Getenv("CONFIG_POLICY_CONTROLLER_IMAGE"),
-				"kube_rbac_proxy":          os.Getenv("KUBE_RBAC_PROXY_IMAGE"),
 			},
 			ProxyConfig: map[string]string{
 				"HTTP_PROXY":  "",

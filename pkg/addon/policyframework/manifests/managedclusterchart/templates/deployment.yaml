@@ -33,34 +33,6 @@ spec:
         heritage: {{ .Release.Service }}
     spec:
       containers:
-      {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
-      - name: kube-rbac-proxy
-        image: "{{ .Values.global.imageOverrides.kube_rbac_proxy  }}"
-        imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
-        args:
-        - --upstream=http://127.0.0.1:8383/
-        - --logtostderr=true
-        - --v=6
-        - --secure-listen-address=0.0.0.0:8443
-        - "--tls-cert-file=/var/run/metrics-cert/tls.crt"
-        - "--tls-private-key-file=/var/run/metrics-cert/tls.key"
-        - "--tls-min-version=VersionTLS12"
-        ports:
-        - name: metrics
-          protocol: TCP
-          containerPort: 8443
-        volumeMounts:
-        - mountPath: "/var/run/metrics-cert"
-          name: metrics-cert
-          readOnly: true
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
-      {{- end }}
       - name: governance-policy-framework-addon
         image: "{{ .Values.global.imageOverrides.governance_policy_framework_addon }}"
         imagePullPolicy: "{{ .Values.global.imagePullPolicy }}"
