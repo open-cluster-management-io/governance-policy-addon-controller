@@ -27,64 +27,41 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: |-
-        ConfigurationPolicy is the schema for the configurationpolicies API. A configuration policy
-        contains, in whole or in part, an object definition to compare with objects on the cluster. If
-        the definition of the configuration policy doesn't match the objects on the cluster, a
-        noncompliant status is displayed. Furthermore, if the RemediationAction is set to `enforce` and
-        the name of the object is available, the configuration policy controller creates or updates the
-        object to match in order to make the configuration policy compliant.
+      description: >-
+        ConfigurationPolicy is the schema for the configurationpolicies API. A configuration policy contains, in whole or in part, an object definition to compare with objects on the cluster. If the definition of the configuration policy doesn't match the objects on the cluster, a noncompliant status is displayed. Furthermore, if the RemediationAction is set to `enforce` and the name of the object is available, the configuration policy controller creates or updates the object to match in order to make the configuration policy compliant.
       properties:
         apiVersion:
-          description: |-
-            APIVersion defines the versioned schema of this representation of an object.
-            Servers should convert recognized schemas to the latest internal value, and
-            may reject unrecognized values.
-            More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          description: >-
+            APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
           type: string
         kind:
-          description: |-
-            Kind is a string value representing the REST resource this object represents.
-            Servers may infer this from the endpoint the client submits requests to.
-            Cannot be updated.
-            In CamelCase.
-            More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          description: >-
+            Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
           type: string
         metadata:
           type: object
         spec:
-          description: |-
-            ConfigurationPolicySpec defines the desired configuration of objects on the cluster, along with
-            how the controller should handle when the cluster doesn't match the configuration policy.
+          description: >-
+            ConfigurationPolicySpec defines the desired configuration of objects on the cluster, along with how the controller should handle when the cluster doesn't match the configuration policy.
           properties:
             evaluationInterval:
-              description: |-
-                EvaluationInterval configures the minimum elapsed time before a configuration policy is
-                reevaluated. The default value is `watch` to leverage Kubernetes API watches instead of polling the Kubernetes API
-                server. If the policy spec is changed or if the list of namespaces selected by the policy changes, the policy might
-                be evaluated regardless of the settings here.
+              description: >-
+                EvaluationInterval configures the minimum elapsed time before a configuration policy is reevaluated. The default value is `watch` to leverage Kubernetes API watches instead of polling the Kubernetes API server. If the policy spec is changed or if the list of namespaces selected by the policy changes, the policy might be evaluated regardless of the settings here.
               properties:
                 compliant:
-                  description: |-
-                    Compliant is the minimum elapsed time before a configuration policy is reevaluated when in the
-                    compliant state. Set this to `never` to disable reevaluation when in the compliant state. The default value is
-                    `watch`.
+                  description: >-
+                    Compliant is the minimum elapsed time before a configuration policy is reevaluated when in the compliant state. Set this to `never` to disable reevaluation when in the compliant state. The default value is `watch`.
                   pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never|watch)+$
                   type: string
                 noncompliant:
-                  description: |-
-                    NonCompliant is the minimum elapsed time before a configuration policy is reevaluated when in the noncompliant
-                    state. Set this to `never` to disable reevaluation when in the noncompliant state. The default value is `watch`.
+                  description: >-
+                    NonCompliant is the minimum elapsed time before a configuration policy is reevaluated when in the noncompliant state. Set this to `never` to disable reevaluation when in the noncompliant state. The default value is `watch`.
                   pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never|watch)+$
                   type: string
               type: object
             namespaceSelector:
-              description: |-
-                NamespaceSelector defines the list of namespaces to include or exclude for objects defined in
-                `spec["object-templates"]`. All selector rules are combined. If 'include' is not provided but
-                `matchLabels` and/or `matchExpressions` are, `include` will behave as if `['*']` were given. If
-                `matchExpressions` and `matchLabels` are both not provided, `include` must be provided to
-                retrieve namespaces.
+              description: >-
+                NamespaceSelector defines the list of namespaces to include or exclude for objects defined in `spec["object-templates"]`. All selector rules are combined. If 'include' is not provided but `matchLabels` and/or `matchExpressions` are, `include` will behave as if `['*']` were given. If `matchExpressions` and `matchLabels` are both not provided, `include` must be provided to retrieve namespaces.
               properties:
                 exclude:
                   description: Exclude is an array of filepath expressions to exclude objects by name.
@@ -101,24 +78,19 @@ spec:
                 matchExpressions:
                   description: MatchExpressions is an array of label selector requirements matching objects by label.
                   items:
-                    description: |-
-                      A label selector requirement is a selector that contains values, a key, and an operator that
-                      relates the key and values.
+                    description: >-
+                      A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
                     properties:
                       key:
                         description: key is the label key that the selector applies to.
                         type: string
                       operator:
-                        description: |-
-                          operator represents a key's relationship to a set of values.
-                          Valid operators are In, NotIn, Exists and DoesNotExist.
+                        description: >-
+                          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
                         type: string
                       values:
-                        description: |-
-                          values is an array of string values. If the operator is In or NotIn,
-                          the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                          the values array must be empty. This array is replaced during a strategic
-                          merge patch.
+                        description: >-
+                          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
                         items:
                           type: string
                         type: array
@@ -134,21 +106,14 @@ spec:
                   type: object
               type: object
             object-templates:
-              description: |-
-                The `object-templates` is an array of object configurations for the configuration policy to
-                check, create, modify, or delete objects on the cluster. Keys inside of the objectDefinition in
-                an object template may point to values that have Go templates. For more advanced Go templating
-                such as `range` loops and `if` conditionals, use `object-templates-raw`. Only one of
-                `object-templates` and `object-templates-raw` can be set in a configuration policy. For more on
-                the Go templates, see https://github.com/stolostron/go-template-utils/blob/main/README.md.
+              description: >-
+                The `object-templates` is an array of object configurations for the configuration policy to check, create, modify, or delete objects on the cluster. Keys inside of the objectDefinition in an object template may point to values that have Go templates. For more advanced Go templating such as `range` loops and `if` conditionals, use `object-templates-raw`. Only one of `object-templates` and `object-templates-raw` can be set in a configuration policy. For more on the Go templates, see https://github.com/stolostron/go-template-utils/blob/main/README.md.
               items:
                 description: ObjectTemplate describes the desired state of an object on the cluster.
                 properties:
                   complianceType:
-                    description: |-
-                      ComplianceType describes how objects on the cluster should be compared with the object definition
-                      of the configuration policy. The supported options are `MustHave`, `MustOnlyHave`, or
-                      `MustNotHave`.
+                    description: >-
+                      ComplianceType describes how objects on the cluster should be compared with the object definition of the configuration policy. The supported options are `MustHave`, `MustOnlyHave`, or `MustNotHave`.
                     enum:
                       - MustHave
                       - Musthave
@@ -161,11 +126,8 @@ spec:
                       - mustnothave
                     type: string
                   metadataComplianceType:
-                    description: |-
-                      MetadataComplianceType describes how the labels and annotations of objects on the cluster should
-                      be compared with the object definition of the configuration policy. The supported options are
-                      `MustHave` or `MustOnlyHave`. The default value is the value defined in `complianceType` for the
-                      object template.
+                    description: >-
+                      MetadataComplianceType describes how the labels and annotations of objects on the cluster should be compared with the object definition of the configuration policy. The supported options are `MustHave` or `MustOnlyHave`. The default value is the value defined in `complianceType` for the object template.
                     enum:
                       - MustHave
                       - Musthave
@@ -179,26 +141,16 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   recordDiff:
-                    description: |-
-                      RecordDiff specifies whether and where to log the difference between the object on the cluster
-                      and the `objectDefinition` parameter in the policy. The supported options are `InStatus` to
-                      record the difference in the policy status field, `Log` to log the difference in the
-                      `config-policy-controller` pod, and `None` to not log the difference. The default value is
-                      `None` for object kinds that include sensitive data such as `ConfigMap`, `OAuthAccessToken`,
-                      `OAuthAuthorizeTokens`, `Route`, and `Secret`, or when a templated `objectDefinition`
-                      references sensitive data. For all other kinds, the default value is `InStatus`.
+                    description: >-
+                      RecordDiff specifies whether and where to log the difference between the object on the cluster and the `objectDefinition` parameter in the policy. The supported options are `InStatus` to record the difference in the policy status field, `Log` to log the difference in the `config-policy-controller` pod, and `None` to not log the difference. The default value is `None` for object kinds that include sensitive data such as `ConfigMap`, `OAuthAccessToken`, `OAuthAuthorizeTokens`, `Route`, and `Secret`, or when a templated `objectDefinition` references sensitive data. For all other kinds, the default value is `InStatus`.
                     enum:
                       - Log
                       - InStatus
                       - None
                     type: string
                   recreateOption:
-                    description: |-
-                      RecreateOption describes when to delete and recreate an object when an update is required. When you set the
-                      object to `IfRequired`, the policy recreates the object when updating an immutable field. When you set the
-                      parameter to `Always`, the policy recreates the object on any update. When you set the `remediationAction` to
-                      `inform`, the parameter value, `recreateOption`, has no effect on the object. The `IfRequired` value has no
-                      effect on clusters without dry-run update support. The default value is `None`.
+                    description: >-
+                      RecreateOption describes when to delete and recreate an object when an update is required. When you set the object to `IfRequired`, the policy recreates the object when updating an immutable field. When you set the parameter to `Always`, the policy recreates the object on any update. When you set the `remediationAction` to `inform`, the parameter value, `recreateOption`, has no effect on the object. The `IfRequired` value has no effect on clusters without dry-run update support. The default value is `None`.
                     enum:
                       - None
                       - IfRequired
@@ -210,26 +162,20 @@ spec:
                 type: object
               type: array
             object-templates-raw:
-              description: |-
-                The `object-templates-raw` is a string containing Go templates that must ultimately produce an
-                array of object configurations in YAML format to be used as `object-templates`. Only one of
-                `object-templates` and `object-templates-raw` can be set in a configuration policy. For more on
-                the Go templates, see https://github.com/stolostron/go-template-utils/blob/main/README.md.
+              description: >-
+                The `object-templates-raw` is a string containing Go templates that must ultimately produce an array of object configurations in YAML format to be used as `object-templates`. Only one of `object-templates` and `object-templates-raw` can be set in a configuration policy. For more on the Go templates, see https://github.com/stolostron/go-template-utils/blob/main/README.md.
               type: string
             pruneObjectBehavior:
-              description: |-
-                PruneObjectBehavior is used to remove objects that are managed by the policy upon either case: a
-                change to the policy that causes an object to no longer be managed by the policy, or the deletion
-                of the policy.
+              description: >-
+                PruneObjectBehavior is used to remove objects that are managed by the policy upon either case: a change to the policy that causes an object to no longer be managed by the policy, or the deletion of the policy.
               enum:
                 - DeleteAll
                 - DeleteIfCreated
                 - None
               type: string
             remediationAction:
-              description: |-
-                RemediationAction is the remediation of the policy. The parameter values are `enforce` and
-                `inform`.
+              description: >-
+                RemediationAction is the remediation of the policy. The parameter values are `enforce` and `inform`.
               enum:
                 - Inform
                 - inform
@@ -237,9 +183,8 @@ spec:
                 - enforce
               type: string
             severity:
-              description: |-
-                Severity is a user-defined severity for when an object is noncompliant with this configuration
-                policy. The supported options are `low`, `medium`, `high`, and `critical`.
+              description: >-
+                Severity is a user-defined severity for when an object is noncompliant with this configuration policy. The supported options are `low`, `medium`, `high`, and `critical`.
               enum:
                 - low
                 - Low
@@ -254,14 +199,12 @@ spec:
             - remediationAction
           type: object
         status:
-          description: |-
-            ConfigurationPolicyStatus is the observed status of the configuration policy from its object
-            definitions.
+          description: >-
+            ConfigurationPolicyStatus is the observed status of the configuration policy from its object definitions.
           properties:
             compliancyDetails:
-              description: |-
-                CompliancyDetails is a list of statuses matching one-to-one with each of the items in the
-                `object-templates` array.
+              description: >-
+                CompliancyDetails is a list of statuses matching one-to-one with each of the items in the `object-templates` array.
               items:
                 description: TemplateStatus reports the compliance details from the definitions in an `object-template`.
                 properties:
@@ -320,15 +263,13 @@ spec:
               description: LastEvaluated is an ISO-8601 timestamp of the last time the policy was evaluated.
               type: string
             lastEvaluatedGeneration:
-              description: |-
-                LastEvaluatedGeneration is the generation of the ConfigurationPolicy object when it was last
-                evaluated.
+              description: >-
+                LastEvaluatedGeneration is the generation of the ConfigurationPolicy object when it was last evaluated.
               format: int64
               type: integer
             relatedObjects:
-              description: |-
-                RelatedObjects is a list of objects processed by the configuration policy due to its
-                `object-templates`.
+              description: >-
+                RelatedObjects is a list of objects processed by the configuration policy due to its `object-templates`.
               items:
                 description: RelatedObject contains the details of an object matched by the policy.
                 properties:
@@ -359,19 +300,16 @@ spec:
                     description: Properties are additional properties of the related object relevant to the configuration policy.
                     properties:
                       createdByPolicy:
-                        description: |-
-                          CreatedByPolicy reports whether the object was created by the configuration policy, which is
-                          important when pruning is configured.
+                        description: >-
+                          CreatedByPolicy reports whether the object was created by the configuration policy, which is important when pruning is configured.
                         type: boolean
                       diff:
-                        description: |-
-                          Diff stores the difference between the `objectDefinition` in the policy and the object on the
-                          cluster.
+                        description: >-
+                          Diff stores the difference between the `objectDefinition` in the policy and the object on the cluster.
                         type: string
                       uid:
-                        description: |-
-                          UID stores the object UID to help track object ownership for deletion when pruning is
-                          configured.
+                        description: >-
+                          UID stores the object UID to help track object ownership for deletion when pruning is configured.
                         type: string
                     type: object
                   reason:
@@ -413,35 +351,22 @@ spec:
       name: v1
       schema:
         openAPIV3Schema:
-          description: |-
-            ConfigurationPolicy is the schema for the configurationpolicies API. A configuration policy
-            contains, in whole or in part, an object definition to compare with objects on the cluster. If
-            the definition of the configuration policy doesn't match the objects on the cluster, a
-            noncompliant status is displayed. Furthermore, if the RemediationAction is set to `enforce` and
-            the name of the object is available, the configuration policy controller creates or updates the
-            object to match in order to make the configuration policy compliant.
+          description: >-
+            ConfigurationPolicy is the schema for the configurationpolicies API. A configuration policy contains, in whole or in part, an object definition to compare with objects on the cluster. If the definition of the configuration policy doesn't match the objects on the cluster, a noncompliant status is displayed. Furthermore, if the RemediationAction is set to `enforce` and the name of the object is available, the configuration policy controller creates or updates the object to match in order to make the configuration policy compliant.
           properties:
             apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              description: >-
+                APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              description: >-
+                Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
             spec:
-              description: |-
-                ConfigurationPolicySpec defines the desired configuration of objects on the cluster, along with
-                how the controller should handle when the cluster doesn't match the configuration policy.
+              description: >-
+                ConfigurationPolicySpec defines the desired configuration of objects on the cluster, along with how the controller should handle when the cluster doesn't match the configuration policy.
               oneOf:
                 - required:
                     - object-templates
@@ -449,33 +374,23 @@ spec:
                     - object-templates-raw
               properties:
                 evaluationInterval:
-                  description: |-
-                    EvaluationInterval configures the minimum elapsed time before a configuration policy is
-                    reevaluated. The default value is `watch` to leverage Kubernetes API watches instead of polling the Kubernetes API
-                    server. If the policy spec is changed or if the list of namespaces selected by the policy changes, the policy might
-                    be evaluated regardless of the settings here.
+                  description: >-
+                    EvaluationInterval configures the minimum elapsed time before a configuration policy is reevaluated. The default value is `watch` to leverage Kubernetes API watches instead of polling the Kubernetes API server. If the policy spec is changed or if the list of namespaces selected by the policy changes, the policy might be evaluated regardless of the settings here.
                   properties:
                     compliant:
-                      description: |-
-                        Compliant is the minimum elapsed time before a configuration policy is reevaluated when in the
-                        compliant state. Set this to `never` to disable reevaluation when in the compliant state. The default value is
-                        `watch`.
+                      description: >-
+                        Compliant is the minimum elapsed time before a configuration policy is reevaluated when in the compliant state. Set this to `never` to disable reevaluation when in the compliant state. The default value is `watch`.
                       pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never|watch)+$
                       type: string
                     noncompliant:
-                      description: |-
-                        NonCompliant is the minimum elapsed time before a configuration policy is reevaluated when in the noncompliant
-                        state. Set this to `never` to disable reevaluation when in the noncompliant state. The default value is `watch`.
+                      description: >-
+                        NonCompliant is the minimum elapsed time before a configuration policy is reevaluated when in the noncompliant state. Set this to `never` to disable reevaluation when in the noncompliant state. The default value is `watch`.
                       pattern: ^(?:(?:(?:[0-9]+(?:.[0-9])?)(?:h|m|s|(?:ms)|(?:us)|(?:ns)))|never|watch)+$
                       type: string
                   type: object
                 namespaceSelector:
-                  description: |-
-                    NamespaceSelector defines the list of namespaces to include or exclude for objects defined in
-                    `spec["object-templates"]`. All selector rules are combined. If 'include' is not provided but
-                    `matchLabels` and/or `matchExpressions` are, `include` will behave as if `['*']` were given. If
-                    `matchExpressions` and `matchLabels` are both not provided, `include` must be provided to
-                    retrieve namespaces.
+                  description: >-
+                    NamespaceSelector defines the list of namespaces to include or exclude for objects defined in `spec["object-templates"]`. All selector rules are combined. If 'include' is not provided but `matchLabels` and/or `matchExpressions` are, `include` will behave as if `['*']` were given. If `matchExpressions` and `matchLabels` are both not provided, `include` must be provided to retrieve namespaces.
                   properties:
                     exclude:
                       description: Exclude is an array of filepath expressions to exclude objects by name.
@@ -492,24 +407,19 @@ spec:
                     matchExpressions:
                       description: MatchExpressions is an array of label selector requirements matching objects by label.
                       items:
-                        description: |-
-                          A label selector requirement is a selector that contains values, a key, and an operator that
-                          relates the key and values.
+                        description: >-
+                          A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
                         properties:
                           key:
                             description: key is the label key that the selector applies to.
                             type: string
                           operator:
-                            description: |-
-                              operator represents a key's relationship to a set of values.
-                              Valid operators are In, NotIn, Exists and DoesNotExist.
+                            description: >-
+                              operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.
                             type: string
                           values:
-                            description: |-
-                              values is an array of string values. If the operator is In or NotIn,
-                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                              the values array must be empty. This array is replaced during a strategic
-                              merge patch.
+                            description: >-
+                              values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.
                             items:
                               type: string
                             type: array
@@ -525,21 +435,14 @@ spec:
                       type: object
                   type: object
                 object-templates:
-                  description: |-
-                    The `object-templates` is an array of object configurations for the configuration policy to
-                    check, create, modify, or delete objects on the cluster. Keys inside of the objectDefinition in
-                    an object template may point to values that have Go templates. For more advanced Go templating
-                    such as `range` loops and `if` conditionals, use `object-templates-raw`. Only one of
-                    `object-templates` and `object-templates-raw` can be set in a configuration policy. For more on
-                    the Go templates, see https://github.com/stolostron/go-template-utils/blob/main/README.md.
+                  description: >-
+                    The `object-templates` is an array of object configurations for the configuration policy to check, create, modify, or delete objects on the cluster. Keys inside of the objectDefinition in an object template may point to values that have Go templates. For more advanced Go templating such as `range` loops and `if` conditionals, use `object-templates-raw`. Only one of `object-templates` and `object-templates-raw` can be set in a configuration policy. For more on the Go templates, see https://github.com/stolostron/go-template-utils/blob/main/README.md.
                   items:
                     description: ObjectTemplate describes the desired state of an object on the cluster.
                     properties:
                       complianceType:
-                        description: |-
-                          ComplianceType describes how objects on the cluster should be compared with the object definition
-                          of the configuration policy. The supported options are `MustHave`, `MustOnlyHave`, or
-                          `MustNotHave`.
+                        description: >-
+                          ComplianceType describes how objects on the cluster should be compared with the object definition of the configuration policy. The supported options are `MustHave`, `MustOnlyHave`, or `MustNotHave`.
                         enum:
                           - MustHave
                           - Musthave
@@ -552,11 +455,8 @@ spec:
                           - mustnothave
                         type: string
                       metadataComplianceType:
-                        description: |-
-                          MetadataComplianceType describes how the labels and annotations of objects on the cluster should
-                          be compared with the object definition of the configuration policy. The supported options are
-                          `MustHave` or `MustOnlyHave`. The default value is the value defined in `complianceType` for the
-                          object template.
+                        description: >-
+                          MetadataComplianceType describes how the labels and annotations of objects on the cluster should be compared with the object definition of the configuration policy. The supported options are `MustHave` or `MustOnlyHave`. The default value is the value defined in `complianceType` for the object template.
                         enum:
                           - MustHave
                           - Musthave
@@ -570,14 +470,8 @@ spec:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       recordDiff:
-                        description: |-
-                          RecordDiff specifies whether and where to log the difference between the object on the cluster
-                          and the `objectDefinition` parameter in the policy. The supported options are `InStatus` to
-                          record the difference in the policy status field, `Log` to log the difference in the
-                          `config-policy-controller` pod, and `None` to not log the difference. The default value is
-                          `None` for object kinds that include sensitive data such as `ConfigMap`, `OAuthAccessToken`,
-                          `OAuthAuthorizeTokens`, `Route`, and `Secret`, or when a templated `objectDefinition`
-                          references sensitive data. For all other kinds, the default value is `InStatus`.
+                        description: >-
+                          RecordDiff specifies whether and where to log the difference between the object on the cluster and the `objectDefinition` parameter in the policy. The supported options are `InStatus` to record the difference in the policy status field, `Log` to log the difference in the `config-policy-controller` pod, and `None` to not log the difference. The default value is `None` for object kinds that include sensitive data such as `ConfigMap`, `OAuthAccessToken`, `OAuthAuthorizeTokens`, `Route`, and `Secret`, or when a templated `objectDefinition` references sensitive data. For all other kinds, the default value is `InStatus`.
                         enum:
                           - Log
                           - InStatus
@@ -585,12 +479,8 @@ spec:
                         type: string
                       recreateOption:
                         default: None
-                        description: |-
-                          RecreateOption describes when to delete and recreate an object when an update is required. When you set the
-                          object to `IfRequired`, the policy recreates the object when updating an immutable field. When you set the
-                          parameter to `Always`, the policy recreates the object on any update. When you set the `remediationAction` to
-                          `inform`, the parameter value, `recreateOption`, has no effect on the object. The `IfRequired` value has no
-                          effect on clusters without dry-run update support. The default value is `None`.
+                        description: >-
+                          RecreateOption describes when to delete and recreate an object when an update is required. When you set the object to `IfRequired`, the policy recreates the object when updating an immutable field. When you set the parameter to `Always`, the policy recreates the object on any update. When you set the `remediationAction` to `inform`, the parameter value, `recreateOption`, has no effect on the object. The `IfRequired` value has no effect on clusters without dry-run update support. The default value is `None`.
                         enum:
                           - None
                           - IfRequired
@@ -602,27 +492,21 @@ spec:
                     type: object
                   type: array
                 object-templates-raw:
-                  description: |-
-                    The `object-templates-raw` is a string containing Go templates that must ultimately produce an
-                    array of object configurations in YAML format to be used as `object-templates`. Only one of
-                    `object-templates` and `object-templates-raw` can be set in a configuration policy. For more on
-                    the Go templates, see https://github.com/stolostron/go-template-utils/blob/main/README.md.
+                  description: >-
+                    The `object-templates-raw` is a string containing Go templates that must ultimately produce an array of object configurations in YAML format to be used as `object-templates`. Only one of `object-templates` and `object-templates-raw` can be set in a configuration policy. For more on the Go templates, see https://github.com/stolostron/go-template-utils/blob/main/README.md.
                   type: string
                 pruneObjectBehavior:
                   default: None
-                  description: |-
-                    PruneObjectBehavior is used to remove objects that are managed by the policy upon either case: a
-                    change to the policy that causes an object to no longer be managed by the policy, or the deletion
-                    of the policy.
+                  description: >-
+                    PruneObjectBehavior is used to remove objects that are managed by the policy upon either case: a change to the policy that causes an object to no longer be managed by the policy, or the deletion of the policy.
                   enum:
                     - DeleteAll
                     - DeleteIfCreated
                     - None
                   type: string
                 remediationAction:
-                  description: |-
-                    RemediationAction is the remediation of the policy. The parameter values are `enforce` and
-                    `inform`.
+                  description: >-
+                    RemediationAction is the remediation of the policy. The parameter values are `enforce` and `inform`.
                   enum:
                     - Inform
                     - inform
@@ -630,9 +514,8 @@ spec:
                     - enforce
                   type: string
                 severity:
-                  description: |-
-                    Severity is a user-defined severity for when an object is noncompliant with this configuration
-                    policy. The supported options are `low`, `medium`, `high`, and `critical`.
+                  description: >-
+                    Severity is a user-defined severity for when an object is noncompliant with this configuration policy. The supported options are `low`, `medium`, `high`, and `critical`.
                   enum:
                     - low
                     - Low
@@ -647,14 +530,12 @@ spec:
                 - remediationAction
               type: object
             status:
-              description: |-
-                ConfigurationPolicyStatus is the observed status of the configuration policy from its object
-                definitions.
+              description: >-
+                ConfigurationPolicyStatus is the observed status of the configuration policy from its object definitions.
               properties:
                 compliancyDetails:
-                  description: |-
-                    CompliancyDetails is a list of statuses matching one-to-one with each of the items in the
-                    `object-templates` array.
+                  description: >-
+                    CompliancyDetails is a list of statuses matching one-to-one with each of the items in the `object-templates` array.
                   items:
                     description: TemplateStatus reports the compliance details from the definitions in an `object-template`.
                     properties:
@@ -713,15 +594,13 @@ spec:
                   description: LastEvaluated is an ISO-8601 timestamp of the last time the policy was evaluated.
                   type: string
                 lastEvaluatedGeneration:
-                  description: |-
-                    LastEvaluatedGeneration is the generation of the ConfigurationPolicy object when it was last
-                    evaluated.
+                  description: >-
+                    LastEvaluatedGeneration is the generation of the ConfigurationPolicy object when it was last evaluated.
                   format: int64
                   type: integer
                 relatedObjects:
-                  description: |-
-                    RelatedObjects is a list of objects processed by the configuration policy due to its
-                    `object-templates`.
+                  description: >-
+                    RelatedObjects is a list of objects processed by the configuration policy due to its `object-templates`.
                   items:
                     description: RelatedObject contains the details of an object matched by the policy.
                     properties:
@@ -752,19 +631,16 @@ spec:
                         description: Properties are additional properties of the related object relevant to the configuration policy.
                         properties:
                           createdByPolicy:
-                            description: |-
-                              CreatedByPolicy reports whether the object was created by the configuration policy, which is
-                              important when pruning is configured.
+                            description: >-
+                              CreatedByPolicy reports whether the object was created by the configuration policy, which is important when pruning is configured.
                             type: boolean
                           diff:
-                            description: |-
-                              Diff stores the difference between the `objectDefinition` in the policy and the object on the
-                              cluster.
+                            description: >-
+                              Diff stores the difference between the `objectDefinition` in the policy and the object on the cluster.
                             type: string
                           uid:
-                            description: |-
-                              UID stores the object UID to help track object ownership for deletion when pruning is
-                              configured.
+                            description: >-
+                              UID stores the object UID to help track object ownership for deletion when pruning is configured.
                             type: string
                         type: object
                       reason:
