@@ -23,25 +23,16 @@ spec:
     - name: v1beta1
       schema:
         openAPIV3Schema:
-          description: |-
-            OperatorPolicy is the schema for the operatorpolicies API. You can use the operator policy to
-            manage operators by providing automation for their management and reporting on the status across
-            the various operator objects.
+          description: >-
+            OperatorPolicy is the schema for the operatorpolicies API. You can use the operator policy to manage operators by providing automation for their management and reporting on the status across the various operator objects.
           properties:
             apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              description: >-
+                APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              description: >-
+                Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -50,59 +41,49 @@ spec:
               properties:
                 complianceConfig:
                   default: {}
-                  description: |-
-                    ComplianceConfig defines how resource statuses affect the OperatorPolicy status and compliance.
-                    When set to Compliant, the condition does not impact the OperatorPolicy compliance. When set to
-                    NonCompliant, the condition causes the OperatorPolicy to become NonCompliant.
+                  description: >-
+                    ComplianceConfig defines how resource statuses affect the OperatorPolicy status and compliance. When set to Compliant, the condition does not impact the OperatorPolicy compliance. When set to NonCompliant, the condition causes the OperatorPolicy to become NonCompliant.
                   properties:
                     catalogSourceUnhealthy:
                       default: Compliant
-                      description: |-
-                        CatalogSourceUnhealthy specifies how the CatalogSourceUnhealthy typed condition should affect
-                        overall policy compliance. The default value is `Compliant`.
+                      description: >-
+                        CatalogSourceUnhealthy specifies how the CatalogSourceUnhealthy typed condition should affect overall policy compliance. The default value is `Compliant`.
                       enum:
                         - Compliant
                         - NonCompliant
                       type: string
                     deploymentsUnavailable:
                       default: NonCompliant
-                      description: |-
-                        DeploymentsUnavailable specifies how the DeploymentCompliant typed condition should affect
-                        overall policy compliance. The default value is `NonCompliant`.
+                      description: >-
+                        DeploymentsUnavailable specifies how the DeploymentCompliant typed condition should affect overall policy compliance. The default value is `NonCompliant`.
                       enum:
                         - Compliant
                         - NonCompliant
                       type: string
                     upgradesAvailable:
                       default: Compliant
-                      description: |-
-                        UpgradesAvailable specifies how the InstallPlanCompliant typed condition should affect overall
-                        policy compliance. The default value is `Compliant`.
+                      description: >-
+                        UpgradesAvailable specifies how the InstallPlanCompliant typed condition should affect overall policy compliance. The default value is `Compliant`.
                       enum:
                         - Compliant
                         - NonCompliant
                       type: string
                   type: object
                 complianceType:
-                  description: |-
-                    ComplianceType describes how objects on the cluster should be compared with the object definition
-                    of the configuration policy. The supported options are `MustHave`, `MustOnlyHave`, or
-                    `MustNotHave`.
+                  description: >-
+                    ComplianceType describes how objects on the cluster should be compared with the object definition of the configuration policy. The supported options are `MustHave`, `MustOnlyHave`, or `MustNotHave`.
                   enum:
                     - musthave
                     - mustnothave
                   type: string
                 operatorGroup:
-                  description: |-
-                    OperatorGroup specifies which `OperatorGroup` to inspect. Include the name, namespace, and any
-                    `spec` fields for the operator group. For more info, see `kubectl explain operatorgroups.spec`
-                    or view https://olm.operatorframework.io/docs/concepts/crds/operatorgroup/.
+                  description: >-
+                    OperatorGroup specifies which `OperatorGroup` to inspect. Include the name, namespace, and any `spec` fields for the operator group. For more info, see `kubectl explain operatorgroups.spec` or view https://olm.operatorframework.io/docs/concepts/crds/operatorgroup/.
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                 remediationAction:
-                  description: |-
-                    RemediationAction is the remediation of the policy. The parameter values are `enforce` and
-                    `inform`.
+                  description: >-
+                    RemediationAction is the remediation of the policy. The parameter values are `enforce` and `inform`.
                   enum:
                     - Inform
                     - inform
@@ -111,10 +92,8 @@ spec:
                   type: string
                 removalBehavior:
                   default: {}
-                  description: |-
-                    Use RemovalBehavior to define what resources need to be removed when enforcing `mustnothave`
-                    policies. When in `inform` mode, any resources that are deleted if the policy is set to
-                    `enforce` makes the policy noncompliant, but resources that are kept are compliant.
+                  description: >-
+                    Use RemovalBehavior to define what resources need to be removed when enforcing `mustnothave` policies. When in `inform` mode, any resources that are deleted if the policy is set to `enforce` makes the policy noncompliant, but resources that are kept are compliant.
                   properties:
                     clusterServiceVersions:
                       allOf:
@@ -126,9 +105,8 @@ spec:
                             - Keep
                             - Delete
                       default: Delete
-                      description: |-
-                        Use the `clusterServiceVersions` parameter to specify whether to delete the
-                        ClusterServiceVersion. The default value is `Delete`.
+                      description: >-
+                        Use the `clusterServiceVersions` parameter to specify whether to delete the ClusterServiceVersion. The default value is `Delete`.
                       type: string
                     customResourceDefinitions:
                       allOf:
@@ -140,10 +118,8 @@ spec:
                             - Keep
                             - Delete
                       default: Keep
-                      description: |-
-                        Use the customResourceDefinitions parameter to specify whether to delete any
-                        CustomResourceDefinitions associated with the operator. The default value is `Keep`, because
-                        deleting them should be done deliberately.
+                      description: >-
+                        Use the customResourceDefinitions parameter to specify whether to delete any CustomResourceDefinitions associated with the operator. The default value is `Keep`, because deleting them should be done deliberately.
                       type: string
                     operatorGroups:
                       allOf:
@@ -155,10 +131,8 @@ spec:
                             - Keep
                             - DeleteIfUnused
                       default: DeleteIfUnused
-                      description: |-
-                        Use the `operatorGroups` parameter to specify whether to delete the OperatorGroup. The default
-                        value is `DeleteIfUnused`, which only deletes the OperatorGroup if there is not another
-                        resource using it.
+                      description: >-
+                        Use the `operatorGroups` parameter to specify whether to delete the OperatorGroup. The default value is `DeleteIfUnused`, which only deletes the OperatorGroup if there is not another resource using it.
                       type: string
                     subscriptions:
                       allOf:
@@ -170,15 +144,13 @@ spec:
                             - Keep
                             - Delete
                       default: Delete
-                      description: |-
-                        Use the `subscriptions` parameter to specify whether to delete the Subscription. The default
-                        value is `Delete`.
+                      description: >-
+                        Use the `subscriptions` parameter to specify whether to delete the Subscription. The default value is `Delete`.
                       type: string
                   type: object
                 severity:
-                  description: |-
-                    Severity is a user-defined severity for when an object is noncompliant with this configuration
-                    policy. The supported options are `low`, `medium`, `high`, and `critical`.
+                  description: >-
+                    Severity is a user-defined severity for when an object is noncompliant with this configuration policy. The supported options are `low`, `medium`, `high`, and `critical`.
                   enum:
                     - low
                     - Low
@@ -190,27 +162,20 @@ spec:
                     - Critical
                   type: string
                 subscription:
-                  description: |-
-                    Subscription specifies which operator `Subscription` resource to inspect. Include the
-                    namespace, and any `spec` fields for the Subscription. For more info, see `kubectl explain
-                    subscriptions.operators.coreos.com.spec` or view
-                    https://olm.operatorframework.io/docs/concepts/crds/subscription/.
+                  description: >-
+                    Subscription specifies which operator `Subscription` resource to inspect. Include the namespace, and any `spec` fields for the Subscription. For more info, see `kubectl explain subscriptions.operators.coreos.com.spec` or view https://olm.operatorframework.io/docs/concepts/crds/subscription/.
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                 upgradeApproval:
-                  description: |-
-                    UpgradeApproval determines whether 'upgrade' InstallPlans for the operator will be approved
-                    by the controller when the policy is enforced and in 'musthave' mode. The initial InstallPlan
-                    approval is not affected by this setting. This setting has no effect when the policy is in
-                    'mustnothave' mode. Allowed values are "None" or "Automatic".
+                  description: >-
+                    UpgradeApproval determines whether 'upgrade' InstallPlans for the operator will be approved by the controller when the policy is enforced and in 'musthave' mode. The initial InstallPlan approval is not affected by this setting. This setting has no effect when the policy is in 'mustnothave' mode. Allowed values are "None" or "Automatic".
                   enum:
                     - None
                     - Automatic
                   type: string
                 versions:
-                  description: |-
-                    Versions is a list of non-empty strings that specifies which installed versions are compliant
-                    when in `inform` mode and which `InstallPlans` are approved when in `enforce` mode.
+                  description: >-
+                    Versions is a list of non-empty strings that specifies which installed versions are compliant when in `inform` mode and which `InstallPlans` are approved when in `enforce` mode.
                   items:
                     minLength: 1
                     type: string
@@ -221,9 +186,8 @@ spec:
                 - upgradeApproval
               type: object
             status:
-              description: |-
-                OperatorPolicyStatus is the observed state of the operators from the specifications given in the
-                operator policy.
+              description: >-
+                OperatorPolicyStatus is the observed state of the operators from the specifications given in the operator policy.
               properties:
                 compliant:
                   description: ComplianceState reports the most recent compliance state of the operator policy.
@@ -239,32 +203,24 @@ spec:
                     description: "Condition contains details for one aspect of the current state of this API Resource.\n---\nThis struct is intended for direct use as an array at the field path .status.conditions.  For example,\n\n\n\ttype FooStatus struct{\n\t    // Represents the observations of a foo's current state.\n\t    // Known .status.conditions.type are: \"Available\", \"Progressing\", and \"Degraded\"\n\t    // +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    // +listType=map\n\t    // +listMapKey=type\n\t    Conditions []metav1.Condition `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t    // other fields\n\t}"
                     properties:
                       lastTransitionTime:
-                        description: |-
-                          lastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                        description: >-
+                          lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
                         format: date-time
                         type: string
                       message:
-                        description: |-
-                          message is a human readable message indicating details about the transition.
-                          This may be an empty string.
+                        description: >-
+                          message is a human readable message indicating details about the transition. This may be an empty string.
                         maxLength: 32768
                         type: string
                       observedGeneration:
-                        description: |-
-                          observedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
+                        description: >-
+                          observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.
                         format: int64
                         minimum: 0
                         type: integer
                       reason:
-                        description: |-
-                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
+                        description: >-
+                          reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.
                         maxLength: 1024
                         minLength: 1
                         pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
@@ -277,12 +233,8 @@ spec:
                           - Unknown
                         type: string
                       type:
-                        description: |-
-                          type of condition in CamelCase or in foo.example.com/CamelCase.
-                          ---
-                          Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                          useful (see .node.status.conditions), the ability to deconflict is important.
-                          The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                        description: >-
+                          type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
                         maxLength: 316
                         pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                         type: string
@@ -298,9 +250,8 @@ spec:
                     - type
                   x-kubernetes-list-type: map
                 overlappingPolicies:
-                  description: |-
-                    The list of overlapping OperatorPolicies (as name.namespace) which all manage the same
-                    subscription, including this policy. When no overlapping is detected, this list will be empty.
+                  description: >-
+                    The list of overlapping OperatorPolicies (as name.namespace) which all manage the same subscription, including this policy. When no overlapping is detected, this list will be empty.
                   items:
                     type: string
                   type: array
@@ -336,14 +287,12 @@ spec:
                         description: Properties are additional properties of the related object relevant to the configuration policy.
                         properties:
                           createdByPolicy:
-                            description: |-
-                              CreatedByPolicy reports whether the object was created by the configuration policy, which is
-                              important when pruning is configured.
+                            description: >-
+                              CreatedByPolicy reports whether the object was created by the configuration policy, which is important when pruning is configured.
                             type: boolean
                           uid:
-                            description: |-
-                              UID stores the object UID to help track object ownership for deletion when pruning is
-                              configured.
+                            description: >-
+                              UID stores the object UID to help track object ownership for deletion when pruning is configured.
                             type: string
                         type: object
                       reason:
@@ -355,11 +304,8 @@ spec:
                   description: The resolved name.namespace of the subscription
                   type: string
                 subscriptionInterventionTime:
-                  description: |-
-                    Timestamp for a possible intervention to help a Subscription stuck with a
-                    ConstraintsNotSatisfiable condition. Can be in the future, indicating the
-                    policy is waiting for OLM to resolve the situation. If in the recent past,
-                    the policy may update the status of the Subscription.
+                  description: >-
+                    Timestamp for a possible intervention to help a Subscription stuck with a ConstraintsNotSatisfiable condition. Can be in the future, indicating the policy is waiting for OLM to resolve the situation. If in the recent past, the policy may update the status of the Subscription.
                   format: date-time
                   type: string
               type: object
