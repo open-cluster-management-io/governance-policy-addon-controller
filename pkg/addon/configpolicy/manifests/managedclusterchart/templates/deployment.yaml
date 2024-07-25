@@ -51,7 +51,10 @@ spec:
           - --client-max-qps={{ .Values.args.clientQPS }}
           - --client-burst={{ .Values.args.clientBurst }}
           - --health-probe-bind-address=:8081
-          {{- if and .Values.prometheus.enabled (ne .Values.kubernetesDistribution "OpenShift") }}
+          {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+          - --secure-metrics=true
+          - --metrics-bind-address=0.0.0.0:8443
+          {{- else if .Values.prometheus.enabled }}
           - --metrics-bind-address=0.0.0.0:8383
           {{- end }}
           {{- if eq .Values.installMode "Hosted" }}
@@ -111,7 +114,12 @@ spec:
           failureThreshold: 30
           periodSeconds: 10
         {{- end }}
-        {{- if and .Values.prometheus.enabled (ne .Values.kubernetesDistribution "OpenShift") }}
+        {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+        ports:
+        - name: metrics
+          protocol: TCP
+          containerPort: 8443
+        {{- else if .Values.prometheus.enabled }}
         ports:
         - name: metrics
           protocol: TCP
@@ -119,8 +127,13 @@ spec:
         {{- end }}
         resources: {{- toYaml .Values.resources | nindent 10 }}
         volumeMounts:
+          {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+          - mountPath: "/var/run/metrics-cert"
+            name: metrics-cert
+            readOnly: true
           - name: klusterlet-config
             mountPath: /var/run/klusterlet
+          {{- end }}
           {{- if eq .Values.installMode "Hosted" }}
           - mountPath: "/var/run/managed-kubeconfig"
             name: managed-kubeconfig-secret
