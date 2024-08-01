@@ -131,9 +131,9 @@ spec:
           - mountPath: "/var/run/metrics-cert"
             name: metrics-cert
             readOnly: true
+          {{- end }}
           - name: klusterlet-config
             mountPath: /var/run/klusterlet
-          {{- end }}
           {{- if eq .Values.installMode "Hosted" }}
           - mountPath: "/var/run/managed-kubeconfig"
             name: managed-kubeconfig-secret
