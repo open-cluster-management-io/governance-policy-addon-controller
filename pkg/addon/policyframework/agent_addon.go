@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
+	"k8s.io/klog"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
@@ -16,7 +17,6 @@ import (
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	addonv1alpha1client "open-cluster-management.io/api/client/addon/clientset/versioned"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 
 	policyaddon "open-cluster-management.io/governance-policy-addon-controller/pkg/addon"
 )
@@ -31,8 +31,6 @@ const (
 	// Should only be set when the hub cluster is imported in a global hub
 	syncPoliciesOnMulticlusterHubAnnotation = "policy.open-cluster-management.io/sync-policies-on-multicluster-hub"
 )
-
-var log = ctrl.Log.WithName("policyframework")
 
 // FS go:embed
 //
@@ -149,7 +147,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	if val, ok := annotations[evaluationConcurrencyAnnotation]; ok {
 		value, err := strconv.ParseUint(val, 10, 8)
 		if err != nil {
-			log.Error(err, fmt.Sprintf(
+			klog.Error(err, fmt.Sprintf(
 				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
 				evaluationConcurrencyAnnotation, val, addonName, userValues.UserArgs.EvaluationConcurrency),
 			)
@@ -162,7 +160,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	if val, ok := annotations[clientQPSAnnotation]; ok {
 		value, err := strconv.ParseUint(val, 10, 8)
 		if err != nil {
-			log.Error(err, fmt.Sprintf(
+			klog.Error(err, fmt.Sprintf(
 				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
 				clientQPSAnnotation, val, addonName, userValues.UserArgs.ClientQPS),
 			)
@@ -177,7 +175,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	if val, ok := annotations[clientBurstAnnotation]; ok {
 		value, err := strconv.ParseUint(val, 10, 8)
 		if err != nil {
-			log.Error(err, fmt.Sprintf(
+			klog.Error(err, fmt.Sprintf(
 				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %d)",
 				clientBurstAnnotation, val, addonName, userValues.UserArgs.ClientBurst),
 			)
@@ -196,7 +194,7 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	if val, ok := annotations[prometheusEnabledAnnotation]; ok {
 		valBool, err := strconv.ParseBool(val)
 		if err != nil {
-			log.Error(err, fmt.Sprintf(
+			klog.Error(err, fmt.Sprintf(
 				"Failed to verify '%s' annotation value '%s' for component %s (falling back to default value %v)",
 				prometheusEnabledAnnotation, val, addonName, userValues.Prometheus["enabled"]),
 			)
