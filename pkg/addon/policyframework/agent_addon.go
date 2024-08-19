@@ -104,7 +104,10 @@ func getValues(cluster *clusterv1.ManagedCluster,
 	annotations := addon.GetAnnotations()
 	hostingClusterName := annotations[addonapiv1alpha1.HostingClusterNameAnnotationKey]
 	// special case for local-cluster
-	if cluster.Name == "local-cluster" || hostingClusterName == "local-cluster" {
+	isLocal := cluster.Name == "local-cluster" ||
+		hostingClusterName == "local-cluster" ||
+		cluster.GetLabels()["local-cluster"] == "true"
+	if isLocal {
 		userValues.OnMulticlusterHub = true
 	}
 
