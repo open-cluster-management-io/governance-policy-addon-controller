@@ -17,7 +17,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     interval: 30s
     port: metrics
-    {{- if eq .Values.kubernetesDistribution "OpenShift" }}
+    {{- if eq .Values.hostingKubernetesDistribution "OpenShift" }}
     scheme: https
     {{- else }}
     scheme: http

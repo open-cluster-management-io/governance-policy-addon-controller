@@ -154,6 +154,27 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 
+			By(logPrefix + "setting the vendor label to OpenShift")
+			Kubectl(
+				"label",
+				"managedcluster",
+				cluster.clusterName,
+				"vendor=OpenShift",
+				"--overwrite",
+				fmt.Sprintf("--kubeconfig=%s1_e2e", kubeconfigFilename),
+			)
+
+			DeferCleanup(func() {
+				By(logPrefix + " removing the vendor label")
+				Kubectl(
+					"label",
+					"managedcluster",
+					cluster.clusterName,
+					"vendor-",
+					fmt.Sprintf("--kubeconfig=%s1_e2e", kubeconfigFilename),
+				)
+			})
+
 			installAddonInHostedMode(
 				logPrefix, hubClient, case1ManagedClusterAddOnName,
 				cluster.clusterName, hubClusterConfig.clusterName, installNamespace, map[string]string{

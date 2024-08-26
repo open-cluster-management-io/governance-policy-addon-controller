@@ -218,6 +218,9 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 		for i, cluster := range managedClusterList[1:] {
 			Expect(cluster.clusterType).To(Equal("managed"))
 
+			hubClusterConfig := managedClusterList[0]
+			hubClient := hubClusterConfig.clusterClient
+
 			cluster = managedClusterConfig{
 				clusterClient: cluster.clusterClient,
 				clusterName:   cluster.clusterName,
@@ -226,10 +229,30 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 				kubeconfig:    cluster.kubeconfig,
 			}
 
-			hubClusterConfig := managedClusterList[0]
-			hubClient := hubClusterConfig.clusterClient
-			installNamespace := fmt.Sprintf("%s-hosted", cluster.clusterName)
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+
+			By(logPrefix + "setting the vendor label to OpenShift")
+			Kubectl(
+				"label",
+				"managedcluster",
+				cluster.clusterName,
+				"vendor=OpenShift",
+				"--overwrite",
+				fmt.Sprintf("--kubeconfig=%s1_e2e", kubeconfigFilename),
+			)
+
+			DeferCleanup(func() {
+				By(logPrefix + " removing the vendor label")
+				Kubectl(
+					"label",
+					"managedcluster",
+					cluster.clusterName,
+					"vendor-",
+					fmt.Sprintf("--kubeconfig=%s1_e2e", kubeconfigFilename),
+				)
+			})
+
+			installNamespace := fmt.Sprintf("%s-hosted", cluster.clusterName)
 
 			setupClusterSecretForHostedMode(
 				logPrefix, hubClient, "config-policy-controller-managed-kubeconfig",

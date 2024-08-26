@@ -42,6 +42,7 @@ uninstallationAnnotation: "false"
 # This is the Kubernetes distribution of the managed cluster. If set to OpenShift,
 # some features such as automatic TLS certificate generation will be used.
 # kubernetesDistribution: OpenShift
+# hostingKubernetesDistribution: OpenShift
 
 # This will expose metrics over HTTP if it's not an OpenShift cluster.
 prometheus:

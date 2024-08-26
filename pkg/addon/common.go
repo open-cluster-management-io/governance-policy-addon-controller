@@ -135,6 +135,24 @@ func NewRegistrationOption(
 	}
 }
 
+func GetClusterVendor(cluster *clusterv1.ManagedCluster) string {
+	var vendor string
+	// Don't just set it to the value in the label, it might be something like "auto-detect"
+	if cluster.Labels["vendor"] == "OpenShift" {
+		vendor = "OpenShift"
+	}
+
+	for _, cc := range cluster.Status.ClusterClaims {
+		if cc.Name == "product.open-cluster-management.io" {
+			vendor = cc.Value
+
+			break
+		}
+	}
+
+	return vendor
+}
+
 func GetAndAddAgent(
 	ctx context.Context,
 	mgr addonmanager.AddonManager,

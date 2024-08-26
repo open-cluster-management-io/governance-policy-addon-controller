@@ -1,6 +1,6 @@
 # Copyright Contributors to the Open Cluster Management project
 
-{{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+{{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
