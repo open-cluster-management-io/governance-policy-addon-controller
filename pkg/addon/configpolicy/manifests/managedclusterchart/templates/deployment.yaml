@@ -51,7 +51,7 @@ spec:
           - --client-max-qps={{ .Values.args.clientQPS }}
           - --client-burst={{ .Values.args.clientBurst }}
           - --health-probe-bind-address=:8081
-          {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+          {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
           - --secure-metrics=true
           - --metrics-bind-address=0.0.0.0:8443
           {{- else if .Values.prometheus.enabled }}
@@ -114,7 +114,7 @@ spec:
           failureThreshold: 30
           periodSeconds: 10
         {{- end }}
-        {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+        {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
         ports:
         - name: metrics
           protocol: TCP
@@ -127,7 +127,7 @@ spec:
         {{- end }}
         resources: {{- toYaml .Values.resources | nindent 10 }}
         volumeMounts:
-          {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+          {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
           - mountPath: "/var/run/metrics-cert"
             name: metrics-cert
             readOnly: true
@@ -155,7 +155,7 @@ spec:
           secret:
             secretName: {{ .Values.managedKubeConfigSecret }}
         {{- end }}
-        {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+        {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
         - name: metrics-cert
           secret:
             secretName: {{ include "controller.fullname" . }}-metrics

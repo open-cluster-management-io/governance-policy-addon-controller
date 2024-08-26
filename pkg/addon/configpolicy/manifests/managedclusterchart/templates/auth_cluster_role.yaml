@@ -2,7 +2,7 @@
 # Note that this only needs to be created in hosted mode since the controller has all permissions on the managed
 # cluster.
 
-{{- if and (eq .Values.installMode "Hosted") .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+{{- if and (eq .Values.installMode "Hosted") .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

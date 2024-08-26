@@ -59,7 +59,7 @@ spec:
           {{- else }}
           - --cluster-namespace={{ .Values.clusterName }}
           {{- end }}
-          {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+          {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
           - --secure-metrics=true
           - --metrics-bind-address=0.0.0.0:8443
           {{- else if .Values.prometheus.enabled }}
@@ -114,7 +114,7 @@ spec:
           failureThreshold: 30
           periodSeconds: 10
         {{- end }}
-        {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+        {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
         ports:
         - name: metrics
           protocol: TCP
@@ -134,7 +134,7 @@ spec:
           privileged: false
           readOnlyRootFilesystem: true
         volumeMounts:
-          {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+          {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
           - mountPath: "/var/run/metrics-cert"
             name: metrics-cert
             readOnly: true
@@ -145,7 +145,7 @@ spec:
         - name: klusterlet-config
           secret:
             secretName: {{ .Values.hubKubeConfigSecret }}
-        {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+        {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
         - name: metrics-cert
           secret:
             secretName: {{ include "controller.fullname" . }}-metrics

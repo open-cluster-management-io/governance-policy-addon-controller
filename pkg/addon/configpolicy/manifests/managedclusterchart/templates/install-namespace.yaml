@@ -8,7 +8,7 @@ metadata:
     addon.open-cluster-management.io/namespace: "true"
     addon.open-cluster-management.io/hosted-manifest-location: hosting
     {{- end }}
-    {{- if and .Values.prometheus.enabled (eq .Values.kubernetesDistribution "OpenShift") }}
+    {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
     openshift.io/cluster-monitoring: "true"
     {{- end }}
   {{- if or (eq .Release.Namespace "open-cluster-management-agent-addon") (eq (.Release.Namespace | trimPrefix "klusterlet-") .Values.clusterName) }}
