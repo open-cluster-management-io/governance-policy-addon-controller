@@ -1,6 +1,6 @@
 module open-cluster-management.io/governance-policy-addon-controller
 
-go 1.22
+go 1.22.0
 
 require (
 	github.com/blang/semver/v4 v4.0.0
