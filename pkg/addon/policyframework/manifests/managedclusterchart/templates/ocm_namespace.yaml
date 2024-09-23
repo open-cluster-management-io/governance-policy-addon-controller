@@ -1,0 +1,8 @@
+# Copyright Contributors to the Open Cluster Management project
+
+{{- if ne .Values.installMode "Hosted" }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: open-cluster-management-policies
+{{- end }}

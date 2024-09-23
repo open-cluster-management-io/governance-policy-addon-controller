@@ -27,6 +27,7 @@ const (
 	case1PodSelector                     string = "app=governance-policy-framework"
 	case1MWName                          string = "addon-governance-policy-framework-deploy-0"
 	case1MWPatch                         string = "../resources/manifestwork_add_patch.json"
+	ocmPolicyNs                          string = "open-cluster-management-policies"
 )
 
 var _ = Describe("Test framework deployment", Ordered, func() {
@@ -72,7 +73,7 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 
 			By(logPrefix +
 				"removing the framework deployment when the ManagedClusterAddOn CR is removed")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
+			Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=180s")
 			deploy = GetWithTimeout(
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, agentInstallNs, false, 180,
 			)
@@ -83,6 +84,11 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 			}
 			pods := ListWithTimeoutByNamespace(cluster.clusterClient, gvrPod, opts, agentInstallNs, 0, false, 180)
 			Expect(pods).To(BeNil())
+
+			By("Should not have " + ocmPolicyNs + " in hosted mode")
+			GetWithTimeout(
+				cluster.clusterClient, gvrNamespace, ocmPolicyNs, "", false, 60,
+			)
 		}
 	})
 
@@ -316,6 +322,12 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 				cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
 			)
 			Expect(deploy).To(BeNil())
+
+			By("Should have " + ocmPolicyNs + " in normal mode")
+			ns := GetWithTimeout(
+				cluster.clusterClient, gvrNamespace, ocmPolicyNs, "", true, 60,
+			)
+			Expect(ns).ShouldNot(BeNil())
 		}
 	})
 
