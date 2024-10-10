@@ -29,6 +29,7 @@ spec:
         - --policy-namespace={{ .Release.Namespace }}
         {{- else }}
         - --policy-namespace={{ .Values.clusterName }}
+        - --additional-namespace=open-cluster-management-policies
         {{- end }}
         - --v={{ .Values.args.pkgLogLevel }}
       env:
