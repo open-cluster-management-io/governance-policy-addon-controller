@@ -36,7 +36,6 @@ tolerations:
 
 clusterName: null
 installMode: null
-complianceHistoryAPIURL: null
 uninstallationAnnotation: "false"
 
 # This is the Kubernetes distribution of the managed cluster. If set to OpenShift,
