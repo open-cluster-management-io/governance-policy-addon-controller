@@ -56,7 +56,6 @@ rules:
   - secrets
   resourceNames:
   - policy-encryption-key
-  - open-cluster-management-compliance-history-api-recorder
   verbs:
   - get
   - list

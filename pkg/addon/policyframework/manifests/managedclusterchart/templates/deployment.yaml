@@ -65,9 +65,6 @@ spec:
           {{- else if .Values.prometheus.enabled }}
           - --metrics-bind-address=0.0.0.0:8383
           {{- end }}
-          {{- if .Values.complianceHistoryAPIURL }}
-          - '--compliance-api-url={{ .Values.complianceHistoryAPIURL }}'
-          {{- end }}
         env:
           - name: POD_NAME
             valueFrom:

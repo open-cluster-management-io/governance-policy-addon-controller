@@ -22,7 +22,6 @@ import (
 
 const (
 	addonNamespace                          string = "open-cluster-management-agent-addon"
-	controllerNamespace                     string = "open-cluster-management"
 	kubeconfigFilename                      string = "../../kubeconfig_cluster"
 	loggingLevelAnnotation                  string = "log-level=8"
 	evaluationConcurrencyAnnotation         string = "policy-evaluation-concurrency=5"
@@ -45,7 +44,6 @@ var (
 	gvrSecret              schema.GroupVersionResource
 	gvrServiceMonitor      schema.GroupVersionResource
 	gvrService             schema.GroupVersionResource
-	gvrServiceAccount      schema.GroupVersionResource
 	gvrClusterRole         schema.GroupVersionResource
 	gvrRoleBinding         schema.GroupVersionResource
 	gvrPolicyCrd           schema.GroupVersionResource
@@ -86,7 +84,6 @@ var _ = BeforeSuite(func() {
 		Group: "monitoring.coreos.com", Version: "v1", Resource: "servicemonitors",
 	}
 	gvrService = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}
-	gvrServiceAccount = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "serviceaccounts"}
 	gvrClusterRole = schema.GroupVersionResource{
 		Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterroles",
 	}

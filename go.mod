@@ -10,7 +10,6 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.74.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stolostron/kubernetes-dependency-watches v0.7.0
 	k8s.io/apimachinery v0.29.5
 	k8s.io/client-go v0.29.5
 	k8s.io/component-base v0.29.5
@@ -129,7 +128,6 @@ require (
 	k8s.io/api v0.29.5 // indirect
 	k8s.io/apiextensions-apiserver v0.29.5 // indirect
 	k8s.io/apiserver v0.29.5 // indirect
-	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kms v0.29.5 // indirect
 	k8s.io/kube-aggregator v0.29.5 // indirect
 	k8s.io/kube-openapi v0.0.0-20240521193020-835d969ad83a // indirect
