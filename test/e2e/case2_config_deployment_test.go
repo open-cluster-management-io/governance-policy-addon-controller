@@ -626,7 +626,9 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 				g.Expect(err).ToNot(HaveOccurred())
 
 				clusterClaims, _, _ := unstructured.NestedSlice(managedCluster.Object, "status", "clusterClaims")
-				g.Expect(clusterClaims).To(BeEmpty())
+				g.Expect(clusterClaims).ToNot(ContainElement(
+					HaveKeyWithValue("name", "product.open-cluster-management.io"),
+				))
 			}, 60, 1).Should(Succeed())
 		}
 	})

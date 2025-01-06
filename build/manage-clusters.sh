@@ -18,6 +18,7 @@ fi
 
 KIND_PREFIX=${KIND_PREFIX:-"policy-addon-ctrl"}
 CLUSTER_PREFIX=${CLUSTER_PREFIX:-"cluster"}
+KUBECONFIG_HUB="${PWD}/kubeconfig_${CLUSTER_PREFIX}1_e2e"
 
 export KIND_NAME="${KIND_PREFIX}1"
 export CLUSTER_NAME="${CLUSTER_PREFIX}1"
@@ -42,7 +43,7 @@ esac
 
 if [[ "${RUN_MODE}" == "create" || "${RUN_MODE}" == "create-dev" ]]; then
   echo Annotating the ManagedCluster object to indicate it is a hub
-  KUBECONFIG="$PWD/kubeconfig_${CLUSTER_NAME}_e2e" kubectl annotate ManagedCluster $CLUSTER_NAME --overwrite "addon.open-cluster-management.io/on-multicluster-hub=true"
+  KUBECONFIG=${KUBECONFIG_HUB} kubectl annotate ManagedCluster $CLUSTER_NAME --overwrite "addon.open-cluster-management.io/on-multicluster-hub=true"
 
   echo Generating the service account kubeconfig
   make kind-controller-kubeconfig
@@ -69,11 +70,26 @@ for i in $(seq 2 $((MANAGED_CLUSTER_COUNT + 1))); do
     fi
 
     # Approval takes place on the hub
-    KIND_KUBECONFIG="${PWD}/kubeconfig_${CLUSTER_PREFIX}1_e2e" make kind-approve-cluster
+    KIND_KUBECONFIG=${KUBECONFIG_HUB} make kind-approve-cluster
+
+    # Deploy "name" ClusterClaim to label ManagedCluster
+    cat <<EOF | kubectl apply --kubeconfig="${PWD}/kubeconfig_${CLUSTER_NAME}_e2e" -f -
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: ClusterClaim
+metadata:
+  name: name
+spec:
+  value: ${CLUSTER_NAME}
+EOF
+
+    # Temporary ManagedCluster label workaround since the ClusterClaim controller
+    # isn't running in our current setup
+    kubectl --kubeconfig="${KUBECONFIG_HUB}" label managedcluster ${CLUSTER_NAME} name=${CLUSTER_NAME}
     ;;
+
   deploy-addons)
     # ManagedClusterAddon is applied to the hub
-    KIND_KUBECONFIG="${PWD}/kubeconfig_${CLUSTER_PREFIX}1_e2e" make kind-deploy-addons
+    KIND_KUBECONFIG=${KUBECONFIG_HUB} make kind-deploy-addons
     ;;
   esac
 done
