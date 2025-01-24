@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -26,14 +27,18 @@ import (
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	k8sdepwatches "github.com/stolostron/kubernetes-dependency-watches/client"
 	"k8s.io/apimachinery/pkg/version"
+	"k8s.io/client-go/dynamic"
 	utilflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/logs"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/clock"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 
 	"open-cluster-management.io/governance-policy-addon-controller/pkg/addon/configpolicy"
 	"open-cluster-management.io/governance-policy-addon-controller/pkg/addon/policyframework"
+	"open-cluster-management.io/governance-policy-addon-controller/pkg/controllers/componentfinalizer"
 )
 
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=get;create
@@ -41,6 +46,9 @@ import (
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=approve
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=managedclusters,verbs=get;list;watch
 //+kubebuilder:rbac:groups=addon.open-cluster-management.io,resources=clustermanagementaddons,verbs=get;list;watch
+
+//+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=internalhubcomponents,verbs=get;list;watch;update,resourceNames=grc
+//+kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=internalhubcomponents/finalizers,verbs=update,resourceNames=grc
 
 // RBAC below will need to be updated if/when new policy controllers are added.
 
@@ -101,7 +109,7 @@ func main() {
 		},
 	}
 
-	ctrlconfig := controllercmd.NewControllerCommandConfig(ctrlName, ctrlVersion, runController)
+	ctrlconfig := controllercmd.NewControllerCommandConfig(ctrlName, ctrlVersion, runController, clock.RealClock{})
 	ctrlconfig.DisableServing = true
 
 	ctrlcmd := ctrlconfig.NewCommandWithContext(context.TODO())
@@ -117,9 +125,52 @@ func main() {
 }
 
 func runController(ctx context.Context, controllerContext *controllercmd.ControllerContext) error {
+	wg := sync.WaitGroup{}
+
+	reconciler := componentfinalizer.Reconciler{
+		DynamicClient: dynamic.NewForConfigOrDie(controllerContext.KubeConfig),
+		ManagedClusterAddOnNames: []string{
+			"config-policy-controller",
+			"governance-policy-framework",
+		},
+		InternalHubComponentNamespace: controllerContext.OperatorNamespace, // usually 'open-cluster-management'
+	}
+
+	dynamicWatcher, err := k8sdepwatches.New(
+		controllerContext.KubeConfig, &reconciler, &k8sdepwatches.Options{EnableCache: true})
+	if err != nil {
+		klog.Error(err, " - failed to start the InternalHubComponent finalizer reconciler")
+		os.Exit(1)
+	}
+
+	reconciler.DynamicWatcher = dynamicWatcher
+
+	go func() {
+		err := dynamicWatcher.Start(ctx)
+		if err != nil {
+			klog.Error(err, " - unable to start the dynamic watcher for the IHC finalizer reconciler")
+			os.Exit(1)
+		}
+
+		wg.Done()
+	}()
+
+	klog.Info("Waiting for the dynamic watcher to start")
+	<-dynamicWatcher.Started()
+
+	if err := reconciler.WatchResources(); err != nil {
+		klog.Error(err, " - finalizer reconciler unable to watch resources")
+
+		if errors.Is(err, k8sdepwatches.ErrNoVersionedResource) {
+			klog.Info("InternalHubComponent CRD not found, that resources will not be watched")
+		} else {
+			os.Exit(1)
+		}
+	}
+
 	mgr, err := addonmanager.New(controllerContext.KubeConfig)
 	if err != nil {
-		klog.Error(err, "unable to create new addon manager")
+		klog.Error(err, " - unable to create new addon manager")
 		os.Exit(1)
 	}
 
@@ -128,12 +179,10 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 		configpolicy.GetAndAddAgent,
 	}
 
-	wg := sync.WaitGroup{}
-
 	for _, f := range agentFuncs {
 		err := f(ctx, mgr, controllerContext)
 		if err != nil {
-			klog.Error(err, "unable to get or add agent addon")
+			klog.Error(err, " - unable to get or add agent addon")
 			os.Exit(1)
 		}
 	}
@@ -145,7 +194,7 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 
 		err = mgr.Start(ctx)
 		if err != nil {
-			klog.Error(err, "problem starting manager")
+			klog.Error(err, " - problem starting manager")
 			os.Exit(1)
 		}
 

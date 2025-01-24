@@ -19,6 +19,7 @@ const (
 	case2ManagedClusterAddOnName         string = "config-policy-controller"
 	case2ManagedClusterAddOnCR           string = "../resources/config_policy_addon_cr.yaml"
 	case2ClusterManagementAddOnCRDefault string = "../resources/config_policy_clustermanagementaddon.yaml"
+	case2InternalHubComponentCRDefault   string = "../resources/grc_internalhubcomponent.yaml"
 	case2ClusterManagementAddOnCR        string = "../resources/config_policy_clustermanagementaddon_config.yaml"
 	case2CMAAddonWithInstallNs           string = "../resources/config_policy_cma_config_agentInstallNs.yaml"
 	case2DeploymentName                  string = "config-policy-controller"
@@ -92,6 +93,9 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 	BeforeAll(func() {
 		By("Deploying the default config-policy-controller ClusterManagementAddon to the hub cluster")
 		Kubectl("apply", "-f", case2ClusterManagementAddOnCRDefault)
+
+		By("Deploying the default grc InternalHubComponent to the hub cluster")
+		Kubectl("apply", "-f", case2InternalHubComponentCRDefault)
 	})
 
 	AfterAll(func() {
@@ -101,6 +105,11 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 
 		By("Deleting the default config-policy-controller ClusterManagementAddon from the hub cluster")
 		Kubectl("delete", "-f", case2ClusterManagementAddOnCRDefault)
+
+		By("Deleting the default grc InternalHubComponent from the hub cluster")
+		Kubectl("patch", "internalhubcomponent", "-n", "open-cluster-management", "grc", "--type=merge",
+			`-p={"metadata":{"finalizers":[]}}`)
+		Kubectl("delete", "-f", case2InternalHubComponentCRDefault)
 	})
 	It("should create the config-policy-controller deployment in hosted mode in user's custom namespace", func() {
 		By("Creating the AddOnDeploymentConfig")
@@ -125,6 +134,14 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 			// Use i+1 since the for loop ranges over a slice skipping first index
 			verifyConfigPolicyDeployment(logPrefix, cluster.clusterClient, cluster.clusterName, agentInstallNs, i+1)
 
+			By("Verifying the InternalHubComponent has the finalizer")
+			Eventually(func() []string {
+				ihc := GetWithTimeout(clientDynamic, gvrInternalHubComponent,
+					"grc", "open-cluster-management", true, 10)
+
+				return ihc.GetFinalizers()
+			}, 30, 3).Should(ContainElements("policy.open-cluster-management.io/mcao-cleanup"))
+
 			By(logPrefix +
 				"removing the config-policy-controller deployment when the ManagedClusterAddOn CR is removed")
 			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, "--timeout=90s")
@@ -138,6 +155,14 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 			}
 			pods := ListWithTimeoutByNamespace(cluster.clusterClient, gvrPod, opts, agentInstallNs, 0, false, 180)
 			Expect(pods).To(BeNil())
+
+			By("Verifying the InternalHubComponent finalizer is removed")
+			Eventually(func() []string {
+				ihc := GetWithTimeout(clientDynamic, gvrInternalHubComponent,
+					"grc", "open-cluster-management", true, 10)
+
+				return ihc.GetFinalizers()
+			}, 30, 3).ShouldNot(ContainElements("policy.open-cluster-management.io/mcao-cleanup"))
 		}
 	})
 
