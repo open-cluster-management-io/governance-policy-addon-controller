@@ -304,8 +304,10 @@ e2e-debug: ## Collect debug logs from deployed clusters.
 install-resources: kustomize
 	@echo creating namespace
 	-kubectl create ns $(CONTROLLER_NAMESPACE)
-	# deploying roles and service account
-	kustomize build config/rbac | $(SED) "s/namespace: system/namespace: open-cluster-management/g" | kubectl -n $(CONTROLLER_NAMESPACE) apply -f -
+	@echo deploying roles and service account
+	kustomize build config/rbac | $(SED) "s/namespace: system/namespace: open-cluster-management/g" | kubectl -n $(CONTROLLER_NAMESPACE) apply -o yaml -f -
+	@echo deploying InternalHubComponent CRD
+	kubectl apply -f https://raw.githubusercontent.com/stolostron/multiclusterhub-operator/refs/heads/main/config/crd/bases/operator.open-cluster-management.io_internalhubcomponents.yaml
 
 .PHONY: kind-ensure-sa
 kind-ensure-sa: export KUBECONFIG=$(KIND_KUBECONFIG_SA)

@@ -46,7 +46,7 @@ if [[ "${RUN_MODE}" == "create" || "${RUN_MODE}" == "create-dev" ]]; then
   KUBECONFIG=${KUBECONFIG_HUB} kubectl annotate ManagedCluster $CLUSTER_NAME --overwrite "addon.open-cluster-management.io/on-multicluster-hub=true"
 
   echo Generating the service account kubeconfig
-  make kind-controller-kubeconfig
+  KIND_KUBECONFIG=${KUBECONFIG_HUB} make kind-controller-kubeconfig
 fi
 
 # Deploy a variable number of managed clusters starting with cluster2
