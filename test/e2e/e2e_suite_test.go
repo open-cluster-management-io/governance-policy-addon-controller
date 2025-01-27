@@ -35,21 +35,22 @@ const (
 )
 
 var (
-	gvrDeployment          schema.GroupVersionResource
-	gvrPod                 schema.GroupVersionResource
-	gvrNamespace           schema.GroupVersionResource
-	gvrManagedClusterAddOn schema.GroupVersionResource
-	gvrManagedCluster      schema.GroupVersionResource
-	gvrManifestWork        schema.GroupVersionResource
-	gvrSecret              schema.GroupVersionResource
-	gvrServiceMonitor      schema.GroupVersionResource
-	gvrService             schema.GroupVersionResource
-	gvrClusterRole         schema.GroupVersionResource
-	gvrRoleBinding         schema.GroupVersionResource
-	gvrPolicyCrd           schema.GroupVersionResource
-	managedClusterList     []managedClusterConfig
-	clientDynamic          dynamic.Interface
-	hubKubeconfigInternal  []byte
+	gvrDeployment           schema.GroupVersionResource
+	gvrPod                  schema.GroupVersionResource
+	gvrNamespace            schema.GroupVersionResource
+	gvrManagedClusterAddOn  schema.GroupVersionResource
+	gvrManagedCluster       schema.GroupVersionResource
+	gvrManifestWork         schema.GroupVersionResource
+	gvrSecret               schema.GroupVersionResource
+	gvrServiceMonitor       schema.GroupVersionResource
+	gvrService              schema.GroupVersionResource
+	gvrClusterRole          schema.GroupVersionResource
+	gvrRoleBinding          schema.GroupVersionResource
+	gvrPolicyCrd            schema.GroupVersionResource
+	gvrInternalHubComponent schema.GroupVersionResource
+	managedClusterList      []managedClusterConfig
+	clientDynamic           dynamic.Interface
+	hubKubeconfigInternal   []byte
 )
 
 type managedClusterConfig struct {
@@ -94,6 +95,11 @@ var _ = BeforeSuite(func() {
 		Group:    "apiextensions.k8s.io",
 		Version:  "v1",
 		Resource: "customresourcedefinitions",
+	}
+	gvrInternalHubComponent = schema.GroupVersionResource{
+		Group:    "operator.open-cluster-management.io",
+		Version:  "v1",
+		Resource: "internalhubcomponents",
 	}
 	clientDynamic = NewKubeClientDynamic("", kubeconfigFilename+"1_e2e", "")
 
