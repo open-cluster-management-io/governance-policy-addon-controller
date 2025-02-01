@@ -219,6 +219,72 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 			Kubectl("apply", "-f", case2ClusterManagementAddOnCRDefault)
 		})
 
+	It("should create a config-policy-controller deployment with resource requirements on the managed cluster",
+		func(ctx SpecContext) {
+			deploymentConfigTests := map[string]map[string]interface{}{
+				"../resources/addondeploymentconfig_resourceRequirements_individual.yaml": {
+					"requests": map[string]interface{}{"memory": "75Mi"},
+					"limits":   map[string]interface{}{"memory": "150Mi"},
+				},
+				"../resources/addondeploymentconfig_resourceRequirements_reduced.yaml": {
+					"requests": map[string]interface{}{"memory": "32Mi"},
+					"limits":   map[string]interface{}{"memory": "128Mi"},
+				},
+				"../resources/addondeploymentconfig_resourceRequirements_universal.yaml": {
+					"requests": map[string]interface{}{"memory": "512Mi"},
+					"limits":   map[string]interface{}{"memory": "1Gi"},
+				},
+			}
+
+			for configFile, expected := range deploymentConfigTests {
+				By("Creating the AddOnDeploymentConfig")
+				Kubectl("apply", "-f", configFile)
+				By("Applying the config-policy-controller ClusterManagementAddOn to use the AddOnDeploymentConfig")
+				Kubectl("apply", "-f", case2ClusterManagementAddOnCR)
+
+				for i, cluster := range managedClusterList {
+					logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+					By(logPrefix + "deploying the default config-policy-controller managedclusteraddon")
+					Kubectl("apply", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
+
+					verifyConfigPolicyDeployment(
+						ctx, logPrefix, cluster.clusterClient, cluster.clusterName, addonNamespace, i)
+
+					By(logPrefix + "verifying the resources")
+					Eventually(func(g Gomega) {
+						deploy := GetWithTimeout(
+							ctx, cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, true, 30,
+						)
+						g.Expect(deploy).NotTo(BeNil())
+						containerSlice, _, err := unstructured.NestedSlice(
+							deploy.Object, "spec", "template", "spec", "containers")
+						g.Expect(err).NotTo(HaveOccurred())
+						g.Expect(containerSlice).To(HaveLen(1))
+						container, ok := containerSlice[0].(map[string]interface{})
+						g.Expect(ok).To(BeTrue(), "Deployment container should be a map[string]interface{}")
+						resources, _, _ := unstructured.NestedMap(container, "resources")
+						g.Expect(resources).To(Equal(expected))
+					}, 30, 1).Should(Succeed())
+				}
+			}
+
+			for _, cluster := range managedClusterList {
+				logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+				By(logPrefix + "removing the config-policy-controller " +
+					"deployment when the ManagedClusterAddOn CR is removed")
+				Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, "--timeout=90s")
+				deploy := GetWithTimeout(
+					ctx, cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, false, 30,
+				)
+				Expect(deploy).To(BeNil())
+			}
+
+			By("Deleting the AddOnDeploymentConfig")
+			Kubectl("delete", "-f", addOnDeploymentConfigCR, "--timeout=15s")
+			By("Restoring the config-policy-controller ClusterManagementAddOn")
+			Kubectl("apply", "-f", case2ClusterManagementAddOnCRDefault)
+		})
+
 	It("should create the default config-policy-controller deployment in hosted mode",
 		Label("hosted-mode"),
 		func(ctx SpecContext) {

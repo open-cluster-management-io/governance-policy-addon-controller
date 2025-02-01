@@ -1,0 +1,13 @@
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: AddOnDeploymentConfig
+metadata:
+  name: addon-default-placement
+  namespace: open-cluster-management
+spec:
+  resourceRequirements:
+  - containerID: "*:*:*"
+    resources:
+      requests:
+        memory: 512Mi
+      limits:
+        memory: 1Gi

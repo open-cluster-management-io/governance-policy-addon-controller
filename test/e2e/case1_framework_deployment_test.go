@@ -363,6 +363,75 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 		Kubectl("apply", "-f", case1ClusterManagementAddOnCRDefault)
 	})
 
+	It("should create a framework deployment with resource requirements on the managed cluster",
+		func(ctx SpecContext) {
+			deploymentConfigTests := map[string]map[string]interface{}{
+				"../resources/addondeploymentconfig_resourceRequirements_individual.yaml": {
+					"requests": map[string]interface{}{"memory": "50Mi"},
+					"limits":   map[string]interface{}{"memory": "100Mi"},
+				},
+				"../resources/addondeploymentconfig_resourceRequirements_reduced.yaml": {
+					"requests": map[string]interface{}{"memory": "32Mi"},
+					"limits":   map[string]interface{}{"memory": "128Mi"},
+				},
+				"../resources/addondeploymentconfig_resourceRequirements_universal.yaml": {
+					"requests": map[string]interface{}{"memory": "512Mi"},
+					"limits":   map[string]interface{}{"memory": "1Gi"},
+				},
+			}
+
+			for configFile, expected := range deploymentConfigTests {
+				By("Creating the AddOnDeploymentConfig")
+				Kubectl("apply", "-f", configFile)
+				By("Applying the governance-policy-framework ClusterManagementAddOn to use the AddOnDeploymentConfig")
+				Kubectl("apply", "-f", case1ClusterManagementAddOnCR)
+
+				for i, cluster := range managedClusterList {
+					logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+					By(logPrefix + "deploying the default framework managedclusteraddon")
+					Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+
+					deploy := GetWithTimeout(
+						ctx, cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 60,
+					)
+					Expect(deploy).NotTo(BeNil())
+
+					checkContainersAndAvailability(ctx, cluster, i)
+
+					By(logPrefix + "verifying the resources")
+					Eventually(func(g Gomega) {
+						deploy := GetWithTimeout(
+							ctx, cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, true, 30,
+						)
+						g.Expect(deploy).NotTo(BeNil())
+						containerSlice, _, err := unstructured.NestedSlice(
+							deploy.Object, "spec", "template", "spec", "containers")
+						g.Expect(err).NotTo(HaveOccurred())
+						g.Expect(containerSlice).To(HaveLen(1))
+						container, ok := containerSlice[0].(map[string]interface{})
+						g.Expect(ok).To(BeTrue(), "Deployment container should be a map[string]interface{}")
+						resources, _, _ := unstructured.NestedMap(container, "resources")
+						g.Expect(resources).To(Equal(expected))
+					}, 30, 1).Should(Succeed())
+				}
+			}
+
+			for _, cluster := range managedClusterList {
+				logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+				By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
+				Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=90s")
+				deploy := GetWithTimeout(
+					ctx, cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
+				)
+				Expect(deploy).To(BeNil())
+			}
+
+			By("Deleting the AddOnDeploymentConfig")
+			Kubectl("delete", "-f", addOnDeploymentConfigCR, "--timeout=15s")
+			By("Restoring the governance-policy-framework ClusterManagementAddOn")
+			Kubectl("apply", "-f", case1ClusterManagementAddOnCRDefault)
+		})
+
 	It("should use the onManagedClusterHub value set in helm values annotation", func(ctx SpecContext) {
 		cluster := managedClusterList[0]
 		Expect(cluster.clusterType).To(Equal("hub"))

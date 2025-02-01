@@ -20,22 +20,16 @@ operatorPolicy:
   disabled: false
   defaultNamespace: ""
 
-resources:
-  requests:
-    memory: 128Mi
-  limits:
-    memory: 512Mi
-
 affinity: {}
 
 tolerations:
-- key: "dedicated"
-  operator: "Equal"
-  value: "infra"
-  effect: "NoSchedule"
-- key: node-role.kubernetes.io/infra
-  operator: Exists
-  effect: NoSchedule
+  - key: "dedicated"
+    operator: "Equal"
+    value: "infra"
+    effect: "NoSchedule"
+  - key: node-role.kubernetes.io/infra
+    operator: Exists
+    effect: NoSchedule
 
 clusterName: null
 managedKubeConfigSecret: null
@@ -54,10 +48,16 @@ prometheus:
     # This will be automatically set to the controller's namespace.
     namespace: null
 
-global: 
+global:
+  resourceRequirements:
+    - containerIDRegex: ^.+:.+:.+$
+      requests:
+        memory: 128Mi
+      limits:
+        memory: 512Mi
   imagePullPolicy: IfNotPresent
   imagePullSecret: open-cluster-management-image-pull-credentials
-  imageOverrides: 
+  imageOverrides:
     config_policy_controller: quay.io/open-cluster-management/config-policy-controller:latest
   nodeSelector: {}
   proxyConfig:
