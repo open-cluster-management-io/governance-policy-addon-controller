@@ -273,7 +273,7 @@ func CommonAgentInstallNamespaceFromDeploymentConfigFunc(
 
 		config, err := utils.GetDesiredAddOnDeploymentConfig(addon, adcgetter)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("failed to get deployment config for addon %s: ", addon.Name))
+			log.Error(err, fmt.Sprintf("failed to get deployment config for addon %s", addon.Name))
 
 			return "", err
 		}
