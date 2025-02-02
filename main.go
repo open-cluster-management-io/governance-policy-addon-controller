@@ -21,16 +21,23 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
+	"strconv"
 	"sync"
 
+	"github.com/go-logr/zapr"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/stolostron/go-log-utils/zaputil"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/version"
 	utilflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/logs"
 	"k8s.io/klog/v2"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"open-cluster-management.io/governance-policy-addon-controller/pkg/addon/configpolicy"
 	"open-cluster-management.io/governance-policy-addon-controller/pkg/addon/policyframework"
@@ -78,15 +85,40 @@ import (
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch
 
-var ctrlVersion = version.Info{}
+var (
+	ctrlVersion = version.Info{}
+	log         = ctrl.Log.WithName("setup")
+	// Set up unified log level and encoding flags
+	zflags = zaputil.FlagConfig{
+		LevelName:   "log-level",
+		EncoderName: "log-encoder",
+	}
+)
 
 const (
 	ctrlName = "governance-policy-addon-controller"
 )
 
 func main() {
-	pflag.CommandLine.SetNormalizeFunc(utilflag.WordSepNormalizeFunc)
+	// Bind command line flags to the various cmd/log configurations
+	zflags.Bind(flag.CommandLine)
+	klog.InitFlags(flag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.CommandLine.SetNormalizeFunc(utilflag.WordSepNormalizeFunc)
+
+	// Set up an initial logger for klog, since flags are parsed inside of the Cobra Execute()
+	// NOTE: This will be set again using go-log-utils in setupLogging()
+	klogConfig := zap.NewProductionConfig()
+	klogConfig.Encoding = "console"
+	klogConfig.DisableStacktrace = true
+	klogConfig.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	klogZap, err := klogConfig.Build()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to build zap logger for klog: %v", err))
+	}
+
+	klog.SetLogger(zapr.NewLogger(klogZap).WithName("klog"))
 
 	logs.InitLogs()
 	defer logs.FlushLogs()
@@ -118,9 +150,13 @@ func main() {
 }
 
 func runController(ctx context.Context, controllerContext *controllercmd.ControllerContext) error {
+	setupLogging()
+
+	log.Info("Starting "+ctrlName, "GoVersion", runtime.Version(), "GOOS", runtime.GOOS, "GOARCH", runtime.GOARCH)
+
 	mgr, err := addonmanager.New(controllerContext.KubeConfig)
 	if err != nil {
-		klog.Error(err, "unable to create new addon manager")
+		log.Error(err, "unable to create new addon manager")
 		os.Exit(1)
 	}
 
@@ -135,7 +171,7 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 	for _, f := range agentFuncs {
 		err := f(ctx, mgr, controllerContext)
 		if err != nil {
-			klog.Error(err, "unable to get or add agent addon")
+			log.Error(err, "unable to get or add agent addon")
 			os.Exit(1)
 		}
 	}
@@ -147,7 +183,7 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 
 		err = mgr.Start(ctx)
 		if err != nil {
-			klog.Error(err, "problem starting manager")
+			log.Error(err, "problem starting manager")
 			os.Exit(1)
 		}
 
@@ -158,4 +194,44 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 	wg.Wait()
 
 	return nil
+}
+
+func setupLogging() {
+	// Build controller-runtime logger
+	ctrlZap, err := zflags.BuildForCtrl()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to build zap logger for controller: %v", err))
+	}
+
+	// Bind the controller-runtime logger
+	ctrl.SetLogger(zapr.NewLogger(ctrlZap))
+
+	// Configure klog logger
+	// (This is a fragment from the go-log-utils BuildForKlog() because the
+	// SkipLineEnding setting there removes newlines that must be preserved
+	// here)
+	klogConfig := zflags.GetConfig()
+
+	klogV := flag.CommandLine.Lookup("v")
+	if klogV != nil {
+		var klogLevel int
+
+		klogLevel, err = strconv.Atoi(klogV.Value.String())
+		if err != nil {
+			klogConfig.Level = zap.NewAtomicLevelAt(zapcore.Level(int8(-1 * klogLevel)))
+		}
+	}
+
+	// Handle errors from building the klog configuration
+	if klogV == nil || err != nil {
+		log.Info("Failed to parse 'v' flag in flagset for klog--verbosity will not be configurable for klog.")
+	}
+
+	// Build the klog logger
+	klogZap, err := klogConfig.Build()
+	if err != nil {
+		log.Error(err, "Failed to build zap logger for klog, those logs will not go through zap")
+	} else {
+		klog.SetLogger(zapr.NewLogger(klogZap).WithName("klog"))
+	}
 }
