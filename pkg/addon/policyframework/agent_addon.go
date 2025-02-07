@@ -242,7 +242,8 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 		controllerContext,
 		addonName,
 		agentPermissionFiles,
-		FS)
+		FS,
+		false)
 
 	addonClient, err := addonv1alpha1client.NewForConfig(controllerContext.KubeConfig)
 	if err != nil {

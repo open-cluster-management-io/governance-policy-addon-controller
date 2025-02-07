@@ -75,17 +75,24 @@ func NewRegistrationOption(
 	addonName string,
 	agentPermissionFiles []string,
 	filesystem embed.FS,
+	useClusterRole bool,
 ) *agent.RegistrationOption {
 	applyManifestFromFile := func(file, clusterName string,
 		kubeclient *kubernetes.Clientset, recorder events.Recorder,
 	) error {
+		groupIdx := 0 // 0 is a cluster-specific group
+
+		if useClusterRole {
+			groupIdx = 1 // 1 is a group for the entire addon
+		}
+
 		groups := agent.DefaultGroups(clusterName, addonName)
 		config := struct {
 			ClusterName string
 			Group       string
 		}{
 			ClusterName: clusterName,
-			Group:       groups[0],
+			Group:       groups[groupIdx],
 		}
 
 		results := resourceapply.ApplyDirectly(context.Background(),

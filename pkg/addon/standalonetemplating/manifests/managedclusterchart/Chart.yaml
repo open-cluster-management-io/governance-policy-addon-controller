@@ -1,0 +1,7 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: v1
+description: A Helm chart for the Policy Standalone Hub Templating feature in open-cluster-management
+name: governance-standalone-hub-templating
+version: 2.13.0
+appVersion: "2.13.0"

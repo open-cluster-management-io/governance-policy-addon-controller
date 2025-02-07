@@ -1,0 +1,7 @@
+# Copyright Contributors to the Open Cluster Management project
+
+fullnameOverride: null
+nameOverride: null
+org: open-cluster-management
+
+hubGroup: ""
