@@ -66,6 +66,9 @@ spec:
           - --operator-policy-default-namespace={{ .Values.operatorPolicy.defaultNamespace }}
           {{- end }}
           {{- end }}
+          {{- if ne .Values.standaloneHubTemplatingSecret "" }}
+          - --standalone-hub-templates-kubeconfig-path=/var/run/standalone-hub-templating/kubeconfig
+          {{- end }}
         env:
           - name: WATCH_NAMESPACE
             {{- if eq .Values.installMode "Hosted" }}
@@ -139,6 +142,11 @@ spec:
             name: managed-kubeconfig-secret
             readOnly: true
           {{- end }}
+          {{- if ne .Values.standaloneHubTemplatingSecret "" }}
+          - mountPath: "/var/run/standalone-hub-templating"
+            name: standalone-hub-templating-kubeconfig
+            readOnly: true
+          {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -159,6 +167,11 @@ spec:
         - name: metrics-cert
           secret:
             secretName: {{ include "controller.fullname" . }}-metrics
+        {{- end }}
+        {{- if ne .Values.standaloneHubTemplatingSecret "" }}
+        - name: standalone-hub-templating-kubeconfig
+          secret:
+            secretName: {{ .Values.standaloneHubTemplatingSecret }}
         {{- end }}
       {{- if .Values.global.imagePullSecret }}
       imagePullSecrets:
