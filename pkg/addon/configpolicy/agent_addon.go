@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
@@ -29,6 +30,7 @@ const (
 	clientBurstAnnotation            = "client-burst"
 	prometheusEnabledAnnotation      = "prometheus-metrics-enabled"
 	operatorPolicyDisabledAnnotation = "operator-policy-disabled"
+	standaloneTemplatingAddonName    = "governance-standalone-hub-templating"
 )
 
 var log = ctrl.Log.WithName("configpolicy")
@@ -47,6 +49,7 @@ type UserValues struct {
 	Prometheus                    map[string]interface{}   `json:"prometheus"`
 	OperatorPolicy                map[string]interface{}   `json:"operatorPolicy"`
 	UserArgs                      UserArgs                 `json:"args,"`
+	StandaloneHubTemplatingSecret string                   `json:"standaloneHubTemplatingSecret"`
 }
 
 // FS go:embed
@@ -63,9 +66,11 @@ var agentPermissionFiles = []string{
 	"manifests/hubpermissions/rolebinding.yaml",
 }
 
-func getValues(ctx context.Context, clusterClient *clusterv1client.Clientset) func(*clusterv1.ManagedCluster,
-	*addonapiv1alpha1.ManagedClusterAddOn,
-) (addonfactory.Values, error) {
+func getValues(
+	ctx context.Context,
+	clusterClient *clusterv1client.Clientset,
+	addonClient *addonv1alpha1client.Clientset,
+) func(*clusterv1.ManagedCluster, *addonapiv1alpha1.ManagedClusterAddOn) (addonfactory.Values, error) {
 	return func(
 		cluster *clusterv1.ManagedCluster, addon *addonapiv1alpha1.ManagedClusterAddOn,
 	) (addonfactory.Values, error) {
@@ -111,6 +116,17 @@ func getValues(ctx context.Context, clusterClient *clusterv1client.Clientset) fu
 			userValues.HostingKubernetesDistribution = policyaddon.GetClusterVendor(hostingCluster)
 		} else {
 			userValues.HostingKubernetesDistribution = userValues.KubernetesDistribution
+		}
+
+		_, err := addonClient.AddonV1alpha1().ManagedClusterAddOns(addon.Namespace).Get(
+			ctx, standaloneTemplatingAddonName, metav1.GetOptions{},
+		)
+		if !errors.IsNotFound(err) {
+			if err != nil {
+				return nil, err
+			}
+
+			userValues.StandaloneHubTemplatingSecret = standaloneTemplatingAddonName + "-hub-kubeconfig"
 		}
 
 		// Enable Prometheus metrics by default on OpenShift
@@ -229,7 +245,8 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 		controllerContext,
 		addonName,
 		agentPermissionFiles,
-		FS)
+		FS,
+		false)
 
 	addonClient, err := addonv1alpha1client.NewForConfig(controllerContext.KubeConfig)
 	if err != nil {
@@ -249,7 +266,7 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 				addonfactory.ToAddOnNodePlacementValues,
 				addonfactory.ToAddOnCustomizedVariableValues,
 			),
-			getValues(ctx, clusterClient),
+			getValues(ctx, clusterClient, addonClient),
 			addonfactory.GetValuesFromAddonAnnotation,
 			mandateValues,
 		).
