@@ -21,16 +21,20 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 	"sync"
 
+	"github.com/go-logr/zapr"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/version"
 	utilflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/logs"
 	"k8s.io/klog/v2"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"open-cluster-management.io/governance-policy-addon-controller/pkg/addon/configpolicy"
 	"open-cluster-management.io/governance-policy-addon-controller/pkg/addon/policyframework"
@@ -78,18 +82,42 @@ import (
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch
 
-var ctrlVersion = version.Info{}
+var (
+	ctrlVersion = version.Info{}
+	log         = ctrl.Log.WithName("setup")
+)
 
 const (
 	ctrlName = "governance-policy-addon-controller"
 )
 
 func main() {
+	zapConfig := zap.NewProductionConfig()
+	zapConfig.Encoding = "console"
+
+	noTraceConfig := zapConfig
+	noTraceConfig.DisableStacktrace = true
+
+	ctrlZap, err := zapConfig.Build()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to build zap logger for controller: %v", err))
+	}
+
+	klogZap, err := noTraceConfig.Build()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to build zap logger for klog: %v", err))
+	}
+
 	pflag.CommandLine.SetNormalizeFunc(utilflag.WordSepNormalizeFunc)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 
+	ctrl.SetLogger(zapr.NewLogger(ctrlZap))
+	klog.SetLogger(zapr.NewLogger(klogZap))
+
 	logs.InitLogs()
 	defer logs.FlushLogs()
+
+	log.Info("Starting "+ctrlName, "GoVersion", runtime.Version(), "GOOS", runtime.GOOS, "GOARCH", runtime.GOARCH)
 
 	cmd := &cobra.Command{
 		Use:   ctrlName,
@@ -120,7 +148,7 @@ func main() {
 func runController(ctx context.Context, controllerContext *controllercmd.ControllerContext) error {
 	mgr, err := addonmanager.New(controllerContext.KubeConfig)
 	if err != nil {
-		klog.Error(err, "unable to create new addon manager")
+		log.Error(err, "unable to create new addon manager")
 		os.Exit(1)
 	}
 
@@ -135,7 +163,7 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 	for _, f := range agentFuncs {
 		err := f(ctx, mgr, controllerContext)
 		if err != nil {
-			klog.Error(err, "unable to get or add agent addon")
+			log.Error(err, "unable to get or add agent addon")
 			os.Exit(1)
 		}
 	}
@@ -147,7 +175,7 @@ func runController(ctx context.Context, controllerContext *controllercmd.Control
 
 		err = mgr.Start(ctx)
 		if err != nil {
-			klog.Error(err, "problem starting manager")
+			log.Error(err, "problem starting manager")
 			os.Exit(1)
 		}
 
