@@ -56,21 +56,24 @@ func Kubectl(args ...string) string {
 // GetWithTimeout keeps polling to get the namespaced object for timeout seconds until wantFound is
 // met (true for found, false for not found)
 func GetWithTimeout(
+	ctx context.Context,
 	client dynamic.Interface,
 	gvr schema.GroupVersionResource,
 	name, namespace string,
 	wantFound bool,
 	timeout int,
 ) *unstructured.Unstructured {
+	GinkgoHelper()
+
 	if timeout < 1 {
 		timeout = 1
 	}
 	var obj *unstructured.Unstructured
 
-	EventuallyWithOffset(1, func() error {
+	Eventually(func() error {
 		var err error
 		namespace := client.Resource(gvr).Namespace(namespace)
-		obj, err = namespace.Get(context.TODO(), name, metav1.GetOptions{})
+		obj, err = namespace.Get(ctx, name, metav1.GetOptions{})
 		if wantFound && err != nil {
 			return err
 		}
@@ -94,21 +97,24 @@ func GetWithTimeout(
 // GetWithTimeoutClusterResource keeps polling to get the cluster-scoped object for timeout seconds
 // until wantFound is met (true for found, false for not found)
 func GetWithTimeoutClusterResource(
+	ctx context.Context,
 	client dynamic.Interface,
 	gvr schema.GroupVersionResource,
 	name string,
 	wantFound bool,
 	timeout int,
 ) *unstructured.Unstructured {
+	GinkgoHelper()
+
 	if timeout < 1 {
 		timeout = 1
 	}
 	var obj *unstructured.Unstructured
 
-	EventuallyWithOffset(1, func() error {
+	Eventually(func() error {
 		var err error
 		res := client.Resource(gvr)
-		obj, err = res.Get(context.TODO(), name, metav1.GetOptions{})
+		obj, err = res.Get(ctx, name, metav1.GetOptions{})
 		if wantFound && err != nil {
 			return err
 		}
@@ -132,6 +138,7 @@ func GetWithTimeoutClusterResource(
 // ListWithTimeoutByNamespace keeps polling to list the object for timeout seconds until wantFound is met
 // (true for found, false for not found)
 func ListWithTimeoutByNamespace(
+	ctx context.Context,
 	clientHubDynamic dynamic.Interface,
 	gvr schema.GroupVersionResource,
 	opts metav1.ListOptions,
@@ -140,15 +147,17 @@ func ListWithTimeoutByNamespace(
 	wantFound bool,
 	timeout int,
 ) *unstructured.UnstructuredList {
+	GinkgoHelper()
+
 	if timeout < 1 {
 		timeout = 1
 	}
 
 	var list *unstructured.UnstructuredList
 
-	EventuallyWithOffset(1, func(g Gomega) {
+	Eventually(func(g Gomega) {
 		var err error
-		list, err = clientHubDynamic.Resource(gvr).Namespace(ns).List(context.TODO(), opts)
+		list, err = clientHubDynamic.Resource(gvr).Namespace(ns).List(ctx, opts)
 		g.Expect(err).ToNot(HaveOccurred())
 		g.Expect(list.Items).To(HaveLen(size))
 	}, timeout, 1).Should(Succeed())

@@ -66,7 +66,7 @@ func TestE2e(t *testing.T) {
 	RunSpecs(t, "governance policy addon controller e2e Suite")
 }
 
-var _ = BeforeSuite(func() {
+var _ = BeforeSuite(func(ctx SpecContext) {
 	gvrDeployment = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 	gvrPod = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
 	gvrNamespace = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}
@@ -101,11 +101,11 @@ var _ = BeforeSuite(func() {
 	hubKubeconfigInternal, err = os.ReadFile(kubeconfigFilename + "1_e2e-internal")
 	Expect(err).ToNot(HaveOccurred())
 
-	managedClusterList = getManagedClusters(clientDynamic)
+	managedClusterList = getManagedClusters(ctx, clientDynamic)
 })
 
-func getManagedClusters(client dynamic.Interface) []managedClusterConfig {
-	clusterObjs, err := client.Resource(gvrManagedCluster).List(context.TODO(), metav1.ListOptions{})
+func getManagedClusters(ctx context.Context, client dynamic.Interface) []managedClusterConfig {
+	clusterObjs, err := client.Resource(gvrManagedCluster).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		panic(err)
 	}
