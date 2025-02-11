@@ -36,37 +36,39 @@ var _ = Describe("Test config-policy-controller deployment with standalone templ
 		}
 	})
 
-	It("should not have hub templating enabled when the standalone-templating addon does not exist", func() {
-		for _, cluster := range managedClusterList {
-			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
-			By(logPrefix + "deploying the default config-policy-controller managedclusteraddon")
-			Kubectl("apply", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
+	It("should not have hub templating enabled when the standalone-templating addon does not exist",
+		func(ctx SpecContext) {
+			for _, cluster := range managedClusterList {
+				logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+				By(logPrefix + "deploying the default config-policy-controller managedclusteraddon")
+				Kubectl("apply", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
 
-			By(logPrefix + "verifying the standalone-hub-templates arg is not set")
+				By(logPrefix + "verifying the standalone-hub-templates arg is not set")
 
-			deploy := GetWithTimeout(
-				cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, true, 60,
-			)
-			Expect(deploy).NotTo(BeNil())
-
-			Eventually(func(g Gomega) []string {
-				deploy = GetWithTimeout(
-					cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, true, 30,
+				deploy := GetWithTimeout(
+					ctx, cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, true, 60,
 				)
-				containers, _, _ := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "containers")
-				g.Expect(containers).Should(HaveLen(1))
+				Expect(deploy).NotTo(BeNil())
 
-				cont, ok := containers[0].(map[string]any)
-				g.Expect(ok).To(BeTrue())
+				Eventually(func(g Gomega) []string {
+					deploy = GetWithTimeout(
+						ctx, cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, true, 30,
+					)
+					containers, _, _ := unstructured.NestedSlice(
+						deploy.Object, "spec", "template", "spec", "containers")
+					g.Expect(containers).Should(HaveLen(1))
 
-				args, _, _ := unstructured.NestedStringSlice(cont, "args")
+					cont, ok := containers[0].(map[string]any)
+					g.Expect(ok).To(BeTrue())
 
-				return args
-			}, 60, 1).ShouldNot(ContainElement(ContainSubstring("standalone-hub-templates")))
-		}
-	})
+					args, _, _ := unstructured.NestedStringSlice(cont, "args")
 
-	It("should have hub templating enabled after the standalone-templating addon is created", func() {
+					return args
+				}, 60, 1).ShouldNot(ContainElement(ContainSubstring("standalone-hub-templates")))
+			}
+		})
+
+	It("should have hub templating enabled after the standalone-templating addon is created", func(ctx SpecContext) {
 		for _, cluster := range managedClusterList {
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 			By(logPrefix + "deploying the default governance-standalone-hub-templating managedclusteraddon")
@@ -75,13 +77,13 @@ var _ = Describe("Test config-policy-controller deployment with standalone templ
 			By(logPrefix + "verifying the standalone-hub-templates arg is set")
 
 			deploy := GetWithTimeout(
-				cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, true, 60,
+				ctx, cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, true, 60,
 			)
 			Expect(deploy).NotTo(BeNil())
 
 			Eventually(func(g Gomega) []string {
 				deploy = GetWithTimeout(
-					cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, true, 30,
+					ctx, cluster.clusterClient, gvrDeployment, case2DeploymentName, addonNamespace, true, 30,
 				)
 				containers, _, _ := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "containers")
 				g.Expect(containers).Should(HaveLen(1))
@@ -97,7 +99,7 @@ var _ = Describe("Test config-policy-controller deployment with standalone templ
 			By(logPrefix + "verifying the " + case3SecretName + " secret was created")
 
 			secret := GetWithTimeout(
-				cluster.clusterClient, gvrSecret, case3SecretName, addonNamespace, true, 30,
+				ctx, cluster.clusterClient, gvrSecret, case3SecretName, addonNamespace, true, 30,
 			)
 			Expect(secret).NotTo(BeNil())
 		}
