@@ -14,8 +14,6 @@ metadata:
     addon.open-cluster-management.io/hosted-manifest-location: hosting
   annotations:
     {{- if eq .Values.hostingKubernetesDistribution "OpenShift" }}
-    # The alpha annotation is required for OpenShift 3.11
-    service.alpha.openshift.io/serving-cert-secret-name: {{ include "controller.fullname" . }}-metrics
     service.beta.openshift.io/serving-cert-secret-name: {{ include "controller.fullname" . }}-metrics
     {{- end }}
 spec:
