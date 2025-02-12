@@ -214,10 +214,11 @@ func setupLogging() {
 
 	klogV := flag.CommandLine.Lookup("v")
 	if klogV != nil {
-		var klogLevel int
+		var klogLevel int64
 
-		klogLevel, err = strconv.Atoi(klogV.Value.String())
+		klogLevel, err = strconv.ParseInt(klogV.Value.String(), 10, 8)
 		if err != nil {
+			// #nosec G115 -- ParseInt() guarantees that it's an int8
 			klogConfig.Level = zap.NewAtomicLevelAt(zapcore.Level(int8(-1 * klogLevel)))
 		}
 	}
