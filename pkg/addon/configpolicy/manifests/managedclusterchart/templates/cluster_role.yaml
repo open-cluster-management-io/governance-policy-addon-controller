@@ -71,13 +71,14 @@ rules:
   - update
 - apiGroups:
   - ""
-  resourceNames:
-  - policy-encryption-key
   resources:
   - secrets
   verbs:
+  - create
   - get
   - list
+  - patch
+  - update
   - watch
 {{- else }}
 - apiGroups:
