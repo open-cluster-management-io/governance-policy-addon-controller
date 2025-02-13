@@ -210,28 +210,38 @@ func debugCollection(podSelector string) {
 			for _, cluster := range managedClusterList[1:] {
 				clusterNs = append(clusterNs, cluster.clusterName)
 			}
+
+			output += "::group::Cluster cluster1: Addon objects"
+			output += Kubectl("get", "clustermanagementaddons", "-o=yaml", targetKubeconfig)
+			output += "---\n"
+			output += Kubectl("get", "managedclusteraddons", "-A", "-o=yaml", targetKubeconfig)
+			output += "---\n"
+			output += Kubectl("get", "addondeploymentconfigs", "-A", "-o=yaml", targetKubeconfig)
+			output += "---\n"
+			output += Kubectl("get", "manifestwork", "-A", "-o=yaml", targetKubeconfig)
+			output += "::endgroup::\n"
 		}
 
 		for _, namespace := range clusterNs {
 			for _, suffix := range namespaceSuffix {
 				namespace += suffix
-				output += fmt.Sprintf("Cluster %s: All objects in namespace %s:\n", targetCluster, namespace)
+				output += fmt.Sprintf("::group::Cluster %s: All objects in namespace %s:\n", targetCluster, namespace)
 				output += Kubectl("get", "all", "-n", namespace, targetKubeconfig)
-				output += "===\n"
+				output += "::endgroup::\n"
 				output += fmt.Sprintf(
-					"Cluster %s: Pod logs for label %s in namespace %s:\n",
+					"::group::Cluster %s: Pod logs for label %s in namespace %s:\n",
 					targetCluster, podSelector, namespace,
 				)
 				output += Kubectl("describe", "pod", "-n", namespace, "-l", podSelector, targetKubeconfig)
 				output += Kubectl("logs", "-n", namespace, "-l", podSelector, "--ignore-errors", targetKubeconfig)
-				output += "===\n"
+				output += "::endgroup::\n"
 			}
 		}
 
-		output += fmt.Sprintf("Cluster %s: All objects in namespace %s:\n", targetCluster, addonNamespace)
+		output += fmt.Sprintf("::group::Cluster %s: All objects in namespace %s:\n", targetCluster, addonNamespace)
 		output += Kubectl("get", "all", "-n", addonNamespace, targetKubeconfig)
-		output += "===\n"
-		output += fmt.Sprintf("Cluster %s: Pod logs for label %s in namespace %s for cluster %s:\n",
+		output += "::endgroup::\n"
+		output += fmt.Sprintf("::group::Cluster %s: Pod logs for label %s in namespace %s for cluster %s:\n",
 			targetCluster, podSelector, addonNamespace, cluster.clusterName)
 		output += Kubectl(
 			"describe", "pod", "-n", addonNamespace, "-l", podSelector, targetKubeconfig,
@@ -239,6 +249,7 @@ func debugCollection(podSelector string) {
 		output += Kubectl(
 			"logs", "-n", addonNamespace, "-l", podSelector, "--ignore-errors", targetKubeconfig,
 		)
+		output += "::endgroup::\n"
 	}
 
 	GinkgoWriter.Print(output)

@@ -17,22 +17,16 @@ args:
   syncPoliciesOnMulticlusterHub: false
 hubKubeConfigSecret: governance-policy-framework-hub-kubeconfig
 
-resources:
-  requests:
-    memory: 64Mi
-  limits:
-    memory: 512Mi
-
 affinity: {}
 
 tolerations:
-- key: "dedicated"
-  operator: "Equal"
-  value: "infra"
-  effect: "NoSchedule"
-- key: node-role.kubernetes.io/infra
-  operator: Exists
-  effect: NoSchedule
+  - key: "dedicated"
+    operator: "Equal"
+    value: "infra"
+    effect: "NoSchedule"
+  - key: node-role.kubernetes.io/infra
+    operator: Exists
+    effect: NoSchedule
 
 clusterName: null
 installMode: null
@@ -51,10 +45,16 @@ prometheus:
     # This will be automatically set to the controller's namespace.
     namespace: null
 
-global: 
+global:
+  resourceRequirements:
+    - containerIDRegex: ^.+:.+:.+$
+      requests:
+        memory: 64Mi
+      limits:
+        memory: 512Mi
   imagePullPolicy: IfNotPresent
   imagePullSecret: open-cluster-management-image-pull-credentials
-  imageOverrides: 
+  imageOverrides:
     governance_policy_framework_addon: quay.io/open-cluster-management/governance-policy-framework-addon:latest
   nodeSelector: {}
   proxyConfig:

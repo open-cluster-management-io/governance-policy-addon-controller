@@ -128,7 +128,16 @@ spec:
           protocol: TCP
           containerPort: 8383
         {{- end }}
-        resources: {{- toYaml .Values.resources | nindent 10 }}
+        {{- $reverseResourceRequirements := reverse .Values.global.resourceRequirements -}}
+        {{- $controllerName := include "controller.fullname" . -}}
+        {{- $chartName := .Chart.Name -}}
+        {{- range $requirement := $reverseResourceRequirements -}}
+          {{- if regexMatch $requirement.containerIDRegex (printf "deployments:%s:%s" $controllerName $chartName) }}
+        resources:
+            {{- toYaml $requirement.resources | nindent 10 }}
+            {{- break -}}
+          {{- end -}}
+        {{- end }}
         volumeMounts:
           {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
           - mountPath: "/var/run/metrics-cert"
