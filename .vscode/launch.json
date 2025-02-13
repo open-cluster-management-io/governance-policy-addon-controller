@@ -10,7 +10,6 @@
             "args": ["--kubeconfig=${workspaceFolder}/kubeconfig_cluster1", "controller", "--namespace=open-cluster-management"],
             "env": {
                 "CONFIG_POLICY_CONTROLLER_IMAGE": "quay.io/open-cluster-management/config-policy-controller:latest",
-                "KUBE_RBAC_PROXY_IMAGE": "registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.10",
                 "GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE": "quay.io/open-cluster-management/governance-policy-framework-addon:latest",
                 "KUBECONFIG": "${workspaceFolder}/kubeconfig_cluster1",
             }
