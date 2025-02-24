@@ -13,6 +13,7 @@ import (
 	"open-cluster-management.io/addon-framework/pkg/utils"
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	addonv1alpha1client "open-cluster-management.io/api/client/addon/clientset/versioned"
+	clusterv1client "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 
 	policyaddon "open-cluster-management.io/governance-policy-addon-controller/pkg/addon"
@@ -35,7 +36,8 @@ var agentPermissionFiles = []string{
 	"manifests/hubpermissions/rolebinding.yaml",
 }
 
-func getValues(_ *clusterv1.ManagedCluster,
+func getValues(
+	_ *clusterv1.ManagedCluster,
 	addon *addonapiv1alpha1.ManagedClusterAddOn,
 ) (addonfactory.Values, error) {
 	values := addonfactory.Values{}
@@ -46,7 +48,7 @@ func getValues(_ *clusterv1.ManagedCluster,
 	return values, nil
 }
 
-func getAgentAddon(ctx context.Context, controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {
+func getAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {
 	registrationOption := policyaddon.NewRegistrationOption(
 		controllerContext,
 		addonName,
@@ -59,7 +61,7 @@ func getAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 		return nil, fmt.Errorf("failed to retrieve addon client: %w", err)
 	}
 
-	clusterClient, err := policyaddon.GetManagedClusterClient(ctx, controllerContext.KubeConfig)
+	clusterClient, err := clusterv1client.NewForConfig(controllerContext.KubeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize a managed cluster client: %w", err)
 	}
@@ -99,9 +101,9 @@ func (sa *StandaloneAgentAddon) Manifests(
 }
 
 func GetAndAddAgent(
-	ctx context.Context, mgr addonmanager.AddonManager, controllerContext *controllercmd.ControllerContext,
+	_ context.Context, mgr addonmanager.AddonManager, controllerContext *controllercmd.ControllerContext,
 ) error {
-	agentAddon, err := getAgentAddon(ctx, controllerContext)
+	agentAddon, err := getAgentAddon(controllerContext)
 	if err != nil {
 		return fmt.Errorf("failed getting the %v agent addon: %w", addonName, err)
 	}

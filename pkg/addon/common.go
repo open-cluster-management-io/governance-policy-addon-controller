@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/blang/semver/v4"
 	"github.com/openshift/library-go/pkg/assets"
@@ -18,13 +17,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/addon-framework/pkg/utils"
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
-	clusterv1client "open-cluster-management.io/api/client/cluster/clientset/versioned"
-	clusterv1informers "open-cluster-management.io/api/client/cluster/informers/externalversions"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -180,18 +176,6 @@ func GetAndAddAgent(
 	}
 
 	return nil
-}
-
-func GetManagedClusterClient(ctx context.Context, kubeConfig *rest.Config) (*clusterv1client.Clientset, error) {
-	clusterClient, err := clusterv1client.NewForConfig(kubeConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	clusterInformers := clusterv1informers.NewSharedInformerFactory(clusterClient, 10*time.Minute)
-	go clusterInformers.Cluster().V1().ManagedClusters().Informer().Run(ctx.Done())
-
-	return clusterClient, nil
 }
 
 // PolicyAgentAddon wraps the AgentAddon created from the addonfactory to override some behavior
