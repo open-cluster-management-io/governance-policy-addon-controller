@@ -7,9 +7,9 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"open-cluster-management.io/addon-framework/pkg/addonfactory"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
@@ -17,6 +17,8 @@ import (
 	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 	addonv1alpha1client "open-cluster-management.io/api/client/addon/clientset/versioned"
 	clusterv1client "open-cluster-management.io/api/client/cluster/clientset/versioned"
+	clusterv1informers "open-cluster-management.io/api/client/cluster/informers/externalversions"
+	clusterlistersv1 "open-cluster-management.io/api/client/cluster/listers/cluster/v1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -67,7 +69,7 @@ type userValues struct {
 	UserArgs                      UserArgs                 `json:"args"`
 }
 
-func getValues(ctx context.Context, clusterClient *clusterv1client.Clientset) func(*clusterv1.ManagedCluster,
+func getValues(clusterClient clusterlistersv1.ManagedClusterLister) func(*clusterv1.ManagedCluster,
 	*addonapiv1alpha1.ManagedClusterAddOn,
 ) (addonfactory.Values, error) {
 	return func(
@@ -116,9 +118,7 @@ func getValues(ctx context.Context, clusterClient *clusterv1client.Clientset) fu
 		userValues.KubernetesDistribution = policyaddon.GetClusterVendor(cluster)
 
 		if hostingClusterName != "" {
-			hostingCluster, err := clusterClient.ClusterV1().ManagedClusters().Get(
-				ctx, hostingClusterName, metav1.GetOptions{},
-			)
+			hostingCluster, err := clusterClient.Get(hostingClusterName)
 			if err != nil {
 				return nil, err
 			}
@@ -250,10 +250,14 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 		return nil, fmt.Errorf("failed to retrieve addon client: %w", err)
 	}
 
-	clusterClient, err := policyaddon.GetManagedClusterClient(ctx, controllerContext.KubeConfig)
+	clusterClient, err := clusterv1client.NewForConfig(controllerContext.KubeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize a managed cluster client: %w", err)
 	}
+
+	clusterInformer := clusterv1informers.NewSharedInformerFactory(clusterClient, 10*time.Minute).
+		Cluster().V1().ManagedClusters()
+	go clusterInformer.Informer().Run(ctx.Done())
 
 	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
 		WithConfigGVRs(utils.AddOnDeploymentConfigGVR).
@@ -264,7 +268,7 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 				addonfactory.ToAddOnResourceRequirementsValues,
 				addonfactory.ToAddOnCustomizedVariableValues,
 			),
-			getValues(ctx, clusterClient),
+			getValues(clusterInformer.Lister()),
 			addonfactory.GetValuesFromAddonAnnotation,
 			mandateValues,
 		).
