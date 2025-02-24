@@ -181,7 +181,19 @@ rules:
   - update
 - apiGroups:
   - rbac.authorization.k8s.io
+  resourceNames:
+  - open-cluster-management:governance-standalone-hub-templating
   resources:
+  - clusterrolebindings
+  verbs:
+  - delete
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
   - clusterroles
   - rolebindings
   verbs:
