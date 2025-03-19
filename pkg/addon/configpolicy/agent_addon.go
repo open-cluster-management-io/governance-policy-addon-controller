@@ -47,12 +47,12 @@ type UserArgs struct {
 }
 
 type UserValues struct {
-	GlobalValues                  policyaddon.GlobalValues `json:"global,"`
+	GlobalValues                  policyaddon.GlobalValues `json:"global"`
 	KubernetesDistribution        string                   `json:"kubernetesDistribution"`
 	HostingKubernetesDistribution string                   `json:"hostingKubernetesDistribution"`
 	Prometheus                    map[string]interface{}   `json:"prometheus"`
 	OperatorPolicy                map[string]interface{}   `json:"operatorPolicy"`
-	UserArgs                      UserArgs                 `json:"args,"`
+	UserArgs                      UserArgs                 `json:"args"`
 	StandaloneHubTemplatingSecret string                   `json:"standaloneHubTemplatingSecret"`
 }
 
