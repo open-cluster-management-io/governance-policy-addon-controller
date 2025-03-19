@@ -128,7 +128,7 @@ func main() {
 	cmd := &cobra.Command{
 		Use:   ctrlName,
 		Short: "Governance policy addon controller for Open Cluster Management",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			if err := cmd.Help(); err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
 			}
@@ -147,7 +147,8 @@ func main() {
 
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
+
+		klog.Fatal()
 	}
 }
 

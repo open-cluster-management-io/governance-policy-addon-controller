@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/user"
@@ -191,5 +192,5 @@ func LoadConfig(url, kubeconfig, context string) (*rest.Config, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("could not create a valid kubeconfig")
+	return nil, errors.New("could not create a valid kubeconfig")
 }

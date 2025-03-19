@@ -135,7 +135,7 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 			}
 			hubClusterConfig := managedClusterList[0]
 			hubClient := hubClusterConfig.clusterClient
-			installNamespace := fmt.Sprintf("%s-hosted", cluster.clusterName)
+			installNamespace := cluster.clusterName + "-hosted"
 
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 
@@ -219,7 +219,7 @@ var _ = Describe("Test framework deployment", Ordered, func() {
 				}
 				hubClusterConfig := managedClusterList[0]
 				hubClient := hubClusterConfig.clusterClient
-				installNamespace := fmt.Sprintf("%s-hosted", cluster.clusterName)
+				installNamespace := cluster.clusterName + "-hosted"
 
 				logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 
@@ -820,7 +820,7 @@ func checkContainersAndAvailability(ctx context.Context, cluster managedClusterC
 	namespace := addonNamespace
 
 	if cluster.hostedOnHub {
-		namespace = fmt.Sprintf("%s-hosted", cluster.clusterName)
+		namespace = cluster.clusterName + "-hosted"
 	}
 
 	checkContainersAndAvailabilityInNamespace(ctx, cluster, clusterIdx, namespace)
@@ -867,7 +867,7 @@ func checkContainersAndAvailabilityInNamespace(
 		phase, _, _ := unstructured.NestedString(pods.Items[0].Object, "status", "phase")
 
 		return phase == "Running"
-	}, 60, 1).Should(Equal(true))
+	}, 60, 1).Should(BeTrue())
 
 	By(logPrefix + "showing the framework managedclusteraddon as available")
 	Eventually(func() bool {
@@ -876,7 +876,7 @@ func checkContainersAndAvailabilityInNamespace(
 		)
 
 		return getAddonStatus(addon)
-	}, 240, 1).Should(Equal(true))
+	}, 240, 1).Should(BeTrue())
 }
 
 func checkArgs(ctx context.Context, cluster managedClusterConfig, desiredArgs ...string) {
@@ -887,11 +887,11 @@ func checkArgs(ctx context.Context, cluster managedClusterConfig, desiredArgs ..
 
 	if cluster.hostedOnHub {
 		client = managedClusterList[0].clusterClient
-		namespace = fmt.Sprintf("%s-hosted", cluster.clusterName)
+		namespace = cluster.clusterName + "-hosted"
 	}
 
 	By(logPrefix + "verifying one framework pod is running and has the desired args")
-	Eventually(func(g Gomega) error {
+	Eventually(func(g Gomega) {
 		opts := metav1.ListOptions{
 			LabelSelector: case1PodSelector,
 		}
@@ -900,34 +900,37 @@ func checkArgs(ctx context.Context, cluster managedClusterConfig, desiredArgs ..
 
 		phase, found, err := unstructured.NestedString(podObj, "status", "phase")
 		if err != nil || !found || phase != "Running" {
-			return fmt.Errorf("pod phase is not running; found=%v; err=%w", found, err)
+			g.Expect(err).ShouldNot(HaveOccurred(),
+				fmt.Sprintf("pod phase is not running; found=%v; err=%v", found, err))
 		}
 
 		containerList, found, err := unstructured.NestedSlice(podObj, "spec", "containers")
 		if err != nil || !found {
-			return fmt.Errorf("could not get container list; found=%v; err=%w", found, err)
+			g.Expect(err).ShouldNot(HaveOccurred(),
+				fmt.Sprintf("could not get container list; found=%v; err=%v", found, err))
 		}
 
 		if len(containerList) != 1 {
-			return fmt.Errorf("the container list had more than 1 entry; containerList=%v", containerList)
+			g.Expect(err).ShouldNot(HaveOccurred(),
+				fmt.Sprintf("the container list had more than 1 entry; containerList=%v", containerList))
 		}
 
 		container := containerList[0]
 
 		containerObj, ok := container.(map[string]interface{})
 		if !ok {
-			return fmt.Errorf("could not convert container to map; container=%v", container)
+			g.Expect(err).ShouldNot(HaveOccurred(),
+				fmt.Sprintf("could not convert container to map; container=%v", container))
 		}
 
 		argList, found, err := unstructured.NestedStringSlice(containerObj, "args")
 		if err != nil || !found {
-			return fmt.Errorf("could not get container args; found=%v; err=%w", found, err)
+			g.Expect(err).ShouldNot(HaveOccurred(),
+				fmt.Sprintf("could not get container args; found=%v; err=%v", found, err))
 		}
 
 		g.Expect(argList).To(ContainElements(desiredArgs))
-
-		return nil
-	}, 120, 1).Should(BeNil())
+	}, 120, 1).Should(Succeed())
 }
 
 func startupProbeInCluster(clusterIdx int) bool {

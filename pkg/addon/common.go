@@ -33,10 +33,10 @@ const (
 )
 
 type GlobalValues struct {
-	ImagePullPolicy string            `json:"imagePullPolicy,"`
+	ImagePullPolicy string            `json:"imagePullPolicy"`
 	ImagePullSecret string            `json:"imagePullSecret"`
-	ImageOverrides  map[string]string `json:"imageOverrides,"`
-	ProxyConfig     map[string]string `json:"proxyConfig,"`
+	ImageOverrides  map[string]string `json:"imageOverrides"`
+	ProxyConfig     map[string]string `json:"proxyConfig"`
 }
 
 type UserArgs struct {
@@ -46,8 +46,8 @@ type UserArgs struct {
 }
 
 type UserValues struct {
-	GlobalValues GlobalValues `json:"global,"`
-	UserArgs     UserArgs     `json:"args,"`
+	GlobalValues GlobalValues `json:"global"`
+	UserArgs     UserArgs     `json:"args"`
 }
 
 var Scheme = runtime.NewScheme()
@@ -121,7 +121,7 @@ func NewRegistrationOption(
 	return &agent.RegistrationOption{
 		CSRConfigurations: agent.KubeClientSignerConfigurations(addonName, addonName),
 		CSRApproveCheck:   utils.DefaultCSRApprover(addonName),
-		PermissionConfig: func(cluster *clusterv1.ManagedCluster, addon *addonapiv1alpha1.ManagedClusterAddOn) error {
+		PermissionConfig: func(cluster *clusterv1.ManagedCluster, _ *addonapiv1alpha1.ManagedClusterAddOn) error {
 			kubeclient, err := kubernetes.NewForConfig(kubeConfig)
 			if err != nil {
 				return err
@@ -257,7 +257,7 @@ func CommonAgentInstallNamespaceFromDeploymentConfigFunc(
 
 		config, err := utils.GetDesiredAddOnDeploymentConfig(addon, adcgetter)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("failed to get deployment config for addon %s", addon.Name))
+			log.Error(err, "failed to get deployment config for addon "+addon.Name)
 
 			return "", err
 		}

@@ -85,7 +85,7 @@ func verifyConfigPolicyDeployment(
 		)
 
 		return getAddonStatus(addon)
-	}, 240, 1).Should(Equal(true))
+	}, 240, 1).Should(BeTrue())
 }
 
 var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
@@ -329,7 +329,7 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 					)
 				})
 
-				installNamespace := fmt.Sprintf("%s-hosted", cluster.clusterName)
+				installNamespace := cluster.clusterName + "-hosted"
 
 				setupClusterSecretForHostedMode(
 					ctx, logPrefix, hubClient, "config-policy-controller-managed-kubeconfig",
@@ -381,7 +381,7 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 				}
 				hubClusterConfig := managedClusterList[0]
 				hubClient := hubClusterConfig.clusterClient
-				installNamespace := fmt.Sprintf("klusterlet-%s", cluster.clusterName)
+				installNamespace := "klusterlet-" + cluster.clusterName
 				logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 
 				setupClusterSecretForHostedMode(
@@ -489,7 +489,7 @@ var _ = Describe("Test config-policy-controller deployment", Ordered, func() {
 				)
 
 				return getAddonStatus(addon)
-			}, 240, 1).Should(Equal(true))
+			}, 240, 1).Should(BeTrue())
 
 			By(logPrefix + "annotating the managedclusteraddon with the " + loggingLevelAnnotation + " annotation")
 			Kubectl("annotate", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, loggingLevelAnnotation)
