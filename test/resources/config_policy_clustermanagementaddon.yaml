@@ -2,3 +2,4 @@ apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: ClusterManagementAddOn
 metadata:
   name: config-policy-controller
+spec: {}
