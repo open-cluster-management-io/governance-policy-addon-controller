@@ -36,6 +36,7 @@ import (
 	utilflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/logs"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/clock"
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -136,7 +137,7 @@ func main() {
 		},
 	}
 
-	ctrlconfig := controllercmd.NewControllerCommandConfig(ctrlName, ctrlVersion, runController)
+	ctrlconfig := controllercmd.NewControllerCommandConfig(ctrlName, ctrlVersion, runController, clock.RealClock{})
 	ctrlconfig.DisableServing = true
 
 	ctrlcmd := ctrlconfig.NewCommandWithContext(context.TODO())
