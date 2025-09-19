@@ -3,21 +3,21 @@
 
 ## CLI versions (with links to the latest releases)
 # https://github.com/kubernetes-sigs/controller-tools/releases/latest
-CONTROLLER_GEN_VERSION := v0.16.3
+CONTROLLER_GEN_VERSION := v0.19.0
 # https://github.com/kubernetes-sigs/kustomize/releases/latest
-KUSTOMIZE_VERSION := v5.6.0
+KUSTOMIZE_VERSION := v5.7.1
 # https://github.com/golangci/golangci-lint/releases/latest
-GOLANGCI_VERSION := v1.64.8
+GOLANGCI_VERSION := v2.4.0
 # https://github.com/mvdan/gofumpt/releases/latest
-GOFUMPT_VERSION := v0.7.0
+GOFUMPT_VERSION := v0.9.1
 # https://github.com/daixiang0/gci/releases/latest
-GCI_VERSION := v0.13.5
+GCI_VERSION := v0.13.7
 # https://github.com/securego/gosec/releases/latest
-GOSEC_VERSION := v2.22.2
+GOSEC_VERSION := v2.22.8
 # https://github.com/kubernetes-sigs/kubebuilder/releases/latest
 KBVERSION := 3.15.1
 # https://github.com/kubernetes/kubernetes/releases/latest
-ENVTEST_K8S_VERSION := 1.30.x
+ENVTEST_K8S_VERSION := 1.34.x
 
 LOCAL_BIN ?= $(error LOCAL_BIN is not set.)
 ifneq ($(findstring $(LOCAL_BIN), $(PATH)), $(LOCAL_BIN))
@@ -71,7 +71,7 @@ lint: lint-dependencies lint-yaml lint-go
 
 .PHONY: lint-dependencies
 lint-dependencies:
-	$(call go-get-tool,github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_VERSION))
+	$(call go-get-tool,github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION))
 
 .PHONY: lint-yaml
 lint-yaml:

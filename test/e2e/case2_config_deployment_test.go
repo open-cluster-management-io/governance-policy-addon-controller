@@ -47,6 +47,7 @@ func verifyConfigPolicyDeployment(
 		return containers
 	}, 60, 1).Should(HaveLen(1))
 
+	//nolint:contextcheck
 	if startupProbeInCluster(clusterNum) {
 		By(logPrefix + "verifying all replicas in config-policy-controller deployment are available")
 		Eventually(func(g Gomega) {

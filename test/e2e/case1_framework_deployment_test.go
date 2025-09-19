@@ -838,6 +838,7 @@ func checkContainersAndAvailabilityInNamespace(
 
 	namespace := installNamespace
 
+	//nolint:contextcheck
 	if startupProbeInCluster(clusterIdx) {
 		By(logPrefix + "verifying all replicas in framework deployment are available")
 		Eventually(func(g Gomega) {

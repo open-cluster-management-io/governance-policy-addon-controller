@@ -150,8 +150,8 @@ func getValues(clusterClient clusterlistersv1.ManagedClusterLister) func(*cluste
 
 		if val, ok := annotations[policyaddon.PolicyLogLevelAnnotation]; ok {
 			logLevel := policyaddon.GetLogLevel(addonName, val)
-			userValues.UserArgs.UserArgs.LogLevel = logLevel
-			userValues.UserArgs.UserArgs.PkgLogLevel = logLevel - 2
+			userValues.UserArgs.LogLevel = logLevel
+			userValues.UserArgs.PkgLogLevel = logLevel - 2
 		}
 
 		if val, ok := annotations[evaluationConcurrencyAnnotation]; ok {
@@ -238,6 +238,7 @@ func mandateValues(
 }
 
 func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {
+	//nolint:contextcheck
 	registrationOption := policyaddon.NewRegistrationOption(
 		controllerContext,
 		addonName,

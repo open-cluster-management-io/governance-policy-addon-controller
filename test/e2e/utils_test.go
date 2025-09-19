@@ -37,7 +37,7 @@ func Kubectl(args ...string) string {
 		args = append(args, "--kubeconfig="+kubeconfigFilename+"1_e2e")
 	}
 
-	cmd := exec.Command("kubectl", args...)
+	cmd := exec.CommandContext(context.TODO(), "kubectl", args...)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

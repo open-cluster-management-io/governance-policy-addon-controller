@@ -103,6 +103,7 @@ func (sa *StandaloneAgentAddon) Manifests(
 func GetAndAddAgent(
 	_ context.Context, mgr addonmanager.AddonManager, controllerContext *controllercmd.ControllerContext,
 ) error {
+	//nolint:contextcheck
 	agentAddon, err := getAgentAddon(controllerContext)
 	if err != nil {
 		return fmt.Errorf("failed getting the %v agent addon: %w", addonName, err)
