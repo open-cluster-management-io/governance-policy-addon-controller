@@ -13,13 +13,13 @@ require (
 	github.com/spf13/pflag v1.0.7
 	github.com/stolostron/go-log-utils v0.1.3
 	go.uber.org/zap v1.27.0
-	k8s.io/apimachinery v0.33.3
-	k8s.io/client-go v0.33.3
-	k8s.io/component-base v0.33.3
+	k8s.io/apimachinery v0.33.5
+	k8s.io/client-go v0.33.5
+	k8s.io/component-base v0.33.5
 	k8s.io/klog/v2 v2.130.1
 	open-cluster-management.io/addon-framework v1.0.1
 	open-cluster-management.io/api v1.0.0
-	sigs.k8s.io/controller-runtime v0.20.2
+	sigs.k8s.io/controller-runtime v0.20.4
 )
 
 require (
@@ -125,15 +125,15 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	helm.sh/helm/v3 v3.18.5 // indirect; CVE-2025-55199 requires 3.18.5+
-	k8s.io/api v0.33.3 // indirect
-	k8s.io/apiextensions-apiserver v0.33.3 // indirect
-	k8s.io/apiserver v0.33.3 // indirect
-	k8s.io/kms v0.33.3 // indirect
-	k8s.io/kube-aggregator v0.33.2 // indirect
+	k8s.io/api v0.33.5 // indirect
+	k8s.io/apiextensions-apiserver v0.33.5 // indirect
+	k8s.io/apiserver v0.33.5 // indirect
+	k8s.io/kms v0.33.5 // indirect
+	k8s.io/kube-aggregator v0.33.5 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	open-cluster-management.io/sdk-go v1.0.0 // indirect
-	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.2 // indirect
+	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.3 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/kube-storage-version-migrator v0.0.6-0.20230721195810-5c8923c5ff96 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
