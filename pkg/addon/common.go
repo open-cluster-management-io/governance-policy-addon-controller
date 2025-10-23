@@ -251,6 +251,7 @@ func CommonAgentInstallNamespaceFromDeploymentConfigFunc(
 
 		hostingClusterName := addon.Annotations["addon.open-cluster-management.io/hosting-cluster-name"]
 		// Check it is hosted mode
+		//nolint:staticcheck
 		if hostingClusterName != "" && addon.Spec.InstallNamespace != "" {
 			return addon.Spec.InstallNamespace, nil
 		}
