@@ -2,8 +2,8 @@ name: CRD Sync Validation
 
 on:
   schedule:
-    # every midnight
-    - cron:  '0 0 * * *'
+    # every midnight M-F
+    - cron:  '0 0 * * 1-5'
 
 defaults:
   run:
@@ -28,5 +28,21 @@ jobs:
 
     - name: Check for any changes
       run: |
-        git diff --exit-code
+        git diff --exit-code || echo "OPEN_PR=true" >> ${GITHUB_ENV}
 
+    - name: Open update PR
+      if: ${{ env.OPEN_PR == 'true' }}
+      env:
+        GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+      run: |
+        # Setup user
+        git config user.name "acm-grc-security[bot]"
+        git config user.email "acm-grc-security[bot]@users.noreply.github.com"
+
+        branch=gh-action-crd-update
+
+        git checkout -b ${branch}
+        git commit -s -am "Sync CRDs"
+        git push --delete origin ${branch} || true
+        git push origin ${branch}
+        gh pr create --fill --base main
