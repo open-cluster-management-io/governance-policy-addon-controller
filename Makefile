@@ -223,6 +223,8 @@ kind-run-local: manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-
 .PHONY: kind-load-image
 kind-load-image: build-images $(KIND_KUBECONFIG) ## Build and load the docker image into kind.
 	kind load docker-image $(IMAGE_NAME_AND_VERSION) --name $(KIND_NAME)
+	docker system df
+	docker system prune -a -f
 
 .PHONY: kind-regenerate-controller
 kind-regenerate-controller: manifests generate kustomize $(KIND_KUBECONFIG) ## Refresh (or initially deploy) the policy-addon-controller.
