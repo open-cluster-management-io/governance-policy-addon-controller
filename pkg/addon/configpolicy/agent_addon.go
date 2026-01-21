@@ -37,22 +37,22 @@ const (
 	standaloneTemplatingAddonName    = "governance-standalone-hub-templating"
 )
 
-var log = ctrl.Log.WithName("configpolicy")
-
 type UserArgs struct {
-	policyaddon.UserArgs
+	policyaddon.UserArgs `json:",inline"`
+
 	EvaluationConcurrency uint8 `json:"evaluationConcurrency,omitempty"`
 	ClientQPS             uint8 `json:"clientQPS,omitempty"` //nolint:tagliatelle
 	ClientBurst           uint8 `json:"clientBurst,omitempty"`
 }
 
 type UserValues struct {
+	UserArgs `json:",inline"`
+
 	GlobalValues                  policyaddon.GlobalValues `json:"global"`
 	KubernetesDistribution        string                   `json:"kubernetesDistribution"`
 	HostingKubernetesDistribution string                   `json:"hostingKubernetesDistribution"`
 	Prometheus                    map[string]interface{}   `json:"prometheus"`
 	OperatorPolicy                map[string]interface{}   `json:"operatorPolicy"`
-	UserArgs                      UserArgs                 `json:"args"`
 	StandaloneHubTemplatingSecret string                   `json:"standaloneHubTemplatingSecret"`
 }
 
@@ -77,6 +77,8 @@ func getValues(
 	return func(
 		cluster *clusterv1.ManagedCluster, addon *addonapiv1alpha1.ManagedClusterAddOn,
 	) (addonfactory.Values, error) {
+		log := ctrl.Log.WithName("configpolicy")
+
 		userValues := UserValues{
 			GlobalValues: policyaddon.GlobalValues{
 				ImagePullPolicy: "IfNotPresent",
