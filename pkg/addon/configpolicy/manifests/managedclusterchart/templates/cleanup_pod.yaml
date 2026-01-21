@@ -31,7 +31,7 @@ spec:
         - --policy-namespace={{ .Values.clusterName }}
         - --additional-namespace=open-cluster-management-policies
         {{- end }}
-        - --v={{ .Values.args.pkgLogLevel }}
+        - --v={{ .Values.pkgLogLevel }}
       env:
         {{- if .Values.global.proxyConfig }}
         - name: HTTP_PROXY

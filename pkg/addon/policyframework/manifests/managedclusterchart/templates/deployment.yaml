@@ -43,13 +43,13 @@ spec:
           {{- if eq (.Values.replicas | int) 1 }}
           - '--leader-elect=false'
           {{- end }}
-          - --log-encoder={{ .Values.args.logEncoder }}
-          - --log-level={{ if eq (toString .Values.args.logLevel) "-1" }}error{{ else }}{{ .Values.args.logLevel }}{{end}}
-          - --v={{ .Values.args.pkgLogLevel }}
-          - --evaluation-concurrency={{ .Values.args.evaluationConcurrency }}
-          - --client-max-qps={{ .Values.args.clientQPS }}
-          - --client-burst={{ .Values.args.clientBurst }}
-          {{- if and .Values.onMulticlusterHub (ne .Values.installMode "Hosted") (not .Values.args.syncPoliciesOnMulticlusterHub) }}
+          - --log-encoder={{ .Values.logEncoder }}
+          - --log-level={{ if eq (toString .Values.logLevel) "-1" }}error{{ else }}{{ .Values.logLevel }}{{end}}
+          - --v={{ .Values.pkgLogLevel }}
+          - --evaluation-concurrency={{ .Values.evaluationConcurrency }}
+          - --client-max-qps={{ .Values.clientQPS }}
+          - --client-burst={{ .Values.clientBurst }}
+          {{- if and .Values.onMulticlusterHub (ne .Values.installMode "Hosted") (not .Values.syncPoliciesOnMulticlusterHub) }}
           - --disable-spec-sync=true
           {{- end }}
           {{- if eq .Values.installMode "Hosted" }}

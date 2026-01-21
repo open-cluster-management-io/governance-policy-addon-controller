@@ -5,13 +5,15 @@ nameOverride: null
 
 org: open-cluster-management
 replicas: 1
-args:
-  logLevel: 0
-  pkgLogLevel: -1
-  logEncoder: console
-  evaluationConcurrency: 2
-  clientQPS: 30
-  clientBurst: 45
+
+# Controller arguments
+logLevel: 0
+pkgLogLevel: -1
+logEncoder: console
+evaluationConcurrency: 2
+clientQPS: 30
+clientBurst: 45
+
 hubKubeConfigSecret: config-policy-controller-hub-kubeconfig
 
 standaloneHubTemplatingSecret: ""

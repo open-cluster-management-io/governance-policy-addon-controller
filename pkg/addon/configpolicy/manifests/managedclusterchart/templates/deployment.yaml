@@ -44,12 +44,12 @@ spec:
           {{- if eq (.Values.replicas | int) 1 }}
           - '--leader-elect=false'
           {{- end }}
-          - --log-encoder={{ .Values.args.logEncoder }}
-          - --log-level={{ if eq (toString .Values.args.logLevel) "-1" }}error{{ else }}{{ .Values.args.logLevel }}{{end}}
-          - --v={{ .Values.args.pkgLogLevel }}
-          - --evaluation-concurrency={{ .Values.args.evaluationConcurrency }}
-          - --client-max-qps={{ .Values.args.clientQPS }}
-          - --client-burst={{ .Values.args.clientBurst }}
+          - --log-encoder={{ .Values.logEncoder }}
+          - --log-level={{ if eq (toString .Values.logLevel) "-1" }}error{{ else }}{{ .Values.logLevel }}{{end}}
+          - --v={{ .Values.pkgLogLevel }}
+          - --evaluation-concurrency={{ .Values.evaluationConcurrency }}
+          - --client-max-qps={{ .Values.clientQPS }}
+          - --client-burst={{ .Values.clientBurst }}
           - --health-probe-bind-address=:8081
           {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
           - --secure-metrics=true

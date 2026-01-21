@@ -1,9 +1,17 @@
 apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: AddOnDeploymentConfig
 metadata:
-  name: addon-default-placement
+  name: addon-customizedvars
   namespace: open-cluster-management
 spec:
   customizedVariables:
-    - name: managedKubeConfigSecret
-      value: external-managed-kubeconfig
+    - name: logLevel
+      value: "2"
+    - name: logEncoder
+      value: "json"
+    - name: evaluationConcurrency
+      value: "1"
+    - name: clientQPS
+      value: "15"
+    - name: clientBurst
+      value: "30"
