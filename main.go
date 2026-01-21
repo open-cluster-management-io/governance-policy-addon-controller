@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"strconv"
 	"sync"
 
 	"github.com/go-logr/zapr"
@@ -210,30 +209,15 @@ func setupLogging() {
 	// Bind the controller-runtime logger
 	ctrl.SetLogger(zapr.NewLogger(ctrlZap))
 
-	// Configure klog logger
-	// (This is a fragment from the go-log-utils BuildForKlog() because the
-	// SkipLineEnding setting there removes newlines that must be preserved
-	// here)
-	klogConfig := zflags.GetConfig()
+	klogFlags := flag.NewFlagSet("klog", flag.ExitOnError)
+	klog.InitFlags(klogFlags)
 
-	klogV := flag.CommandLine.Lookup("v")
-	if klogV != nil {
-		var klogLevel int64
-
-		klogLevel, err = strconv.ParseInt(klogV.Value.String(), 10, 8)
-		if err != nil {
-			// #nosec G115 -- ParseInt() guarantees that it's an int8
-			klogConfig.Level = zap.NewAtomicLevelAt(zapcore.Level(int8(-1 * klogLevel)))
-		}
+	err = zaputil.SyncWithGlogFlags(klogFlags)
+	if err != nil {
+		log.Error(err, "Failed to synchronize klog and glog flags, continuing with what succeeded")
 	}
 
-	// Handle errors from building the klog configuration
-	if klogV == nil || err != nil {
-		log.Info("Failed to parse 'v' flag in flagset for klog--verbosity will not be configurable for klog.")
-	}
-
-	// Build the klog logger
-	klogZap, err := klogConfig.Build()
+	klogZap, err := zaputil.BuildForKlog(zflags.GetConfig(), klogFlags)
 	if err != nil {
 		log.Error(err, "Failed to build zap logger for klog, those logs will not go through zap")
 	} else {

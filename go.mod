@@ -11,8 +11,8 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.85.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10
-	github.com/stolostron/go-log-utils v0.1.3
-	go.uber.org/zap v1.27.0
+	github.com/stolostron/go-log-utils v0.1.4
+	go.uber.org/zap v1.27.1
 	k8s.io/apimachinery v0.33.7
 	k8s.io/client-go v0.33.7
 	k8s.io/component-base v0.33.7
