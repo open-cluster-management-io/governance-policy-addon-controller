@@ -36,21 +36,22 @@ const (
 )
 
 var (
-	gvrDeployment          schema.GroupVersionResource
-	gvrPod                 schema.GroupVersionResource
-	gvrNamespace           schema.GroupVersionResource
-	gvrManagedClusterAddOn schema.GroupVersionResource
-	gvrManagedCluster      schema.GroupVersionResource
-	gvrManifestWork        schema.GroupVersionResource
-	gvrSecret              schema.GroupVersionResource
-	gvrServiceMonitor      schema.GroupVersionResource
-	gvrService             schema.GroupVersionResource
-	gvrClusterRole         schema.GroupVersionResource
-	gvrRoleBinding         schema.GroupVersionResource
-	gvrPolicyCrd           schema.GroupVersionResource
-	managedClusterList     []managedClusterConfig
-	clientDynamic          dynamic.Interface
-	hubKubeconfigInternal  []byte
+	gvrDeployment             schema.GroupVersionResource
+	gvrPod                    schema.GroupVersionResource
+	gvrNamespace              schema.GroupVersionResource
+	gvrClusterManagementAddOn schema.GroupVersionResource
+	gvrManagedClusterAddOn    schema.GroupVersionResource
+	gvrManagedCluster         schema.GroupVersionResource
+	gvrManifestWork           schema.GroupVersionResource
+	gvrSecret                 schema.GroupVersionResource
+	gvrServiceMonitor         schema.GroupVersionResource
+	gvrService                schema.GroupVersionResource
+	gvrClusterRole            schema.GroupVersionResource
+	gvrRoleBinding            schema.GroupVersionResource
+	gvrPolicyCrd              schema.GroupVersionResource
+	managedClusterList        []managedClusterConfig
+	clientDynamic             dynamic.Interface
+	hubKubeconfigInternal     []byte
 )
 
 type managedClusterConfig struct {
@@ -71,6 +72,9 @@ var _ = BeforeSuite(func(ctx SpecContext) {
 	gvrDeployment = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 	gvrPod = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
 	gvrNamespace = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}
+	gvrClusterManagementAddOn = schema.GroupVersionResource{
+		Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "clustermanagementaddons",
+	}
 	gvrManagedClusterAddOn = schema.GroupVersionResource{
 		Group: "addon.open-cluster-management.io", Version: "v1alpha1", Resource: "managedclusteraddons",
 	}
@@ -103,6 +107,24 @@ var _ = BeforeSuite(func(ctx SpecContext) {
 	Expect(err).ToNot(HaveOccurred())
 
 	managedClusterList = getManagedClusters(ctx, clientDynamic)
+
+	addonMap := map[string]string{
+		case1ManagedClusterAddOnName:           case1ClusterManagementAddOnCRDefault,
+		case2ManagedClusterAddOnName:           case2ClusterManagementAddOnCRDefault,
+		"governance-standalone-hub-templating": case3ClusterManagementAddOnDefaultCR,
+	}
+
+	for addonName, addonCR := range addonMap {
+		By("Deploying the default " + addonName + " ClusterManagementAddon to the hub cluster")
+		Kubectl("apply", "-f", addonCR)
+	}
+
+	DeferCleanup(func() {
+		for addonName, addonCR := range addonMap {
+			By("Deleting the default " + addonName + " ClusterManagementAddon from the hub cluster")
+			Kubectl("delete", "--ignore-not-found", "-f", addonCR)
+		}
+	})
 })
 
 func getManagedClusters(ctx context.Context, client dynamic.Interface) []managedClusterConfig {
