@@ -200,7 +200,9 @@ func debugCollection(podSelector string) {
 
 	By("Recording debug logs")
 
-	output := "===\n"
+	stringBuilder := strings.Builder{}
+
+	stringBuilder.WriteString("===\n")
 
 	for i, cluster := range managedClusterList {
 		targetKubeconfig := fmt.Sprintf("--kubeconfig=%s%d_e2e", kubeconfigFilename, i+1)
@@ -212,46 +214,48 @@ func debugCollection(podSelector string) {
 				clusterNs = append(clusterNs, cluster.clusterName)
 			}
 
-			output += "::group::Cluster cluster1: Addon objects"
-			output += Kubectl("get", "clustermanagementaddons", "-o=yaml", targetKubeconfig)
-			output += "---\n"
-			output += Kubectl("get", "managedclusteraddons", "-A", "-o=yaml", targetKubeconfig)
-			output += "---\n"
-			output += Kubectl("get", "addondeploymentconfigs", "-A", "-o=yaml", targetKubeconfig)
-			output += "---\n"
-			output += Kubectl("get", "manifestwork", "-A", "-o=yaml", targetKubeconfig)
-			output += "::endgroup::\n"
+			stringBuilder.WriteString("::group::Cluster cluster1: Addon objects\n")
+			stringBuilder.WriteString(Kubectl("get", "clustermanagementaddons", "-o=yaml", targetKubeconfig))
+			stringBuilder.WriteString("---\n")
+			stringBuilder.WriteString(Kubectl("get", "managedclusteraddons", "-A", "-o=yaml", targetKubeconfig))
+			stringBuilder.WriteString("---\n")
+			stringBuilder.WriteString(Kubectl("get", "addondeploymentconfigs", "-A", "-o=yaml", targetKubeconfig))
+			stringBuilder.WriteString("---\n")
+			stringBuilder.WriteString(Kubectl("get", "manifestwork", "-A", "-o=yaml", targetKubeconfig))
+			stringBuilder.WriteString("::endgroup::\n")
 		}
 
 		for _, namespace := range clusterNs {
 			for _, suffix := range namespaceSuffix {
 				namespace += suffix
-				output += fmt.Sprintf("::group::Cluster %s: All objects in namespace %s:\n", targetCluster, namespace)
-				output += Kubectl("get", "all", "-n", namespace, targetKubeconfig)
-				output += "::endgroup::\n"
-				output += fmt.Sprintf(
-					"::group::Cluster %s: Pod logs for label %s in namespace %s:\n",
-					targetCluster, podSelector, namespace,
-				)
-				output += Kubectl("describe", "pod", "-n", namespace, "-l", podSelector, targetKubeconfig)
-				output += Kubectl("logs", "-n", namespace, "-l", podSelector, "--ignore-errors", targetKubeconfig)
-				output += "::endgroup::\n"
+				fmt.Fprintf(&stringBuilder,
+					"::group::Cluster %s: All objects in namespace %s:\n", targetCluster, namespace)
+				stringBuilder.WriteString(Kubectl("get", "all", "-n", namespace, targetKubeconfig))
+				stringBuilder.WriteString("::endgroup::\n")
+
+				fmt.Fprintf(&stringBuilder, "::group::Cluster %s: Pod logs for label %s in namespace %s:\n",
+					targetCluster, podSelector, namespace)
+				stringBuilder.WriteString(
+					Kubectl("describe", "pod", "-n", namespace, "-l", podSelector, targetKubeconfig))
+				stringBuilder.WriteString(
+					Kubectl("logs", "-n", namespace, "-l", podSelector, "--ignore-errors", targetKubeconfig))
+				stringBuilder.WriteString("::endgroup::\n")
 			}
 		}
 
-		output += fmt.Sprintf("::group::Cluster %s: All objects in namespace %s:\n", targetCluster, addonNamespace)
-		output += Kubectl("get", "all", "-n", addonNamespace, targetKubeconfig)
-		output += "::endgroup::\n"
-		output += fmt.Sprintf("::group::Cluster %s: Pod logs for label %s in namespace %s for cluster %s:\n",
-			targetCluster, podSelector, addonNamespace, cluster.clusterName)
-		output += Kubectl(
-			"describe", "pod", "-n", addonNamespace, "-l", podSelector, targetKubeconfig,
-		)
-		output += Kubectl(
-			"logs", "-n", addonNamespace, "-l", podSelector, "--ignore-errors", targetKubeconfig,
-		)
-		output += "::endgroup::\n"
+		for _, namespace := range []string{addonNamespace, agentInstallNs} {
+			fmt.Fprintf(&stringBuilder,
+				"::group::Cluster %s: All objects in namespace %s:\n", targetCluster, namespace)
+			stringBuilder.WriteString(Kubectl("get", "all", "-n", namespace, targetKubeconfig))
+			stringBuilder.WriteString("::endgroup::\n")
+			fmt.Fprintf(&stringBuilder, "::group::Cluster %s: Pod logs for label %s in namespace %s for cluster %s:\n",
+				targetCluster, podSelector, namespace, cluster.clusterName)
+			stringBuilder.WriteString(Kubectl("describe", "pod", "-n", namespace, "-l", podSelector, targetKubeconfig))
+			stringBuilder.WriteString(
+				Kubectl("logs", "-n", namespace, "-l", podSelector, "--ignore-errors", targetKubeconfig))
+			stringBuilder.WriteString("::endgroup::\n")
+		}
 	}
 
-	GinkgoWriter.Print(output)
+	GinkgoWriter.Print(stringBuilder.String())
 }
