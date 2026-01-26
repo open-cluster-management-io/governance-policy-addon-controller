@@ -10,7 +10,7 @@ replicas: 1
 
 # Controller arguments
 logLevel: 0
-pkgLogLevel: -1
+pkgLogLevel: 0
 logEncoder: console
 evaluationConcurrency: 2
 clientQPS: 30
