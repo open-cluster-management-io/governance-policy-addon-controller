@@ -3,6 +3,7 @@ package configpolicy
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -217,7 +218,23 @@ func getValues(
 			}
 		}
 
-		return addonfactory.JsonStructToValues(userValues)
+		log.Info("debug", "userValues", userValues)
+
+		raw, err := json.Marshal(userValues)
+		if err != nil {
+			panic(err)
+		}
+
+		log.Info("debug", "rawString", string(raw))
+
+		v := addonfactory.Values{}
+
+		err = json.Unmarshal(raw, &v)
+		if err != nil {
+			panic(err)
+		}
+
+		return v, nil
 	}
 }
 
@@ -270,14 +287,14 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
 		WithConfigGVRs(utils.AddOnDeploymentConfigGVR).
 		WithGetValuesFuncs(
+			getValues(clusterInformer.Lister(), addonInformer.Lister()),
+			addonfactory.GetValuesFromAddonAnnotation,
 			addonfactory.GetAddOnDeploymentConfigValues(
 				addonfactory.NewAddOnDeploymentConfigGetter(addonClient),
 				addonfactory.ToAddOnNodePlacementValues,
 				addonfactory.ToAddOnResourceRequirementsValues,
 				addonfactory.ToAddOnCustomizedVariableValues,
 			),
-			getValues(clusterInformer.Lister(), addonInformer.Lister()),
-			addonfactory.GetValuesFromAddonAnnotation,
 			mandateValues,
 		).
 		WithManagedClusterClient(clusterClient).
