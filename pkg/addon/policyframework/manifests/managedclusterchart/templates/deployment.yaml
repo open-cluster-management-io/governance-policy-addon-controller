@@ -50,7 +50,7 @@ spec:
           - --client-max-qps={{ .Values.clientQPS }}
           - --client-burst={{ .Values.clientBurst }}
           {{- if and .Values.onMulticlusterHub (ne .Values.installMode "Hosted") (not .Values.syncPoliciesOnMulticlusterHub) }}
-          - --disable-spec-sync=true
+          - --on-multicluster-hub=true
           {{- end }}
           {{- if eq .Values.installMode "Hosted" }}
           - --disable-gatekeeper-sync=true

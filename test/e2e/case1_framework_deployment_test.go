@@ -477,7 +477,7 @@ var _ = Describe("Test framework deployment", func() {
 
 		checkContainersAndAvailability(ctx, cluster, 0)
 
-		checkArgs(ctx, cluster, "--disable-spec-sync=true")
+		checkArgs(ctx, cluster, "--on-multicluster-hub=true")
 
 		// Adding this annotation and later verifying the cluster namespace is not removed checks
 		// that the helm values annotation and the logging level annotation are stackable.
@@ -516,7 +516,7 @@ var _ = Describe("Test framework deployment", func() {
 
 			checkContainersAndAvailability(ctx, cluster, 0)
 
-			checkArgs(ctx, cluster, "--disable-spec-sync=true")
+			checkArgs(ctx, cluster, "--on-multicluster-hub=true")
 
 			By(logPrefix + "forcing the spec sync to be enabled on the hub")
 			Kubectl(
@@ -552,7 +552,7 @@ var _ = Describe("Test framework deployment", func() {
 				g.Expect(ok).To(BeTrue())
 
 				for _, arg := range args {
-					g.Expect(arg).ToNot(Equal("--disable-spec-sync=true"))
+					g.Expect(arg).ToNot(Equal("--on-multicluster-hub=true"))
 				}
 			}, 60, 5).Should(Succeed())
 
@@ -631,7 +631,7 @@ var _ = Describe("Test framework deployment", func() {
 
 		checkContainersAndAvailability(ctx, cluster, 0)
 
-		checkArgs(ctx, cluster, "--disable-spec-sync=true")
+		checkArgs(ctx, cluster, "--on-multicluster-hub=true")
 
 		// Adding this annotation and later verifying the cluster namespace is not removed checks
 		// that the multiclusterhub annotation and the logging level annotation are stackable.
