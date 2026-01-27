@@ -250,27 +250,6 @@ func (pa *PolicyAgentAddon) Manifests(
 	return pa.AgentAddon.Manifests(cluster, addon)
 }
 
-// IsOldKubernetes returns a boolean for whether a cluster is running an older Kubernetes that
-// doesn't support current leader election methods.
-func IsOldKubernetes(cluster *clusterv1.ManagedCluster) bool {
-	for _, cc := range cluster.Status.ClusterClaims {
-		if cc.Name == "kubeversion.open-cluster-management.io" {
-			k8sVersion, err := semver.ParseTolerant(cc.Value)
-			if err != nil {
-				continue
-			}
-
-			if k8sVersion.Major <= 1 && k8sVersion.Minor < 14 {
-				return true
-			}
-
-			return false
-		}
-	}
-
-	return false
-}
-
 // CommonAgentInstallNamespaceFromDeploymentConfigFunc returns a function that
 // gets the agent install namespace for the addon from the deployment config.
 func CommonAgentInstallNamespaceFromDeploymentConfigFunc(
@@ -466,15 +445,10 @@ func (cv *CommonValues) SetCommonValuesFromAnnotations(addon *addonapiv1alpha1.M
 // MandateValues sets deployment variables regardless of user overrides. As a result, caution should
 // be taken when adding settings to this function.
 func MandateValues(
-	cluster *clusterv1.ManagedCluster,
+	_ *clusterv1.ManagedCluster,
 	mcao *addonapiv1alpha1.ManagedClusterAddOn,
 ) (addonfactory.Values, error) {
 	values := addonfactory.Values{}
-
-	// Don't allow replica overrides for older Kubernetes
-	if IsOldKubernetes(cluster) {
-		values["replicas"] = 1
-	}
 
 	if !mcao.DeletionTimestamp.IsZero() {
 		values["uninstallationAnnotation"] = "true"

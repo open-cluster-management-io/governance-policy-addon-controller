@@ -119,7 +119,6 @@ Addons support configuration via:
 Shared utilities:
 - `NewRegistrationOption()` - Creates addon registration with CSR configuration and RBAC
 - `GetClusterVendor()` - Determines if cluster is OpenShift (from labels/claims)
-- `IsOldKubernetes()` - Checks if cluster runs K8s < 1.14 (affects leader election)
 - `GetLogLevel()` - Validates and parses log level annotations
 - `PolicyAgentAddon` wrapper - Implements pause annotation check
 
