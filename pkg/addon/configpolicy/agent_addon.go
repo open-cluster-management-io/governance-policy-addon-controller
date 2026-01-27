@@ -3,6 +3,7 @@ package configpolicy
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -37,12 +38,13 @@ const (
 type configPolicyUserValues struct {
 	policyaddon.CommonValues `json:",inline"`
 
-	OperatorPolicy                operatorPolicy `json:"operatorPolicy"`
-	StandaloneHubTemplatingSecret string         `json:"standaloneHubTemplatingSecret,omitempty"`
+	ManagedKubeConfigSecret       string          `json:"managedKubeConfigSecret,omitempty"`
+	OperatorPolicy                *operatorPolicy `json:"operatorPolicy,omitempty"`
+	StandaloneHubTemplatingSecret string          `json:"standaloneHubTemplatingSecret,omitempty"`
 }
 
 type operatorPolicy struct {
-	Disabled         bool   `json:"disabled,omitempty"`
+	Disabled         bool   `json:"disabled"`
 	DefaultNamespace string `json:"defaultNamespace,omitempty"`
 }
 
@@ -68,20 +70,29 @@ func getSkeletonValues() configPolicyUserValues {
 	return configPolicyUserValues{
 		CommonValues: policyaddon.CommonValues{
 			BaseValues: policyaddon.BaseValues{
-				GlobalValues: policyaddon.GlobalValues{
+				GlobalValues: &policyaddon.GlobalValues{
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					ImageOverrides: map[string]string{
 						"config_policy_controller": os.Getenv("CONFIG_POLICY_CONTROLLER_IMAGE"),
 					},
-					ProxyConfig: policyaddon.ProxyConfig{},
 				},
 			},
 		},
-		OperatorPolicy: operatorPolicy{
-			Disabled:         false,
-			DefaultNamespace: "",
+		OperatorPolicy: &operatorPolicy{
+			Disabled: false,
 		},
 	}
+}
+
+func (cpv *configPolicyUserValues) setOperatorPolicyDisabled(value string) error {
+	valBool, err := strconv.ParseBool(value)
+	if err != nil {
+		return err
+	}
+
+	cpv.OperatorPolicy.Disabled = valBool
+
+	return nil
 }
 
 func getValuesFromAnnotations(
@@ -92,6 +103,7 @@ func getValuesFromAnnotations(
 		cluster *clusterv1.ManagedCluster, addon *addonapiv1alpha1.ManagedClusterAddOn,
 	) (addonfactory.Values, error) {
 		userValues := getSkeletonValues()
+
 		err := userValues.CommonValues.SetCommonValues(cluster, addon, clusterClient)
 		if err != nil {
 			return nil, err
@@ -101,18 +113,17 @@ func getValuesFromAnnotations(
 		_, err = addonClient.ManagedClusterAddOns(addon.Namespace).Get(standaloneTemplatingAddonName)
 		if !k8serrors.IsNotFound(err) {
 			if err != nil {
-				log.Error(err, "failed to get standalone hub templating addon")
-			} else {
-				userValues.StandaloneHubTemplatingSecret = standaloneTemplatingAddonName + "-hub-kubeconfig"
+				return nil, err
 			}
+
+			userValues.StandaloneHubTemplatingSecret = standaloneTemplatingAddonName + "-hub-kubeconfig"
 		}
 
-		// Disable OperatorPolicy if the cluster is not on OpenShift version 4.y
-		userValues.OperatorPolicy.Disabled = cluster.Labels["openshiftVersion-major"] != "4"
-
-		// Set the default namespace for OperatorPolicy for OpenShift 4
+		// Configure OperatorPolicy based on the cluster's OpenShift version
 		if cluster.Labels["openshiftVersion-major"] == "4" {
 			userValues.OperatorPolicy.DefaultNamespace = "openshift-operators"
+		} else {
+			userValues.OperatorPolicy.Disabled = true
 		}
 
 		if err := userValues.CommonValues.SetCommonValuesFromAnnotations(addon); err != nil {
@@ -120,19 +131,52 @@ func getValuesFromAnnotations(
 		}
 
 		if val, ok := addon.GetAnnotations()[operatorPolicyDisabledAnnotation]; ok {
-			valBool, err := strconv.ParseBool(val)
+			err := userValues.setOperatorPolicyDisabled(val)
 			if err != nil {
 				log.Error(err, fmt.Sprintf(
 					policyaddon.AnnotationParseErrorFmt,
-					operatorPolicyDisabledAnnotation, val, addonName, userValues.OperatorPolicy.Disabled),
+					operatorPolicyDisabledAnnotation, val, addonName, false),
 				)
-			} else {
-				userValues.OperatorPolicy.Disabled = valBool
 			}
 		}
 
 		return addonfactory.JsonStructToValues(userValues)
 	}
+}
+
+func getValuesFromCustomizedVariableValues(config addonapiv1alpha1.AddOnDeploymentConfig) (addonfactory.Values, error) {
+	userValues := getSkeletonValues()
+
+	userValuesMap, err := userValues.CommonValues.SetCommonValuesFromCustomizedVariables(config)
+	if err != nil {
+		log.Error(err, "error setting common addon values from customized variables")
+	}
+
+	//nolint:unparam
+	variableToFuncMap := map[string]func(string) error{
+		"operatorPolicyDisabled": userValues.setOperatorPolicyDisabled,
+		"managedKubeConfigSecret": func(value string) error {
+			userValues.ManagedKubeConfigSecret = value
+
+			return nil
+		},
+	}
+
+	for key, value := range userValuesMap {
+		if fn, ok := variableToFuncMap[key]; ok {
+			err := fn(value)
+			if err != nil {
+				log.Error(err, "error setting customized variable", "variable", key, "value", value)
+			}
+		} else {
+			log.Error(errors.New("unknown customized variable"),
+				"variable is not supported",
+				"variable", key,
+				"value", value)
+		}
+	}
+
+	return addonfactory.JsonStructToValues(userValues)
 }
 
 func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {
@@ -164,14 +208,14 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
 		WithConfigGVRs(utils.AddOnDeploymentConfigGVR).
 		WithGetValuesFuncs(
-			addonfactory.GetAddOnDeploymentConfigValues(
-				addonfactory.NewAddOnDeploymentConfigGetter(addonClient),
-				addonfactory.ToAddOnNodePlacementValues,
-				addonfactory.ToAddOnResourceRequirementsValues,
-				addonfactory.ToAddOnCustomizedVariableValues,
-			),
 			getValuesFromAnnotations(clusterInformer.Lister(), addonInformer.Lister()),
 			addonfactory.GetValuesFromAddonAnnotation,
+			addonfactory.GetAddOnDeploymentConfigValues(
+				utils.NewAddOnDeploymentConfigGetter(addonClient),
+				addonfactory.ToAddOnNodePlacementValues,
+				addonfactory.ToAddOnResourceRequirementsValues,
+				getValuesFromCustomizedVariableValues,
+			),
 			policyaddon.MandateValues,
 		).
 		WithManagedClusterClient(clusterClient).

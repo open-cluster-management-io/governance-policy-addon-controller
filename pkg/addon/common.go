@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/blang/semver/v4"
 	"github.com/openshift/library-go/pkg/assets"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"github.com/openshift/library-go/pkg/operator/events"
@@ -66,7 +65,7 @@ type GlobalValues struct {
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	ImagePullSecret string            `json:"imagePullSecret,omitempty"`
 	ImageOverrides  map[string]string `json:"imageOverrides,omitempty"`
-	ProxyConfig     ProxyConfig       `json:"proxyConfig"`
+	ProxyConfig     *ProxyConfig      `json:"proxyConfig,omitempty"`
 }
 
 // ProxyConfig contains proxy configuration values for the addon chart.
@@ -80,17 +79,17 @@ type ProxyConfig struct {
 
 // BaseValues contains base values for the addon chart.
 type BaseValues struct {
-	GlobalValues                  GlobalValues `json:"global"`
-	OnMulticlusterHub             bool         `json:"onMulticlusterHub,omitempty"`
-	KubernetesDistribution        string       `json:"kubernetesDistribution,omitempty"`
-	HostingKubernetesDistribution string       `json:"hostingKubernetesDistribution,omitempty"`
-	Prometheus                    Prometheus   `json:"prometheus"`
+	GlobalValues                  *GlobalValues     `json:"global,omitempty"`
+	OnMulticlusterHub             bool              `json:"onMulticlusterHub,omitempty"`
+	KubernetesDistribution        string            `json:"kubernetesDistribution,omitempty"`
+	HostingKubernetesDistribution string            `json:"hostingKubernetesDistribution,omitempty"`
+	PrometheusConfig              *PrometheusConfig `json:"prometheus,omitempty"`
 }
 
 // Prometheus contains Prometheus metrics configuration values for the addon chart.
-type Prometheus struct {
-	Enabled        bool           `json:"enabled,omitempty"`
-	ServiceMonitor ServiceMonitor `json:"serviceMonitor"`
+type PrometheusConfig struct {
+	Enabled        bool            `json:"enabled,omitempty"`
+	ServiceMonitor *ServiceMonitor `json:"serviceMonitor,omitempty"`
 }
 
 // ServiceMonitor contains Prometheus ServiceMonitor configuration values for the addon chart.
@@ -371,7 +370,9 @@ func (cv *CommonValues) SetPrometheusEnabled(value string) error {
 			value, false, err)
 	}
 
-	cv.Prometheus.Enabled = prometheusEnabled
+	cv.PrometheusConfig = &PrometheusConfig{
+		Enabled: prometheusEnabled,
+	}
 
 	return nil
 }
@@ -387,28 +388,63 @@ func (cv *CommonValues) SetCommonValues(
 	addon *addonapiv1alpha1.ManagedClusterAddOn,
 	clusterClient clusterlistersv1.ManagedClusterLister,
 ) error {
+	var err error
 	// Set the Kubernetes distribution for the current cluster
 	cv.KubernetesDistribution = GetClusterVendor(cluster)
 
 	// Set the Kubernetes distribution for the hosting cluster
-	mangedClusterAddOnAnnotations := addon.GetAnnotations()
-
-	hostingClusterName := mangedClusterAddOnAnnotations[addonapiv1alpha1.HostingClusterNameAnnotationKey]
+	hostingClusterName := addon.GetAnnotations()[addonapiv1alpha1.HostingClusterNameAnnotationKey]
 	if hostingClusterName != "" {
 		hostingCluster, err := clusterClient.Get(hostingClusterName)
-		if err != nil {
-			return err
+		if err == nil {
+			cv.HostingKubernetesDistribution = GetClusterVendor(hostingCluster)
 		}
-
-		cv.HostingKubernetesDistribution = GetClusterVendor(hostingCluster)
 	} else {
 		cv.HostingKubernetesDistribution = cv.KubernetesDistribution
 	}
 
 	// Enable Prometheus metrics by default on OpenShift
-	cv.Prometheus.Enabled = cv.HostingKubernetesDistribution == "OpenShift"
+	cv.PrometheusConfig = &PrometheusConfig{
+		Enabled: cv.HostingKubernetesDistribution == "OpenShift",
+	}
 
-	return nil
+	return err
+}
+
+// SetCommonValuesFromCustomizedVariables sets the common values for the addon
+// chart using customized variables from the addon deployment config. It sets
+// known values and returns a map with any unknown values and an aggregated
+// error for the respective component addon handler.
+func (cv *CommonValues) SetCommonValuesFromCustomizedVariables(
+	config addonapiv1alpha1.AddOnDeploymentConfig,
+) (map[string]string, error) {
+	values := map[string]string{}
+	var aggregateErr error
+
+	//nolint:nlreturn,unparam
+	variableToFuncMap := map[string]func(string) error{
+		"logLevel":              cv.SetLogLevel,
+		"logEncoder":            func(value string) error { cv.UserArgs.LogEncoder = value; return nil },
+		"evaluationConcurrency": cv.SetEvaluationConcurrency,
+		"clientQPS":             cv.SetClientQPS,
+		"clientBurst":           cv.SetClientBurst,
+		"prometheusEnabled":     cv.SetPrometheusEnabled,
+	}
+
+	for _, variable := range config.Spec.CustomizedVariables {
+		if fn, ok := variableToFuncMap[variable.Name]; ok {
+			if err := fn(variable.Value); err != nil {
+				aggregateErr = errors.Join(aggregateErr, err)
+			}
+		} else {
+			// If the variable is unknown, add it to the returned values
+			values[variable.Name] = variable.Value
+		}
+	}
+
+	cv.SetClientBurstFromEvaluationConcurrency()
+
+	return values, aggregateErr
 }
 
 // SetCommonValuesFromAnnotations sets the common values for the addon chart

@@ -35,8 +35,8 @@ const (
 type policyFrameworkUserValues struct {
 	policyaddon.CommonValues `json:",inline"`
 
-	SyncPoliciesOnMulticlusterHub bool `json:"syncPoliciesOnMulticlusterHub,omitempty"`
-	OnMulticlusterHub             bool `json:"onMulticlusterHub,omitempty"`
+	SyncPoliciesOnMulticlusterHub bool `json:"syncPoliciesOnMulticlusterHub,string,omitempty"`
+	OnMulticlusterHub             bool `json:"onMulticlusterHub,string,omitempty"`
 }
 
 var (
@@ -61,12 +61,11 @@ func getSkeletonValues() policyFrameworkUserValues {
 	return policyFrameworkUserValues{
 		CommonValues: policyaddon.CommonValues{
 			BaseValues: policyaddon.BaseValues{
-				GlobalValues: policyaddon.GlobalValues{
+				GlobalValues: &policyaddon.GlobalValues{
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					ImageOverrides: map[string]string{
 						"governance_policy_framework_addon": os.Getenv("GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE"),
 					},
-					ProxyConfig: policyaddon.ProxyConfig{},
 				},
 			},
 		},
@@ -80,6 +79,7 @@ func getValuesFromAnnotations(clusterClient clusterlistersv1.ManagedClusterListe
 		cluster *clusterv1.ManagedCluster, addon *addonapiv1alpha1.ManagedClusterAddOn,
 	) (addonfactory.Values, error) {
 		userValues := getSkeletonValues()
+
 		err := userValues.CommonValues.SetCommonValues(cluster, addon, clusterClient)
 		if err != nil {
 			return nil, err
@@ -124,6 +124,27 @@ func getValuesFromAnnotations(clusterClient clusterlistersv1.ManagedClusterListe
 	}
 }
 
+func getValuesFromCustomizedVariableValues(config addonapiv1alpha1.AddOnDeploymentConfig) (addonfactory.Values, error) {
+	userValues := getSkeletonValues()
+
+	userValuesMap, err := userValues.CommonValues.SetCommonValuesFromCustomizedVariables(config)
+	if err != nil {
+		log.Error(err, "error setting common addon values from customized variables")
+	}
+
+	variableToFuncMap := map[string]func(*policyFrameworkUserValues, string){}
+
+	for key, value := range userValuesMap {
+		if fn, ok := variableToFuncMap[key]; ok {
+			fn(&userValues, value)
+		} else {
+			log.Error(fmt.Errorf("unknown customized variable: %s", key), "unknown customized variable")
+		}
+	}
+
+	return addonfactory.JsonStructToValues(userValues)
+}
+
 func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {
 	registrationOption := policyaddon.NewRegistrationOption(
 		controllerContext,
@@ -149,14 +170,14 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
 		WithConfigGVRs(utils.AddOnDeploymentConfigGVR).
 		WithGetValuesFuncs(
-			addonfactory.GetAddOnDeploymentConfigValues(
-				addonfactory.NewAddOnDeploymentConfigGetter(addonClient),
-				addonfactory.ToAddOnNodePlacementValues,
-				addonfactory.ToAddOnResourceRequirementsValues,
-				addonfactory.ToAddOnCustomizedVariableValues,
-			),
 			getValuesFromAnnotations(clusterInformer.Lister()),
 			addonfactory.GetValuesFromAddonAnnotation,
+			addonfactory.GetAddOnDeploymentConfigValues(
+				utils.NewAddOnDeploymentConfigGetter(addonClient),
+				addonfactory.ToAddOnNodePlacementValues,
+				addonfactory.ToAddOnResourceRequirementsValues,
+				getValuesFromCustomizedVariableValues,
+			),
 			policyaddon.MandateValues,
 		).
 		WithManagedClusterClient(clusterClient).

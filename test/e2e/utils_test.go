@@ -193,9 +193,14 @@ func getAddonStatus(addon *unstructured.Unstructured) bool {
 
 func debugCollection(podSelector string) {
 	namespaceSuffix := []string{""}
+	deploymentNamespaces := []string{addonNamespace, agentInstallNs}
 
 	if slices.Contains(CurrentSpecReport().Labels(), "hosted-mode") {
 		namespaceSuffix = append(namespaceSuffix, "-hosted")
+
+		for _, cluster := range managedClusterList[1:] {
+			deploymentNamespaces = append(deploymentNamespaces, "klusterlet-"+cluster.clusterName)
+		}
 	}
 
 	By("Recording debug logs")
@@ -243,7 +248,7 @@ func debugCollection(podSelector string) {
 			}
 		}
 
-		for _, namespace := range []string{addonNamespace, agentInstallNs} {
+		for _, namespace := range deploymentNamespaces {
 			fmt.Fprintf(&stringBuilder,
 				"::group::Cluster %s: All objects in namespace %s:\n", targetCluster, namespace)
 			stringBuilder.WriteString(Kubectl("get", "all", "-n", namespace, targetKubeconfig))

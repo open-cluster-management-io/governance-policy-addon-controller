@@ -70,7 +70,7 @@ func getAgentAddon(controllerContext *controllercmd.ControllerContext) (agent.Ag
 		WithConfigGVRs(utils.AddOnDeploymentConfigGVR).
 		WithGetValuesFuncs(
 			addonfactory.GetAddOnDeploymentConfigValues(
-				addonfactory.NewAddOnDeploymentConfigGetter(addonClient),
+				utils.NewAddOnDeploymentConfigGetter(addonClient),
 				addonfactory.ToAddOnNodePlacementValues,
 				addonfactory.ToAddOnCustomizedVariableValues,
 			),
