@@ -18,12 +18,12 @@ require (
 	k8s.io/klog/v2 v2.130.1
 	open-cluster-management.io/addon-framework v1.2.0
 	open-cluster-management.io/api v1.2.0
-	sigs.k8s.io/controller-runtime v0.22.4
+	sigs.k8s.io/controller-runtime v0.22.5
 )
 
 require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v6 v6.3.2 // indirect
 )
 
 require (
@@ -140,7 +140,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.34.3 // indirect
 	k8s.io/apiserver v0.34.3 // indirect
 	k8s.io/kms v0.34.3 // indirect
-	k8s.io/kube-aggregator v0.34.1 // indirect
+	k8s.io/kube-aggregator v0.34.3 // indirect
 	k8s.io/kube-openapi v0.0.0-20250710124328-f3f2b991d03b // indirect
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	open-cluster-management.io/sdk-go v1.2.0 // indirect
