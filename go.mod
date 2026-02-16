@@ -12,9 +12,9 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/stolostron/go-log-utils v0.1.4
 	go.uber.org/zap v1.27.1
-	k8s.io/apimachinery v0.34.3
-	k8s.io/client-go v0.34.3
-	k8s.io/component-base v0.34.3
+	k8s.io/apimachinery v0.34.4
+	k8s.io/client-go v0.34.4
+	k8s.io/component-base v0.34.4
 	k8s.io/klog/v2 v2.130.1
 	open-cluster-management.io/addon-framework v1.2.0
 	open-cluster-management.io/api v1.2.0
@@ -136,11 +136,11 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	helm.sh/helm/v3 v3.19.5 // indirect; CVE-2025-55199 requires 3.18.5+
-	k8s.io/api v0.34.3
-	k8s.io/apiextensions-apiserver v0.34.3 // indirect
-	k8s.io/apiserver v0.34.3 // indirect
-	k8s.io/kms v0.34.3 // indirect
-	k8s.io/kube-aggregator v0.34.3 // indirect
+	k8s.io/api v0.34.4
+	k8s.io/apiextensions-apiserver v0.34.4 // indirect
+	k8s.io/apiserver v0.34.4 // indirect
+	k8s.io/kms v0.34.4 // indirect
+	k8s.io/kube-aggregator v0.34.4 // indirect
 	k8s.io/kube-openapi v0.0.0-20250710124328-f3f2b991d03b // indirect
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	open-cluster-management.io/sdk-go v1.2.0 // indirect
