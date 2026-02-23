@@ -155,8 +155,8 @@ github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.0 h1:FbSCl+KggFl+Ocym490i/E
 github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.0/go.mod h1:qOchhhIlmRcqk/O9uCo/puJlyo07YINaIqdZfZG3Jkc=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 h1:Ovs26xHkKqVztRpIrF/92BcuyuQ/YW4NSIpoGtfXNho=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgfV/d3M/q6VIi02HzZEHgUlZvzk=
-github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.8 h1:NpbJl/eVbvrGE0MJ6X16X9SAifesl6Fwxg/YmCvubRI=
-github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.8/go.mod h1:mi7YA+gCzVem12exXy46ZespvGtX/lZmD/RLnQhVW7U=
+github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 h1:HWRh5R2+9EifMyIHV7ZV+MIZqgz+PMpZ14Jynv3O2Zs=
+github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0/go.mod h1:JfhWUomR1baixubs02l85lZYYOm7LV6om4ceouMv45c=
 github.com/huandu/xstrings v1.5.0 h1:2ag3IFq9ZDANvthTwTiqSSZLjDc+BedvHPAp5tJy2TI=
 github.com/huandu/xstrings v1.5.0/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/ianlancetaylor/demangle v0.0.0-20210905161508-09a460cdf81d/go.mod h1:aYm2/VgdVmcIU8iMfdMvDMsRAQjcfZSKFby6HOFvi/w=
