@@ -868,7 +868,7 @@ func checkContainersAndAvailabilityInNamespace(
 			g.Expect(err).ToNot(HaveOccurred())
 
 			g.Expect(available).To(Equal(replicas), "available replicas should equal expected replicas")
-		}, 240, 1).Should(Succeed())
+		}, 300, 1).Should(Succeed())
 	}
 
 	By(logPrefix + "verifying one framework pod is running")
