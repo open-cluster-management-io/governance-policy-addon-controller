@@ -318,7 +318,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 					)
 				})
 
-				installNamespace := cluster.clusterName + "-hosted"
+				installNamespace := "klusterlet-" + cluster.clusterName
 
 				setupClusterSecretForHostedMode(
 					ctx, logPrefix, hubClient, "config-policy-controller-managed-kubeconfig",
@@ -326,7 +326,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 				installAddonInHostedMode(
 					ctx, logPrefix, hubClient, case2ManagedClusterAddOnName,
-					cluster.clusterName, hubClusterConfig.clusterName, installNamespace, nil)
+					cluster.clusterName, hubClusterConfig.clusterName, nil)
 
 				// Use i+1 since the for loop ranges over a slice skipping first index
 				verifyConfigPolicyDeployment(ctx, logPrefix, hubClient, cluster.clusterName, installNamespace, i+1)
@@ -346,8 +346,12 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 				)
 				Expect(deploy).To(BeNil())
 
-				namespace := GetWithTimeout(ctx, hubClient, gvrNamespace, installNamespace, "", false, 120)
-				Expect(namespace).To(BeNil())
+				By(logPrefix + "waiting for the ManagedClusterAddOn to be fully deleted")
+				addon := GetWithTimeout(
+					ctx, hubClient, gvrManagedClusterAddOn, case2ManagedClusterAddOnName, cluster.clusterName,
+					false, 120,
+				)
+				Expect(addon).To(BeNil())
 			}
 		})
 
@@ -379,7 +383,7 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 				installAddonInHostedMode(
 					ctx, logPrefix, hubClient, case2ManagedClusterAddOnName,
-					cluster.clusterName, hubClusterConfig.clusterName, installNamespace, nil)
+					cluster.clusterName, hubClusterConfig.clusterName, nil)
 
 				// Use i+1 since the for loop ranges over a slice skipping first index
 				verifyConfigPolicyDeployment(ctx, logPrefix, hubClient, cluster.clusterName, installNamespace, i+1)
