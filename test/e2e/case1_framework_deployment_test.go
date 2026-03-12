@@ -120,7 +120,7 @@ var _ = Describe("Test framework deployment", func() {
 			}
 			hubClusterConfig := managedClusterList[0]
 			hubClient := hubClusterConfig.clusterClient
-			installNamespace := cluster.clusterName + "-hosted"
+			installNamespace := "klusterlet-" + cluster.clusterName
 
 			logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 
@@ -147,7 +147,7 @@ var _ = Describe("Test framework deployment", func() {
 
 			installAddonInHostedMode(
 				ctx, logPrefix, hubClient, case1ManagedClusterAddOnName,
-				cluster.clusterName, hubClusterConfig.clusterName, installNamespace, map[string]string{
+				cluster.clusterName, hubClusterConfig.clusterName, map[string]string{
 					"addon.open-cluster-management.io/on-multicluster-hub": "true",
 				})
 
@@ -186,8 +186,11 @@ var _ = Describe("Test framework deployment", func() {
 			deploy := GetWithTimeout(ctx, hubClient, gvrDeployment, case1DeploymentName, installNamespace, false, 120)
 			Expect(deploy).To(BeNil())
 
-			namespace := GetWithTimeout(ctx, hubClient, gvrNamespace, installNamespace, "", false, 120)
-			Expect(namespace).To(BeNil())
+			By(logPrefix + "waiting for the ManagedClusterAddOn to be fully deleted")
+			addon := GetWithTimeout(
+				ctx, hubClient, gvrManagedClusterAddOn, case1ManagedClusterAddOnName, cluster.clusterName, false, 120,
+			)
+			Expect(addon).To(BeNil())
 		}
 	})
 
@@ -209,13 +212,13 @@ var _ = Describe("Test framework deployment", func() {
 				}
 				hubClusterConfig := managedClusterList[0]
 				hubClient := hubClusterConfig.clusterClient
-				installNamespace := cluster.clusterName + "-hosted"
+				installNamespace := "klusterlet-" + cluster.clusterName
 
 				logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 
 				installAddonInHostedMode(
 					ctx, logPrefix, hubClient, case1ManagedClusterAddOnName,
-					cluster.clusterName, hubClusterConfig.clusterName, installNamespace, nil)
+					cluster.clusterName, hubClusterConfig.clusterName, nil)
 
 				// Use i+1 since the for loop ranges over a slice skipping first index
 				checkContainersAndAvailabilityInNamespace(ctx, cluster, i+1, installNamespace)
@@ -834,7 +837,7 @@ func checkContainersAndAvailability(
 	namespace := addonNamespace
 
 	if cluster.hostedOnHub {
-		namespace = cluster.clusterName + "-hosted"
+		namespace = "klusterlet-" + cluster.clusterName
 	}
 
 	return checkContainersAndAvailabilityInNamespace(ctx, cluster, clusterIdx, namespace)
@@ -903,7 +906,7 @@ func checkArgs(ctx context.Context, cluster managedClusterConfig, desiredArgs ..
 
 	if cluster.hostedOnHub {
 		client = managedClusterList[0].clusterClient
-		namespace = cluster.clusterName + "-hosted"
+		namespace = "klusterlet-" + cluster.clusterName
 	}
 
 	By(logPrefix + "verifying one framework pod is running and has the desired args")
@@ -973,7 +976,7 @@ func startupProbeInCluster(clusterIdx int) bool {
 
 func installAddonInHostedMode(
 	ctx context.Context, logPrefix string, hubClient dynamic.Interface, addOnName, clusterName,
-	hostingClusterName, installNamespace string, moreAnnotations map[string]string,
+	hostingClusterName string, moreAnnotations map[string]string,
 ) {
 	By(logPrefix + "deploying the " + addOnName + " ManagedClusterAddOn in hosted mode")
 
@@ -986,9 +989,7 @@ func installAddonInHostedMode(
 				"addon.open-cluster-management.io/hosting-cluster-name": hostingClusterName,
 			},
 		},
-		"spec": map[string]interface{}{
-			"installNamespace": installNamespace,
-		},
+		"spec": map[string]interface{}{},
 	}}
 
 	if moreAnnotations != nil {

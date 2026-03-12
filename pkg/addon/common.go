@@ -263,23 +263,12 @@ func CommonAgentInstallNamespaceFromDeploymentConfigFunc(
 
 		hostingClusterName := addon.Annotations["addon.open-cluster-management.io/hosting-cluster-name"]
 		// Check it is hosted mode
-		//nolint:staticcheck
-		if hostingClusterName != "" && addon.Spec.InstallNamespace != "" {
-			return addon.Spec.InstallNamespace, nil
+		// the hosted mode install namespace name follows the fixed format: klusterlet-<cluster name>
+		if hostingClusterName != "" {
+			return "klusterlet-" + addon.Namespace, nil
 		}
 
-		config, err := utils.GetDesiredAddOnDeploymentConfig(addon, adcgetter)
-		if err != nil {
-			log.Error(err, "failed to get deployment config for addon "+addon.Name)
-
-			return "", err
-		}
-
-		if config == nil {
-			return "", nil
-		}
-
-		return config.Spec.AgentInstallNamespace, nil
+		return utils.AgentInstallNamespaceFromDeploymentConfigFunc(adcgetter)(addon)
 	}
 }
 
