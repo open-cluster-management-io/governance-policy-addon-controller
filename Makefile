@@ -55,11 +55,11 @@ vet: ## Run go vet against code.
 ############################################################
 
 .PHONY: test
-test:
-	go test $(TESTARGS) `go list ./... | grep -v test/e2e`
+test: gotestsum
+	$(GOTESTSUM) $(GOTST_FMT) --junitfile report_unit.xml -- $(TESTARGS) `go list ./... | grep -v test/e2e`
 
 .PHONY: test-coverage
-test-coverage: TESTARGS = -json -cover -covermode=atomic -coverprofile=coverage_unit.out
+test-coverage: TESTARGS = -coverpkg=./... -covermode=atomic -coverprofile=coverage_unit.out
 test-coverage: test
 
 .PHONY: gosec-scan
@@ -241,17 +241,26 @@ kind-prep-ocm: $(OCM_PREP_TARGETS) ## Install OCM registration pieces and connec
 .PHONY: kind-deploy-controller
 kind-deploy-controller: kind-prep-ocm kind-load-image kind-regenerate-controller ## Deploy the policy-addon-controller to the kind cluster.
 
+E2E_TEST_ARGS = --label-filter="!hosted-mode"
+E2E_JSON = --json-report=report_e2e.json
+E2E_JUNIT = --junit-report=report_e2e.xml
+
 .PHONY: e2e-test
 e2e-test: e2e-dependencies ## Run E2E tests.
-	$(GINKGO) -v --label-filter="!hosted-mode" --fail-fast $(E2E_TEST_ARGS) test/e2e
+	$(GINKGO) -v $(E2E_TEST_ARGS) --output-dir=. $(E2E_JSON) $(E2E_JUNIT) test/e2e
 
 .PHONY: e2e-test-hosted-mode
-e2e-test-hosted-mode: e2e-dependencies
-	$(GINKGO) -v --label-filter="hosted-mode" --fail-fast test/e2e
+e2e-test-hosted-mode: E2E_TEST_ARGS = --label-filter="hosted-mode"
+e2e-test-hosted-mode: E2E_JSON = --json-report=report_e2e_hosted.json
+e2e-test-hosted-mode: E2E_JUNIT = --junit-report=report_e2e_hosted.xml
+e2e-test-hosted-mode: e2e-test
 
 .PHONY: e2e-test-coverage
-e2e-test-coverage: E2E_TEST_ARGS = --json-report=report_e2e.json --output-dir=.
 e2e-test-coverage: e2e-run-instrumented e2e-test e2e-stop-instrumented ## Run E2E tests using instrumented controller.
+
+.PHONY: e2e-test-hosted-mode-coverage
+e2e-test-hosted-mode-coverage: COVERAGE_E2E_OUT = coverage_e2e_hosted.out
+e2e-test-hosted-mode-coverage: e2e-run-instrumented e2e-test-hosted-mode e2e-stop-instrumented
 
 .PHONY: e2e-test-coverage-foreground
 e2e-test-coverage-foreground: LOG_REDIRECT =
@@ -259,9 +268,9 @@ e2e-test-coverage-foreground: e2e-test-coverage ## Run E2E tests using instrumen
 
 .PHONY: e2e-build-instrumented
 e2e-build-instrumented:
-	go test -covermode=atomic -coverpkg=$(shell cat go.mod | head -1 | cut -d ' ' -f 2)/... -c -tags e2e ./ -o build/_output/bin/$(IMG)-instrumented
+	go test -covermode=atomic -coverpkg=./... -c -tags e2e ./ -o build/_output/bin/$(IMG)-instrumented
 
-COVERAGE_E2E_OUT ?= coverage_e2e.out
+COVERAGE_E2E_OUT ?= coverage_e2e_basic.out
 .PHONY: e2e-run-instrumented
 LOG_REDIRECT ?= &>build/_output/controller.log
 e2e-run-instrumented: e2e-build-instrumented
@@ -321,13 +330,16 @@ kind-controller-kubeconfig: export CLUSTER_NAME=$(HUB_CLUSTER_NAME)
 ############################################################
 # test coverage
 ############################################################
-
-COVERAGE_FILE = coverage.out
 .PHONY: coverage-merge
-coverage-merge: coverage-dependencies ## Merge coverage reports.
-	@echo Merging the coverage reports into $(COVERAGE_FILE)
-	$(GOCOVMERGE) $(PWD)/coverage_* > $(COVERAGE_FILE)
+coverage-merge: coverage-dependencies
+	@echo Merging the coverage reports into coverage.out
+	$(GOCOVMERGE) $(PWD)/coverage_* > coverage.out
+
+.PHONY: coverage-merge-e2e
+coverage-merge-e2e: coverage-dependencies
+	@echo Merging the e2e coverage reports into coverage_e2e.out
+	$(GOCOVMERGE) $(PWD)/coverage_e2e* > coverage_e2e.out
 
 .PHONY: coverage-verify
-coverage-verify: ## Verify coverage percentage meets coverage thresholds.
+coverage-verify: coverage-merge-e2e
 	./build/common/scripts/coverage_calc.sh
