@@ -19,5 +19,6 @@ __debug_*
 
 kubeconfig_*
 coverage*.out
-report_e2e.json
+report*.json
+report*.xml
 gosec.json
