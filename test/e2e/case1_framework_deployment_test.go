@@ -40,6 +40,9 @@ var _ = Describe("Test framework deployment", func() {
 
 		By("Restoring the default governance-policy-framework ClusterManagementAddon on the hub cluster")
 		Kubectl("apply", "-f", case1ClusterManagementAddOnCRDefault)
+
+		By("Cleaning up CSRs")
+		Kubectl("delete", "csr", "-l", "open-cluster-management.io/addon-name="+case1ManagedClusterAddOnName)
 	})
 
 	It("should create the framework deployment in user's custom namespace", func(ctx SpecContext) {

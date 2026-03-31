@@ -97,6 +97,9 @@ var _ = Describe("Test config-policy-controller deployment", func() {
 
 		By("Restoring the default config-policy-controller ClusterManagementAddon on the hub cluster")
 		Kubectl("apply", "-f", case2ClusterManagementAddOnCRDefault)
+
+		By("Cleaning up CSRs")
+		Kubectl("delete", "csr", "-l", "open-cluster-management.io/addon-name="+case2ManagedClusterAddOnName)
 	})
 
 	It("should create the config-policy-controller deployment in hosted mode in user's custom namespace",
