@@ -90,7 +90,11 @@ func (cpv *configPolicyUserValues) setOperatorPolicyDisabled(value string) error
 		return err
 	}
 
-	cpv.OperatorPolicy.Disabled = valBool
+	if cpv.OperatorPolicy != nil {
+		cpv.OperatorPolicy.Disabled = valBool
+	} else {
+		cpv.OperatorPolicy = &operatorPolicy{Disabled: valBool}
+	}
 
 	return nil
 }
@@ -122,8 +126,6 @@ func getValuesFromAnnotations(
 		// Configure OperatorPolicy based on the cluster's OpenShift version
 		if cluster.Labels["openshiftVersion-major"] == "4" {
 			userValues.OperatorPolicy.DefaultNamespace = "openshift-operators"
-		} else {
-			userValues.OperatorPolicy.Disabled = true
 		}
 
 		if err := userValues.CommonValues.SetCommonValuesFromAnnotations(addon); err != nil {
