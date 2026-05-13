@@ -14,7 +14,7 @@ import (
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/addon-framework/pkg/utils"
-	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+	addonapiv1beta1 "open-cluster-management.io/api/addon/v1beta1"
 	addonv1alpha1client "open-cluster-management.io/api/client/addon/clientset/versioned"
 	clusterv1client "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	clusterv1informers "open-cluster-management.io/api/client/cluster/informers/externalversions"
@@ -73,10 +73,10 @@ func getSkeletonValues() policyFrameworkUserValues {
 }
 
 func getValuesFromAnnotations(clusterClient clusterlistersv1.ManagedClusterLister) func(*clusterv1.ManagedCluster,
-	*addonapiv1alpha1.ManagedClusterAddOn,
+	*addonapiv1beta1.ManagedClusterAddOn,
 ) (addonfactory.Values, error) {
 	return func(
-		cluster *clusterv1.ManagedCluster, addon *addonapiv1alpha1.ManagedClusterAddOn,
+		cluster *clusterv1.ManagedCluster, addon *addonapiv1beta1.ManagedClusterAddOn,
 	) (addonfactory.Values, error) {
 		userValues := getSkeletonValues()
 
@@ -86,7 +86,7 @@ func getValuesFromAnnotations(clusterClient clusterlistersv1.ManagedClusterListe
 		}
 
 		annotations := addon.GetAnnotations()
-		hostingClusterName := annotations[addonapiv1alpha1.HostingClusterNameAnnotationKey]
+		hostingClusterName := annotations[addonapiv1beta1.HostingClusterNameAnnotationKey]
 
 		// special case for local-cluster
 		isLocal := cluster.Name == "local-cluster" ||
@@ -124,7 +124,7 @@ func getValuesFromAnnotations(clusterClient clusterlistersv1.ManagedClusterListe
 	}
 }
 
-func getValuesFromCustomizedVariableValues(config addonapiv1alpha1.AddOnDeploymentConfig) (addonfactory.Values, error) {
+func getValuesFromCustomizedVariableValues(config addonapiv1beta1.AddOnDeploymentConfig) (addonfactory.Values, error) {
 	userValues := getSkeletonValues()
 
 	userValuesMap, err := userValues.CommonValues.SetCommonValuesFromCustomizedVariables(config)

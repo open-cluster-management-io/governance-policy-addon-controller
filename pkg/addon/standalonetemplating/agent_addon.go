@@ -11,7 +11,7 @@ import (
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/addon-framework/pkg/utils"
-	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+	addonapiv1beta1 "open-cluster-management.io/api/addon/v1beta1"
 	addonv1alpha1client "open-cluster-management.io/api/client/addon/clientset/versioned"
 	clusterv1client "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
@@ -38,7 +38,7 @@ var agentPermissionFiles = []string{
 
 func getValues(
 	_ *clusterv1.ManagedCluster,
-	addon *addonapiv1alpha1.ManagedClusterAddOn,
+	addon *addonapiv1beta1.ManagedClusterAddOn,
 ) (addonfactory.Values, error) {
 	values := addonfactory.Values{}
 
@@ -91,13 +91,14 @@ type StandaloneAgentAddon struct {
 }
 
 func (sa *StandaloneAgentAddon) Manifests(
+	ctx context.Context,
 	cluster *clusterv1.ManagedCluster,
-	addon *addonapiv1alpha1.ManagedClusterAddOn,
+	addon *addonapiv1beta1.ManagedClusterAddOn,
 ) ([]runtime.Object, error) {
 	// config-policy addon needs to update itself whenever this addon is created/updated/deleted
 	sa.manager.Trigger(cluster.Name, cfgpolAddonName)
 
-	return sa.AgentAddon.Manifests(cluster, addon)
+	return sa.AgentAddon.Manifests(ctx, cluster, addon)
 }
 
 func GetAndAddAgent(
