@@ -21,7 +21,7 @@ import (
 	"open-cluster-management.io/addon-framework/pkg/addonmanager"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/addon-framework/pkg/utils"
-	addonapiv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+	addonapiv1beta1 "open-cluster-management.io/api/addon/v1beta1"
 	clusterlistersv1 "open-cluster-management.io/api/client/cluster/listers/cluster/v1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -167,9 +167,13 @@ func NewRegistrationOption(
 	recorder := controllerContext.EventRecorder
 
 	return &agent.RegistrationOption{
-		CSRConfigurations: agent.KubeClientSignerConfigurations(addonName, addonName),
-		CSRApproveCheck:   utils.DefaultCSRApprover(addonName),
-		PermissionConfig: func(cluster *clusterv1.ManagedCluster, _ *addonapiv1alpha1.ManagedClusterAddOn) error {
+		Configurations:  agent.KubeClientSignerConfigurations(addonName, addonName),
+		CSRApproveCheck: utils.DefaultCSRApprover(addonName),
+		PermissionConfig: func(
+			_ context.Context,
+			cluster *clusterv1.ManagedCluster,
+			_ *addonapiv1beta1.ManagedClusterAddOn,
+		) error {
 			kubeclient, err := kubernetes.NewForConfig(kubeConfig)
 			if err != nil {
 				return err
@@ -237,8 +241,9 @@ type PolicyAgentAddon struct {
 // Manifests overrides the AgentAddon.Manifests method to return an error when
 // the policy addon is paused.
 func (pa *PolicyAgentAddon) Manifests(
+	ctx context.Context,
 	cluster *clusterv1.ManagedCluster,
-	addon *addonapiv1alpha1.ManagedClusterAddOn,
+	addon *addonapiv1beta1.ManagedClusterAddOn,
 ) ([]runtime.Object, error) {
 	// Return error when pause annotation is set to short-circuit automatic addon updates
 	pauseAnnotation := addon.GetAnnotations()[PolicyAddonPauseAnnotation]
@@ -246,15 +251,15 @@ func (pa *PolicyAgentAddon) Manifests(
 		return nil, errors.New("the Policy Addon controller is paused due to the policy-addon-pause annotation")
 	}
 
-	return pa.AgentAddon.Manifests(cluster, addon)
+	return pa.AgentAddon.Manifests(ctx, cluster, addon)
 }
 
 // CommonAgentInstallNamespaceFromDeploymentConfigFunc returns a function that
 // gets the agent install namespace for the addon from the deployment config.
 func CommonAgentInstallNamespaceFromDeploymentConfigFunc(
 	adcgetter utils.AddOnDeploymentConfigGetter,
-) func(*addonapiv1alpha1.ManagedClusterAddOn) (string, error) {
-	return func(addon *addonapiv1alpha1.ManagedClusterAddOn) (string, error) {
+) func(context.Context, *addonapiv1beta1.ManagedClusterAddOn) (string, error) {
+	return func(ctx context.Context, addon *addonapiv1beta1.ManagedClusterAddOn) (string, error) {
 		if addon == nil {
 			log.Info("failed to get addon install namespace, addon is nil")
 
@@ -268,7 +273,7 @@ func CommonAgentInstallNamespaceFromDeploymentConfigFunc(
 			return "klusterlet-" + addon.Namespace, nil
 		}
 
-		return utils.AgentInstallNamespaceFromDeploymentConfigFunc(adcgetter)(addon)
+		return utils.AgentInstallNamespaceFromDeploymentConfigFunc(adcgetter)(ctx, addon)
 	}
 }
 
@@ -374,7 +379,7 @@ func (cv *CommonValues) SetPrometheusEnabled(value string) error {
 // would warrant a retry.
 func (cv *CommonValues) SetCommonValues(
 	cluster *clusterv1.ManagedCluster,
-	addon *addonapiv1alpha1.ManagedClusterAddOn,
+	addon *addonapiv1beta1.ManagedClusterAddOn,
 	clusterClient clusterlistersv1.ManagedClusterLister,
 ) error {
 	var err error
@@ -382,7 +387,7 @@ func (cv *CommonValues) SetCommonValues(
 	cv.KubernetesDistribution = GetClusterVendor(cluster)
 
 	// Set the Kubernetes distribution for the hosting cluster
-	hostingClusterName := addon.GetAnnotations()[addonapiv1alpha1.HostingClusterNameAnnotationKey]
+	hostingClusterName := addon.GetAnnotations()[addonapiv1beta1.HostingClusterNameAnnotationKey]
 	if hostingClusterName != "" {
 		hostingCluster, err := clusterClient.Get(hostingClusterName)
 		if err == nil {
@@ -405,7 +410,7 @@ func (cv *CommonValues) SetCommonValues(
 // known values and returns a map with any unknown values and an aggregated
 // error for the respective component addon handler.
 func (cv *CommonValues) SetCommonValuesFromCustomizedVariables(
-	config addonapiv1alpha1.AddOnDeploymentConfig,
+	config addonapiv1beta1.AddOnDeploymentConfig,
 ) (map[string]string, error) {
 	values := map[string]string{}
 	var aggregateErr error
@@ -439,7 +444,7 @@ func (cv *CommonValues) SetCommonValuesFromCustomizedVariables(
 // SetCommonValuesFromAnnotations sets the common values for the addon chart
 // using annotations on the ManagedClusterAddOn. It returns an aggregated error
 // for the respective component addon handler.
-func (cv *CommonValues) SetCommonValuesFromAnnotations(addon *addonapiv1alpha1.ManagedClusterAddOn) error {
+func (cv *CommonValues) SetCommonValuesFromAnnotations(addon *addonapiv1beta1.ManagedClusterAddOn) error {
 	addonName := addon.Name
 	mcaoAnnotations := addon.GetAnnotations()
 	var aggregateErr error
@@ -471,7 +476,7 @@ func (cv *CommonValues) SetCommonValuesFromAnnotations(addon *addonapiv1alpha1.M
 // be taken when adding settings to this function.
 func MandateValues(
 	_ *clusterv1.ManagedCluster,
-	mcao *addonapiv1alpha1.ManagedClusterAddOn,
+	mcao *addonapiv1beta1.ManagedClusterAddOn,
 ) (addonfactory.Values, error) {
 	values := addonfactory.Values{}
 
