@@ -26,7 +26,6 @@ const (
 	case2PodSelector                     string = "app=config-policy-controller"
 	case2OpenShiftClusterClaim           string = "../resources/openshift_cluster_claim.yaml"
 	policyCrdName                        string = "policies.policy.open-cluster-management.io"
-	deletionOrphanAnnotationKey          string = "addon.open-cluster-management.io/deletion-orphan"
 )
 
 func verifyConfigPolicyDeployment(

@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -37,6 +38,7 @@ type policyFrameworkUserValues struct {
 
 	SyncPoliciesOnMulticlusterHub bool `json:"syncPoliciesOnMulticlusterHub,string,omitempty"`
 	OnMulticlusterHub             bool `json:"onMulticlusterHub,string,omitempty"`
+	OrphanClusterNamespace        bool `json:"orphanClusterNamespace,string,omitempty"`
 }
 
 var (
@@ -132,11 +134,25 @@ func getValuesFromCustomizedVariableValues(config addonapiv1beta1.AddOnDeploymen
 		log.Error(err, "error setting common addon values from customized variables")
 	}
 
-	variableToFuncMap := map[string]func(*policyFrameworkUserValues, string){}
+	variableToFuncMap := map[string]func(string) error{
+		"orphanClusterNamespace": func(value string) error {
+			valBool, err := strconv.ParseBool(value)
+			if err != nil {
+				return err
+			}
+
+			userValues.OrphanClusterNamespace = valBool
+
+			return nil
+		},
+	}
 
 	for key, value := range userValuesMap {
 		if fn, ok := variableToFuncMap[key]; ok {
-			fn(&userValues, value)
+			err := fn(value)
+			if err != nil {
+				log.Error(err, "error setting customized variable", "variable", key, "value", value)
+			}
 		} else {
 			log.Error(fmt.Errorf("unknown customized variable: %s", key), "unknown customized variable")
 		}
