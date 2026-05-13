@@ -23,6 +23,8 @@ const (
 	case1ClusterManagementAddOnCR        string = "../resources/framework_clustermanagementaddon_config.yaml"
 	case1CMAAddonWithInstallNs           string = "../resources/framework_cma_config_agentInstallNs.yaml"
 	case1CMAAddonWithCustomizedVars      string = "../resources/framework_cma_config_customizedVars.yaml"
+	case1CMAOrphanClusterNamespace       string = "../resources/framework_cma_config_orphanClusterNamespace.yaml"
+	case1AODCOrphanClusterNamespace      string = "../resources/addondeploymentconfig_orphan_cluster_namespace.yaml"
 	case1hubAnnotationMCAOCR             string = "../resources/framework_hub_annotation_addon_cr.yaml"
 	case1hubValuesMCAOCR                 string = "../resources/framework_hub_values_addon_cr.yaml"
 	case1DeploymentName                  string = "governance-policy-framework"
@@ -30,6 +32,7 @@ const (
 	case1MWName                          string = "addon-governance-policy-framework-deploy-0"
 	case1MWPatch                         string = "../resources/manifestwork_add_patch.json"
 	ocmPolicyNs                          string = "open-cluster-management-policies"
+	deletionOrphanAnnotationKey          string = "addon.open-cluster-management.io/deletion-orphan"
 )
 
 var _ = Describe("Test framework deployment", func() {
@@ -791,6 +794,52 @@ var _ = Describe("Test framework deployment", func() {
 			GetWithTimeoutClusterResource(ctx, cluster.clusterClient, gvrNamespace, cluster.clusterName, false, 15)
 		}
 	})
+
+	It("should leave the cluster namespace on the managed cluster when orphanClusterNamespace is configured",
+		func(ctx SpecContext) {
+			By("Creating the AddOnDeploymentConfig with orphanClusterNamespace")
+			Kubectl("apply", "-f", case1AODCOrphanClusterNamespace)
+			DeferCleanup(func() {
+				By("Deleting the AddOnDeploymentConfig for orphanClusterNamespace")
+				Kubectl("delete", "-f", case1AODCOrphanClusterNamespace, "--timeout=15s")
+			})
+
+			By("Applying the governance-policy-framework ClusterManagementAddOn to use the AddOnDeploymentConfig")
+			Kubectl("apply", "-f", case1CMAOrphanClusterNamespace)
+
+			for i, cluster := range managedClusterList[1:] {
+				Expect(cluster.clusterType).To(Equal("managed"))
+
+				logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
+				By(logPrefix + "deploying the framework managedclusteraddon")
+				Kubectl("apply", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR)
+				checkContainersAndAvailability(ctx, cluster, i+1)
+
+				By(logPrefix + "deleting the managedclusteraddon")
+				Kubectl("delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=180s")
+				deploy := GetWithTimeout(
+					ctx, cluster.clusterClient, gvrDeployment, case1DeploymentName, addonNamespace, false, 30,
+				)
+				Expect(deploy).To(BeNil())
+
+				By(logPrefix + "checking the managed cluster namespace remains after the addon is removed")
+				Consistently(func() *unstructured.Unstructured {
+					return GetWithTimeoutClusterResource(
+						ctx, cluster.clusterClient, gvrNamespace, cluster.clusterName, true, 15)
+				}, 30, 5).Should(Not(BeNil()))
+
+				ctxNS, cancelNS := context.WithTimeout(ctx, 15*time.Second)
+				defer cancelNS()
+
+				By(logPrefix + "cleaning up the orphaned cluster namespace")
+				err := cluster.clusterClient.Resource(gvrNamespace).Delete(
+					ctxNS, cluster.clusterName, metav1.DeleteOptions{},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				GetWithTimeoutClusterResource(ctx, cluster.clusterClient, gvrNamespace, cluster.clusterName, false, 120)
+			}
+		})
 
 	It("should deploy with startupProbes or initialDelaySeconds depending on version", func(ctx SpecContext) {
 		for i, cluster := range managedClusterList[1:] {

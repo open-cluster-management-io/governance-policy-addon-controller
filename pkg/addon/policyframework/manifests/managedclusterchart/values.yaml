@@ -4,6 +4,7 @@ fullnameOverride: null
 nameOverride: null
 
 onMulticlusterHub: false
+orphanClusterNamespace: false
 
 org: open-cluster-management
 replicas: 1
