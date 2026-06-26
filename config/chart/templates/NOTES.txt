@@ -1,0 +1,18 @@
+The governance-policy-addon-controller has been installed in namespace {{ .Values.namespace | default .Release.Namespace }}.
+
+This chart is version v{{ .Chart.Version }}, aligned with Open Cluster Management {{ .Values.ocm_version }}.
+
+Prerequisites not installed by this chart:
+  - OCM hub components (cluster-manager, registration, work)
+  - Policy CRDs and governance-policy-propagator in the same namespace
+
+Verify the deployment:
+
+  kubectl get deployment {{ .Chart.Name }} -n {{ .Values.namespace | default .Release.Namespace }}
+
+Next steps:
+
+  - Ensure governance-policy-propagator is running in {{ .Values.namespace | default .Release.Namespace }}.
+  - Deploy policy addons to managed clusters using `clusteradm addon enable`.
+  - View the documentation at https://open-cluster-management.io/docs/getting-started/integration/policy-controllers/
+  - Create your first Policy!
