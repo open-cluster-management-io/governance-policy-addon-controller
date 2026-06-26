@@ -100,8 +100,19 @@ clean: kind-bootstrap-delete-clusters ## Clean up generated files.
 ############################################################
 
 .PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=governance-policy-addon-controller crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+manifests: controller-gen kustomize ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	$(CONTROLLER_GEN) rbac:roleName=governance-policy-addon-controller paths="./..."
+	$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) webhook paths="./..."
+	$(KUSTOMIZE) build config/rbac >/dev/null
+	$(KUSTOMIZE) build config/rbac | yq ea 'select(.kind == "*Role")' | \
+		yq ea -s '"config/chart/templates/" + (.kind | downcase) + ".yaml"'
+	$(SED) -i 's/  name: governance-policy-addon-controller$$/  labels:\n    app: {{ .Chart.Name }}\n  name: {{ .Chart.Name }}/' config/chart/templates/clusterrole.yaml
+	$(SED) -i 's/  name: governance-policy-addon-controller-leader-election$$/  labels:\n    app: {{ .Chart.Name }}\n  name: {{ printf "%s-leader-election" .Chart.Name }}\n  namespace: {{ .Values.namespace | default .Release.Namespace }}/' config/chart/templates/role.yaml
+
+.PHONY: validate-helm
+validate-helm: kustomize ## Validate the Helm chart matches kustomize build config/default.
+	./build/validate-helm.sh
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -230,7 +241,9 @@ kind-load-image: build-images $(KIND_KUBECONFIG) ## Build and load the docker im
 kind-regenerate-controller: manifests generate kustomize $(KIND_KUBECONFIG) ## Refresh (or initially deploy) the policy-addon-controller.
 	cp config/default/kustomization.yaml config/default/kustomization.yaml.tmp
 	cd config/default && $(KUSTOMIZE) edit set image policy-addon-image=$(IMAGE_NAME_AND_VERSION)
-	$(KUSTOMIZE) build config/default | $(SED) -E "s/(value\: .+)(:latest)$$/\1:$(TAG)/g" | KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f -
+	$(KUSTOMIZE) build config/default | \
+	  $(SED) -E "s/(value\: .+)(:latest)$$/\1:$(TAG)/g; s/imagePullPolicy\: Always/imagePullPolicy\: Never/g" | \
+		KUBECONFIG=$(KIND_KUBECONFIG) kubectl apply -f -
 	mv config/default/kustomization.yaml.tmp config/default/kustomization.yaml
 	KUBECONFIG=$(KIND_KUBECONFIG) kubectl delete -n $(CONTROLLER_NAMESPACE) pods -l=app=governance-policy-addon-controller
 

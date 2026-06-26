@@ -66,12 +66,6 @@ spec:
           - --metrics-bind-address=0.0.0.0:8383
           {{- end }}
         env:
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: OPERATOR_NAME
-            value: "governance-policy-framework-addon"
           - name: DEPLOYMENT_NAME
             valueFrom:
               fieldRef:
