@@ -29,8 +29,6 @@ spec:
       containers:
       - command:
         - governance-policy-addon-controller
-        args:
-        - controller
         image: policy-addon-image
         imagePullPolicy: IfNotPresent
         env:
