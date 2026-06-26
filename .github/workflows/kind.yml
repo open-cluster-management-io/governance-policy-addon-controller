@@ -36,6 +36,12 @@ jobs:
         make lint
         make gosec-scan
 
+    - name: Verify Helm chart
+      run: |
+        make manifests
+        git diff --exit-code
+        make validate-helm
+
     - name: Unit Tests
       # currently there are no unit tests, so there is no point in collecting coverage info here.
       run: |

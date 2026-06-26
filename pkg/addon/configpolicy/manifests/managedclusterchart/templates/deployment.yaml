@@ -76,10 +76,6 @@ spec:
             {{- else }}
             value: {{ .Values.clusterName }}
             {{- end }}
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
           - name: OPERATOR_NAME
             value: {{ include "controller.fullname" . }}
           {{- if .Values.global.proxyConfig }}
