@@ -63,6 +63,7 @@ rules:
 # Rule for status-sync
 - apiGroups:
   - ""
+  - events.k8s.io
   resources:
   - events
   verbs:

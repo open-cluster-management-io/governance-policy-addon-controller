@@ -21,6 +21,7 @@ rules:
 {{- if eq .Values.installMode "Hosted" }}
 - apiGroups:
   - ""
+  - events.k8s.io
   resources:
   - events
   verbs:

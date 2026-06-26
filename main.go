@@ -83,7 +83,7 @@ import (
 //+kubebuilder:rbac:groups=policy.open-cluster-management.io,resources=policies/status,verbs=get;patch;update
 //+kubebuilder:rbac:groups=core,resources=secrets,resourceNames=policy-encryption-key,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cluster.open-cluster-management.io,resources=clusterclaims,resourceNames=id.k8s.io,verbs=get
-//+kubebuilder:rbac:groups=core,resources=events,verbs=create;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=core;events.k8s.io,resources=events,verbs=create;get;list;patch;update;watch
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 //+kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch
 
