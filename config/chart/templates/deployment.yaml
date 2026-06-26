@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Chart.Name }}
+    control-plane: controller-manager
+    {{- if .Values.podLabels }}
+    {{- include "controller.workloadLabels" . | trim | nindent 4 }}
+    {{- end }}
+  name: {{ .Chart.Name }}
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  {{- if .Values.podAnnotations }}
+  annotations:
+    {{- include "controller.workloadAnnotations" . | trim | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        {{- if .Values.podAnnotations }}
+        {{- include "controller.workloadAnnotations" . | trim | nindent 8 }}
+        {{- end }}
+      labels:
+        app: {{ .Chart.Name }}
+        control-plane: controller-manager
+        {{- if .Values.podLabels }}
+        {{- include "controller.workloadLabels" . | trim | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+        - args:
+            - controller
+          command:
+            - governance-policy-addon-controller
+          env:
+            - name: CONFIG_POLICY_CONTROLLER_IMAGE
+              value: {{ .Values.env.configPolicyControllerImage | quote }}
+            - name: GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE
+              value: {{ .Values.env.governancePolicyFrameworkAddonImage | quote }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          name: manager
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /tmp
+              name: serving-cert
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Chart.Name }}
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - emptyDir: {}
+          name: serving-cert
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
