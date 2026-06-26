@@ -218,7 +218,7 @@ kind-run-local: manifests generate fmt vet $(KIND_KUBECONFIG) ## Run the policy-
 	-KUBECONFIG=$(KIND_KUBECONFIG) kubectl create ns $(CONTROLLER_NAMESPACE)
 	CONFIG_POLICY_CONTROLLER_IMAGE="$(REGISTRY)/config-policy-controller:$(TAG)" \
 	  GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE="$(REGISTRY)/governance-policy-framework-addon:$(TAG)" \
-		go run ./main.go controller --kubeconfig=$(KIND_KUBECONFIG) --namespace $(CONTROLLER_NAMESPACE)
+		go run ./main.go --kubeconfig=$(KIND_KUBECONFIG) --namespace $(CONTROLLER_NAMESPACE)
 
 .PHONY: kind-load-image
 kind-load-image: build-images $(KIND_KUBECONFIG) ## Build and load the docker image into kind.
