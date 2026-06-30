@@ -26,7 +26,6 @@ import (
 
 	"github.com/go-logr/zapr"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stolostron/go-log-utils/zaputil"
 	"go.uber.org/zap"
@@ -125,27 +124,14 @@ func main() {
 	logs.InitLogs()
 	defer logs.FlushLogs()
 
-	cmd := &cobra.Command{
-		Use:   ctrlName,
-		Short: "Governance policy addon controller for Open Cluster Management",
-		Run: func(cmd *cobra.Command, _ []string) {
-			if err := cmd.Help(); err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-			}
-			os.Exit(1)
-		},
-	}
-
 	ctrlconfig := controllercmd.NewControllerCommandConfig(ctrlName, ctrlVersion, runController, clock.RealClock{})
 	ctrlconfig.DisableServing = true
 
 	ctrlcmd := ctrlconfig.NewCommandWithContext(context.TODO())
-	ctrlcmd.Use = "controller"
-	ctrlcmd.Short = "Start the addon controller"
+	ctrlcmd.Use = ctrlName
+	ctrlcmd.Short = "Governance policy addon controller for Open Cluster Management"
 
-	cmd.AddCommand(ctrlcmd)
-
-	if err := cmd.Execute(); err != nil {
+	if err := ctrlcmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 
 		klog.Fatal()

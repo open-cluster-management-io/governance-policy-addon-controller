@@ -8,7 +8,6 @@ require (
 	github.com/onsi/gomega v1.41.0
 	github.com/openshift/library-go v0.0.0-20251015125748-fcf51fa75eff
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.91.0
-	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/stolostron/go-log-utils v0.1.5
 	go.uber.org/zap v1.28.0
@@ -19,11 +18,6 @@ require (
 	open-cluster-management.io/addon-framework v1.3.0
 	open-cluster-management.io/api v1.3.0
 	sigs.k8s.io/controller-runtime v0.23.3
-)
-
-require (
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	sigs.k8s.io/structured-merge-diff/v6 v6.3.2 // indirect
 )
 
 require (
@@ -91,6 +85,7 @@ require (
 	github.com/openshift/client-go v0.0.0-20251015124057-db0dee36e235 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.7.0 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.68.0 // indirect
@@ -99,6 +94,7 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
+	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.12 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.6.12 // indirect
@@ -148,5 +144,6 @@ require (
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kube-storage-version-migrator v0.0.6-0.20230721195810-5c8923c5ff96 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v6 v6.3.2 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
