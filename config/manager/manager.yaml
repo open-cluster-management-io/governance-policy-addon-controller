@@ -26,18 +26,16 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - command:
         - governance-policy-addon-controller
         args:
         - controller
         image: policy-addon-image
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         env:
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
         - name: CONFIG_POLICY_CONTROLLER_IMAGE
           value: quay.io/open-cluster-management/config-policy-controller:latest
         - name: GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE
@@ -45,14 +43,19 @@ spec:
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
-        # TODO(user): Configure the resources accordingly based on the project requirements.
-        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
         resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
           requests:
-            cpu: 10m
+            cpu: 25m
             memory: 64Mi
+        volumeMounts:
+        - name: serving-cert
+          mountPath: /tmp
       serviceAccountName: governance-policy-addon-controller
       terminationGracePeriodSeconds: 10
+      volumes:
+      - name: serving-cert
+        emptyDir: {}
