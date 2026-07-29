@@ -20,8 +20,10 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
+var c = context.Background()
+
 // Kubectl executes kubectl commands
-func Kubectl(args ...string) string {
+func Kubectl(ctx context.Context, args ...string) string {
 	// Inject the kubeconfig to ensure we're pointing to the hub if none is provided
 	skipKubeconfig := false
 
@@ -37,7 +39,7 @@ func Kubectl(args ...string) string {
 		args = append(args, "--kubeconfig="+kubeconfigFilename+"1_e2e")
 	}
 
-	cmd := exec.Command("kubectl", args...)
+	cmd := exec.CommandContext(ctx, "kubectl", args...)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -74,13 +76,16 @@ func GetWithTimeout(
 	Eventually(func() error {
 		var err error
 		namespace := client.Resource(gvr).Namespace(namespace)
+
 		obj, err = namespace.Get(ctx, name, metav1.GetOptions{})
 		if wantFound && err != nil {
 			return err
 		}
+
 		if !wantFound && err == nil {
 			return errs.New("expected to return IsNotFound error")
 		}
+
 		if !wantFound && err != nil && !errors.IsNotFound(err) {
 			return err
 		}
@@ -115,13 +120,16 @@ func GetWithTimeoutClusterResource(
 	Eventually(func() error {
 		var err error
 		res := client.Resource(gvr)
+
 		obj, err = res.Get(ctx, name, metav1.GetOptions{})
 		if wantFound && err != nil {
 			return err
 		}
+
 		if !wantFound && err == nil {
 			return errs.New("expected to return IsNotFound error")
 		}
+
 		if !wantFound && err != nil && !errors.IsNotFound(err) {
 			return err
 		}
@@ -181,7 +189,7 @@ func getAddonStatus(addon *unstructured.Unstructured) bool {
 	}
 
 	for _, item := range conditions {
-		if condition, ok := item.(map[string]interface{}); !ok {
+		if condition, ok := item.(map[string]any); !ok {
 			panic(fmt.Errorf("failed to parse .status.condition[]: %+v", item))
 		} else if condition["type"] == "Available" {
 			return condition["status"] == "True"
@@ -220,13 +228,13 @@ func debugCollection(podSelector string) {
 			}
 
 			stringBuilder.WriteString("::group::Cluster cluster1: Addon objects\n")
-			stringBuilder.WriteString(Kubectl("get", "clustermanagementaddons", "-o=yaml", targetKubeconfig))
+			stringBuilder.WriteString(Kubectl(c, "get", "clustermanagementaddons", "-o=yaml", targetKubeconfig))
 			stringBuilder.WriteString("---\n")
-			stringBuilder.WriteString(Kubectl("get", "managedclusteraddons", "-A", "-o=yaml", targetKubeconfig))
+			stringBuilder.WriteString(Kubectl(c, "get", "managedclusteraddons", "-A", "-o=yaml", targetKubeconfig))
 			stringBuilder.WriteString("---\n")
-			stringBuilder.WriteString(Kubectl("get", "addondeploymentconfigs", "-A", "-o=yaml", targetKubeconfig))
+			stringBuilder.WriteString(Kubectl(c, "get", "addondeploymentconfigs", "-A", "-o=yaml", targetKubeconfig))
 			stringBuilder.WriteString("---\n")
-			stringBuilder.WriteString(Kubectl("get", "manifestwork", "-A", "-o=yaml", targetKubeconfig))
+			stringBuilder.WriteString(Kubectl(c, "get", "manifestwork", "-A", "-o=yaml", targetKubeconfig))
 			stringBuilder.WriteString("::endgroup::\n")
 		}
 
@@ -235,15 +243,15 @@ func debugCollection(podSelector string) {
 				namespace += suffix
 				fmt.Fprintf(&stringBuilder,
 					"::group::Cluster %s: All objects in namespace %s:\n", targetCluster, namespace)
-				stringBuilder.WriteString(Kubectl("get", "all", "-n", namespace, targetKubeconfig))
+				stringBuilder.WriteString(Kubectl(c, "get", "all", "-n", namespace, targetKubeconfig))
 				stringBuilder.WriteString("::endgroup::\n")
 
 				fmt.Fprintf(&stringBuilder, "::group::Cluster %s: Pod logs for label %s in namespace %s:\n",
 					targetCluster, podSelector, namespace)
 				stringBuilder.WriteString(
-					Kubectl("describe", "pod", "-n", namespace, "-l", podSelector, targetKubeconfig))
+					Kubectl(c, "describe", "pod", "-n", namespace, "-l", podSelector, targetKubeconfig))
 				stringBuilder.WriteString(
-					Kubectl("logs", "-n", namespace, "-l", podSelector, "--ignore-errors", targetKubeconfig))
+					Kubectl(c, "logs", "-n", namespace, "-l", podSelector, "--ignore-errors", targetKubeconfig))
 				stringBuilder.WriteString("::endgroup::\n")
 			}
 		}
@@ -251,13 +259,14 @@ func debugCollection(podSelector string) {
 		for _, namespace := range deploymentNamespaces {
 			fmt.Fprintf(&stringBuilder,
 				"::group::Cluster %s: All objects in namespace %s:\n", targetCluster, namespace)
-			stringBuilder.WriteString(Kubectl("get", "all", "-n", namespace, targetKubeconfig))
+			stringBuilder.WriteString(Kubectl(c, "get", "all", "-n", namespace, targetKubeconfig))
 			stringBuilder.WriteString("::endgroup::\n")
 			fmt.Fprintf(&stringBuilder, "::group::Cluster %s: Pod logs for label %s in namespace %s for cluster %s:\n",
 				targetCluster, podSelector, namespace, cluster.clusterName)
-			stringBuilder.WriteString(Kubectl("describe", "pod", "-n", namespace, "-l", podSelector, targetKubeconfig))
+			stringBuilder.WriteString(Kubectl(c, "describe", "pod", "-n", namespace,
+				"-l", podSelector, targetKubeconfig))
 			stringBuilder.WriteString(
-				Kubectl("logs", "-n", namespace, "-l", podSelector, "--ignore-errors", targetKubeconfig))
+				Kubectl(c, "logs", "-n", namespace, "-l", podSelector, "--ignore-errors", targetKubeconfig))
 			stringBuilder.WriteString("::endgroup::\n")
 		}
 	}

@@ -118,13 +118,13 @@ var _ = BeforeSuite(func(ctx SpecContext) {
 
 	for addonName, addonCR := range addonMap {
 		By("Deploying the default " + addonName + " ClusterManagementAddon to the hub cluster")
-		Kubectl("apply", "-f", addonCR)
+		Kubectl(c, "apply", "-f", addonCR)
 	}
 
 	DeferCleanup(func() {
 		for addonName, addonCR := range addonMap {
 			By("Deleting the default " + addonName + " ClusterManagementAddon from the hub cluster")
-			Kubectl("delete", "--ignore-not-found", "-f", addonCR)
+			Kubectl(c, "delete", "--ignore-not-found", "-f", addonCR)
 		}
 	})
 })
