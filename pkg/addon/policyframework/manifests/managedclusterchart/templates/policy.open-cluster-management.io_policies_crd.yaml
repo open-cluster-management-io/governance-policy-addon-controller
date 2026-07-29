@@ -60,7 +60,7 @@ spec:
                     PolicyDependencies is a list of dependency objects detailed with extra considerations for compliance that should be fulfilled before applying the policies to the managed clusters.
                   items:
                     description: >-
-                      Each PolicyDependency defines an object reference which must be in a certain compliance state before the policy should be created.
+                      PolicyDependency defines an object reference which must be in a certain compliance state before the policy should be created.
                     oneOf:
                       - properties:
                           kind:
@@ -127,7 +127,7 @@ spec:
                           ExtraDependencies is additional PolicyDependencies that only apply to this policy template. ExtraDependencies is a list of dependency objects detailed with extra considerations for compliance that should be fulfilled before applying the policy template to the managed clusters.
                         items:
                           description: >-
-                            Each PolicyDependency defines an object reference which must be in a certain compliance state before the policy should be created.
+                            PolicyDependency defines an object reference which must be in a certain compliance state before the policy should be created.
                           oneOf:
                             - properties:
                                 kind:
