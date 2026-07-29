@@ -86,7 +86,7 @@ type BaseValues struct {
 	PrometheusConfig              *PrometheusConfig `json:"prometheus,omitempty"`
 }
 
-// Prometheus contains Prometheus metrics configuration values for the addon chart.
+// PrometheusConfig contains Prometheus metrics configuration values for the addon chart.
 type PrometheusConfig struct {
 	Enabled        bool            `json:"enabled,omitempty"`
 	ServiceMonitor *ServiceMonitor `json:"serviceMonitor,omitempty"`
@@ -115,6 +115,7 @@ func init() {
 
 // NewRegistrationOption creates a new registration option for the addon.
 func NewRegistrationOption(
+	ctx context.Context,
 	controllerContext *controllercmd.ControllerContext,
 	addonName string,
 	agentPermissionFiles []string,
@@ -139,7 +140,7 @@ func NewRegistrationOption(
 			Group:       groups[groupIdx],
 		}
 
-		results := resourceapply.ApplyDirectly(context.Background(),
+		results := resourceapply.ApplyDirectly(ctx,
 			resourceapply.NewKubeClientHolder(kubeclient),
 			recorder,
 			resourceapply.NewResourceCache(),
@@ -299,8 +300,8 @@ func GetLogLevel(level string) (int8, error) {
 // to 2 less than the user log level.
 func (cv *CommonValues) SetLogLevel(value string) error {
 	logLevel, err := GetLogLevel(value)
-	cv.UserArgs.LogLevel = logLevel
-	cv.UserArgs.PkgLogLevel = logLevel - 2
+	cv.LogLevel = logLevel
+	cv.PkgLogLevel = logLevel - 2
 
 	return err
 }
@@ -310,11 +311,11 @@ func (cv *CommonValues) SetEvaluationConcurrency(value string) error {
 	evaluationConcurrency, err := strconv.ParseUint(value, 10, 8)
 	if err != nil {
 		return fmt.Errorf("failed to parse evaluation concurrency value '%s' (falling back to default value %d): %w",
-			value, cv.UserArgs.EvaluationConcurrency, err)
+			value, cv.EvaluationConcurrency, err)
 	}
 
 	// This is safe because we specified the uint8 in ParseUint
-	cv.UserArgs.EvaluationConcurrency = uint8(evaluationConcurrency)
+	cv.EvaluationConcurrency = uint8(evaluationConcurrency)
 
 	return nil
 }
@@ -324,11 +325,11 @@ func (cv *CommonValues) SetClientQPS(value string) error {
 	clientQPS, err := strconv.ParseUint(value, 10, 8)
 	if err != nil {
 		return fmt.Errorf("failed to parse client QPS value '%s' (falling back to default value %d): %w",
-			value, cv.UserArgs.ClientQPS, err)
+			value, cv.ClientQPS, err)
 	}
 
 	// This is safe because we specified the uint8 in ParseUint
-	cv.UserArgs.ClientQPS = uint8(clientQPS)
+	cv.ClientQPS = uint8(clientQPS)
 
 	return nil
 }
@@ -336,8 +337,8 @@ func (cv *CommonValues) SetClientQPS(value string) error {
 // SetClientBurstFromEvaluationConcurrency sets the client burst for the addon
 // based on the evaluation concurrency.
 func (cv *CommonValues) SetClientBurstFromEvaluationConcurrency() {
-	if cv.UserArgs.EvaluationConcurrency != 0 && cv.UserArgs.ClientBurst == 0 {
-		cv.UserArgs.ClientBurst = cv.UserArgs.EvaluationConcurrency*22 + 1
+	if cv.EvaluationConcurrency != 0 && cv.ClientBurst == 0 {
+		cv.ClientBurst = cv.EvaluationConcurrency*22 + 1
 	}
 }
 
@@ -346,11 +347,11 @@ func (cv *CommonValues) SetClientBurst(value string) error {
 	clientBurst, err := strconv.ParseUint(value, 10, 8)
 	if err != nil {
 		return fmt.Errorf("failed to parse client burst value '%s' (falling back to default value %d): %w",
-			value, cv.UserArgs.ClientBurst, err)
+			value, cv.ClientBurst, err)
 	}
 
 	// This is safe because we specified the uint8 in ParseUint
-	cv.UserArgs.ClientBurst = uint8(clientBurst)
+	cv.ClientBurst = uint8(clientBurst)
 
 	return nil
 }
@@ -418,7 +419,7 @@ func (cv *CommonValues) SetCommonValuesFromCustomizedVariables(
 	//nolint:nlreturn,unparam
 	variableToFuncMap := map[string]func(string) error{
 		"logLevel":              cv.SetLogLevel,
-		"logEncoder":            func(value string) error { cv.UserArgs.LogEncoder = value; return nil },
+		"logEncoder":            func(value string) error { cv.LogEncoder = value; return nil },
 		"evaluationConcurrency": cv.SetEvaluationConcurrency,
 		"clientQPS":             cv.SetClientQPS,
 		"clientBurst":           cv.SetClientBurst,

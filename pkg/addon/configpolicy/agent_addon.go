@@ -108,7 +108,7 @@ func getValuesFromAnnotations(
 	) (addonfactory.Values, error) {
 		userValues := getSkeletonValues()
 
-		err := userValues.CommonValues.SetCommonValues(cluster, addon, clusterClient)
+		err := userValues.SetCommonValues(cluster, addon, clusterClient)
 		if err != nil {
 			return nil, err
 		}
@@ -128,7 +128,7 @@ func getValuesFromAnnotations(
 			userValues.OperatorPolicy.DefaultNamespace = "openshift-operators"
 		}
 
-		if err := userValues.CommonValues.SetCommonValuesFromAnnotations(addon); err != nil {
+		if err := userValues.SetCommonValuesFromAnnotations(addon); err != nil {
 			log.Error(err, "failed to set common values from annotations")
 		}
 
@@ -149,7 +149,7 @@ func getValuesFromAnnotations(
 func getValuesFromCustomizedVariableValues(config addonapiv1beta1.AddOnDeploymentConfig) (addonfactory.Values, error) {
 	userValues := getSkeletonValues()
 
-	userValuesMap, err := userValues.CommonValues.SetCommonValuesFromCustomizedVariables(config)
+	userValuesMap, err := userValues.SetCommonValuesFromCustomizedVariables(config)
 	if err != nil {
 		log.Error(err, "error setting common addon values from customized variables")
 	}
@@ -182,7 +182,7 @@ func getValuesFromCustomizedVariableValues(config addonapiv1beta1.AddOnDeploymen
 }
 
 func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {
-	registrationOption := policyaddon.NewRegistrationOption(
+	registrationOption := policyaddon.NewRegistrationOption(ctx,
 		controllerContext,
 		addonName,
 		agentPermissionFiles,

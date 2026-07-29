@@ -18,19 +18,21 @@ var _ = Describe("Test config-policy-controller deployment with standalone templ
 	AfterEach(func() {
 		By("Deleting the default config-policy-controller and governance-standalone-hub-templating " +
 			"ManagedClusterAddons on each cluster")
+
 		for _, cluster := range managedClusterList {
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, "--ignore-not-found=true")
-			Kubectl("delete", "-n", cluster.clusterName, "-f", case3ManagedClusterAddOnCR, "--ignore-not-found=true")
+			Kubectl(c, "delete", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR, "--ignore-not-found=true")
+			Kubectl(c, "delete", "-n", cluster.clusterName, "-f", case3ManagedClusterAddOnCR, "--ignore-not-found=true")
 		}
 	})
 
 	It("should properly handle the standalone-templating addon",
 		func(ctx SpecContext) {
 			By("Verifying have hub templating is not enabled when the standalone-templating addon does not exist")
+
 			for _, cluster := range managedClusterList {
 				logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 				By(logPrefix + "deploying the default config-policy-controller managedclusteraddon")
-				Kubectl("apply", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
+				Kubectl(c, "apply", "-n", cluster.clusterName, "-f", case2ManagedClusterAddOnCR)
 
 				By(logPrefix + "verifying the standalone-hub-templates arg is not set")
 				Eventually(func(g Gomega) []string {
@@ -51,10 +53,11 @@ var _ = Describe("Test config-policy-controller deployment with standalone templ
 			}
 
 			By("Verifying hub templating is enabled when the standalone-templating addon is created")
+
 			for _, cluster := range managedClusterList {
 				logPrefix := cluster.clusterType + " " + cluster.clusterName + ": "
 				By(logPrefix + "deploying the default governance-standalone-hub-templating managedclusteraddon")
-				Kubectl("apply", "-n", cluster.clusterName, "-f", case3ManagedClusterAddOnCR)
+				Kubectl(c, "apply", "-n", cluster.clusterName, "-f", case3ManagedClusterAddOnCR)
 
 				By(logPrefix + "verifying the standalone-hub-templates arg is set")
 				Eventually(func(g Gomega) []string {
