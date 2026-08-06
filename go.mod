@@ -11,16 +11,16 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/stolostron/go-log-utils v0.1.5
 	go.uber.org/zap v1.28.0
+	k8s.io/api v0.35.7
 	k8s.io/apimachinery v0.35.7
 	k8s.io/client-go v0.35.7
 	k8s.io/component-base v0.35.7
 	k8s.io/klog/v2 v2.140.0
+	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
 	open-cluster-management.io/addon-framework v1.3.0
 	open-cluster-management.io/api v1.3.0
 	sigs.k8s.io/controller-runtime v0.23.3
 )
-
-require github.com/go-openapi/swag/pools v0.28.0 // indirect
 
 require (
 	cel.dev/expr v0.25.2 // indirect
@@ -58,6 +58,7 @@ require (
 	github.com/go-openapi/swag/loading v0.28.0 // indirect
 	github.com/go-openapi/swag/mangling v0.28.0 // indirect
 	github.com/go-openapi/swag/netutils v0.28.0 // indirect
+	github.com/go-openapi/swag/pools v0.28.0 // indirect
 	github.com/go-openapi/swag/stringutils v0.28.0 // indirect
 	github.com/go-openapi/swag/typeutils v0.28.0 // indirect
 	github.com/go-openapi/swag/yamlutils v0.28.0 // indirect
@@ -132,14 +133,12 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	helm.sh/helm/v3 v3.21.0 // indirect; CVE-2025-55199 requires 3.18.5+
-	k8s.io/api v0.35.7
+	helm.sh/helm/v3 v3.21.0 // indirect
 	k8s.io/apiextensions-apiserver v0.35.7 // indirect
 	k8s.io/apiserver v0.35.7 // indirect
 	k8s.io/kms v0.35.7 // indirect
 	k8s.io/kube-aggregator v0.35.7 // indirect
 	k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a // indirect
-	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
 	open-cluster-management.io/sdk-go v1.3.0 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.4 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
