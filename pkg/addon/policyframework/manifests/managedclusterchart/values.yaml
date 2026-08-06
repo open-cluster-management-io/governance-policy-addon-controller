@@ -20,6 +20,8 @@ syncPoliciesOnMulticlusterHub: false
 
 hubKubeConfigSecret: governance-policy-framework-hub-kubeconfig
 
+networkPolicies: true
+
 affinity: {}
 
 tolerations:

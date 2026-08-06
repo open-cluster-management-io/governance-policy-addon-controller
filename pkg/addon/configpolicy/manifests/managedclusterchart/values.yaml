@@ -18,6 +18,8 @@ hubKubeConfigSecret: config-policy-controller-hub-kubeconfig
 
 standaloneHubTemplatingSecret: ""
 
+networkPolicies: true
+
 operatorPolicy:
   disabled: false
   defaultNamespace: ""

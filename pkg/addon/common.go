@@ -36,6 +36,7 @@ const (
 	ClientQPSAnnotation             = "client-qps"
 	ClientBurstAnnotation           = "client-burst"
 	PrometheusEnabledAnnotation     = "prometheus-metrics-enabled"
+	NetworkPoliciesEnabledEnvVar    = "NETWORK_POLICIES_ENABLED"
 
 	AnnotationParseErrorFmt = "Failed to verify '%s' annotation value '%s' for component %s " +
 		"(falling back to default value %v)"
@@ -66,6 +67,7 @@ type GlobalValues struct {
 	ImagePullSecret string            `json:"imagePullSecret,omitempty"`
 	ImageOverrides  map[string]string `json:"imageOverrides,omitempty"`
 	ProxyConfig     *ProxyConfig      `json:"proxyConfig,omitempty"`
+	NetworkPolicies *NetworkPolicies  `json:"networkPolicies,omitempty"`
 }
 
 // ProxyConfig contains proxy configuration values for the addon chart.
@@ -75,6 +77,34 @@ type ProxyConfig struct {
 	HTTPProxy  string `json:"HTTP_PROXY,omitempty"`
 	HTTPSProxy string `json:"HTTPS_PROXY,omitempty"`
 	NoProxy    string `json:"NO_PROXY,omitempty"`
+}
+
+// NetworkPolicies contains network policies configuration values for the addon chart.
+type NetworkPolicies struct {
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+// GetNetworkPoliciesEnabled reads the environment variable
+// that determines whether network policies should be created.
+// Default true.
+func GetNetworkPoliciesEnabled() bool {
+	defaultVal := true
+
+	value := os.Getenv(NetworkPoliciesEnabledEnvVar)
+	if value == "" {
+		return defaultVal
+	}
+
+	enabled, err := strconv.ParseBool(value)
+	if err != nil {
+		log.Error(err, fmt.Sprintf(
+			"Failed to parse '%s' (falling back to default value %v)",
+			NetworkPoliciesEnabledEnvVar, defaultVal))
+
+		return defaultVal
+	}
+
+	return enabled
 }
 
 // BaseValues contains base values for the addon chart.

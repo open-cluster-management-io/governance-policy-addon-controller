@@ -68,6 +68,9 @@ func getSkeletonValues() policyFrameworkUserValues {
 					ImageOverrides: map[string]string{
 						"governance_policy_framework_addon": os.Getenv("GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE"),
 					},
+					NetworkPolicies: &policyaddon.NetworkPolicies{
+						Enabled: policyaddon.GetNetworkPoliciesEnabled(),
+					},
 				},
 			},
 		},

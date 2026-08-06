@@ -75,6 +75,9 @@ func getSkeletonValues() configPolicyUserValues {
 					ImageOverrides: map[string]string{
 						"config_policy_controller": os.Getenv("CONFIG_POLICY_CONTROLLER_IMAGE"),
 					},
+					NetworkPolicies: &policyaddon.NetworkPolicies{
+						Enabled: policyaddon.GetNetworkPoliciesEnabled(),
+					},
 				},
 			},
 		},
