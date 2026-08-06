@@ -1,0 +1,53 @@
+# Copyright Contributors to the Open Cluster Management project
+
+# NetworkPolicy for governance-policy-framework-addon
+
+{{- if and .Values.global.networkPolicies.enabled .Values.networkPolicies }}
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: governance-policy-framework-addon
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "controller.fullname" . }}
+    chart: {{ include "controller.chart" . }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ include "controller.fullname" . }}
+  policyTypes:
+  - Ingress
+  - Egress
+  # Ingress rules
+  ingress:
+  # Metrics collection from monitoring stack on port 8443 (secure metrics on OpenShift)
+  {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
+  - ports:
+    - protocol: TCP
+      port: 8443
+  {{- else if .Values.prometheus.enabled }}
+  # Metrics collection from monitoring stack on port 8383
+  - ports:
+    - protocol: TCP
+      port: 8383
+  {{- end }}
+  # Egress rules
+  egress:
+  # DNS for name resolution
+  - ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  # Kubernetes API access
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+{{- end }}

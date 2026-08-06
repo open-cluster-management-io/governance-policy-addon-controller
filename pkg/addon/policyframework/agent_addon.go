@@ -68,6 +68,9 @@ func getSkeletonValues() policyFrameworkUserValues {
 					ImageOverrides: map[string]string{
 						"governance_policy_framework_addon": os.Getenv("GOVERNANCE_POLICY_FRAMEWORK_ADDON_IMAGE"),
 					},
+					NetworkPolicies: &policyaddon.NetworkPolicies{
+						Enabled: policyaddon.GetNetworkPoliciesEnabled(),
+					},
 				},
 			},
 		},
@@ -82,7 +85,7 @@ func getValuesFromAnnotations(clusterClient clusterlistersv1.ManagedClusterListe
 	) (addonfactory.Values, error) {
 		userValues := getSkeletonValues()
 
-		err := userValues.CommonValues.SetCommonValues(cluster, addon, clusterClient)
+		err := userValues.SetCommonValues(cluster, addon, clusterClient)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +121,7 @@ func getValuesFromAnnotations(clusterClient clusterlistersv1.ManagedClusterListe
 			}
 		}
 
-		if err := userValues.CommonValues.SetCommonValuesFromAnnotations(addon); err != nil {
+		if err := userValues.SetCommonValuesFromAnnotations(addon); err != nil {
 			log.Error(err, "failed to set common values from annotations")
 		}
 
@@ -129,7 +132,7 @@ func getValuesFromAnnotations(clusterClient clusterlistersv1.ManagedClusterListe
 func getValuesFromCustomizedVariableValues(config addonapiv1beta1.AddOnDeploymentConfig) (addonfactory.Values, error) {
 	userValues := getSkeletonValues()
 
-	userValuesMap, err := userValues.CommonValues.SetCommonValuesFromCustomizedVariables(config)
+	userValuesMap, err := userValues.SetCommonValuesFromCustomizedVariables(config)
 	if err != nil {
 		log.Error(err, "error setting common addon values from customized variables")
 	}

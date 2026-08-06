@@ -1,0 +1,55 @@
+# Copyright Contributors to the Open Cluster Management project
+
+# NetworkPolicy for config-policy-controller
+
+{{- if and .Values.global.networkPolicies.enabled .Values.networkPolicies }}
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: config-policy-controller-network-policy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "controller.fullname" . }}
+    chart: {{ include "controller.chart" . }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ include "controller.fullname" . }}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Metrics ingress on port 8443 (secure metrics on OpenShift)
+  {{- if and .Values.prometheus.enabled (eq .Values.hostingKubernetesDistribution "OpenShift") }}
+  - ports:
+    - protocol: TCP
+      port: 8443
+  {{- else if .Values.prometheus.enabled }}
+  # Metrics ingress on port 8383
+  - ports:
+    - protocol: TCP
+      port: 8383
+  {{- end }}
+  # Webhook ingress from Kubernetes API server on port 9443
+  - ports:
+    - protocol: TCP
+      port: 9443
+  egress:
+  # DNS for name resolution
+  - ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 5353
+    - protocol: TCP
+      port: 5353
+  # Kubernetes API server egress for cluster management operations
+  - ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+{{- end }}
