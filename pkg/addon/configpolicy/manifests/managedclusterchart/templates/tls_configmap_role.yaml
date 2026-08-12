@@ -1,0 +1,34 @@
+# Copyright Contributors to the Open Cluster Management project
+
+# Grants read access to the ocm-tls-profile ConfigMap in the controller's own namespace, used to
+# pick up the cluster's configured TLS profile. Scoped to Release.Namespace unconditionally (same
+# value in both Hosted and non-Hosted mode) since this is always about the controller's own pod,
+# unlike the policy-resource permissions in role.yaml/cluster_role.yaml which target a different
+# namespace depending on install mode. Granted explicitly here rather than relying on the
+# non-Hosted ClusterRole's wildcard, so this dependency is visible on its own and behavior doesn't
+# differ between install modes. list/watch can be scoped by resourceNames because the ConfigMap
+# watcher (sdktls.StartTLSConfigMapWatcher) lists/watches with a matching metadata.name field
+# selector.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: {{ include "controller.tlsconfigmaprolename" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "controller.fullname" . }}
+    chart: {{ include "controller.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    addon.open-cluster-management.io/hosted-manifest-location: hosting
+rules:
+- apiGroups:
+  - ""
+  resourceNames:
+  - ocm-tls-profile
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch

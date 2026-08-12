@@ -335,6 +335,8 @@ var _ = Describe("Test framework deployment", func() {
 				"--evaluation-concurrency=1",
 				"--client-max-qps=15",
 				"--client-burst=30",
+				"--tls-min-version=VersionTLS12",
+				"--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
 			)
 
 			By(logPrefix + "verifying the " + ocmPolicyNs + " namespace exists in non-hosted mode")
