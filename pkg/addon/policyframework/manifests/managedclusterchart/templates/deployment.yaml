@@ -49,6 +49,12 @@ spec:
           - --evaluation-concurrency={{ .Values.evaluationConcurrency }}
           - --client-max-qps={{ .Values.clientQPS }}
           - --client-burst={{ .Values.clientBurst }}
+          {{- if ne .Values.tlsMinVersion "" }}
+          - --tls-min-version={{ .Values.tlsMinVersion }}
+          {{- end }}
+          {{- if ne .Values.tlsCipherSuites "" }}
+          - --tls-cipher-suites={{ .Values.tlsCipherSuites }}
+          {{- end }}
           {{- if and .Values.onMulticlusterHub (ne .Values.installMode "Hosted") (not .Values.syncPoliciesOnMulticlusterHub) }}
           - --on-multicluster-hub=true
           {{- end }}

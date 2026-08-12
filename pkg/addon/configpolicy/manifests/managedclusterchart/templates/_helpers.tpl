@@ -51,3 +51,10 @@ Create the name of the service account to use
 {{- define "controller.serviceAccountName" -}}
     {{- template "controller.fullname" . -}}-sa
 {{- end -}}
+
+{{/*
+Create role name used in role and binding for watching the ocm-tls-profile ConfigMap
+*/}}
+{{- define "controller.tlsconfigmaprolename" -}}
+    {{ template "controller.fullname" . }}-tls-configmap
+{{- end -}}

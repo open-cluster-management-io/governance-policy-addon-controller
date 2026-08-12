@@ -14,6 +14,9 @@ evaluationConcurrency: 2
 clientQPS: 30
 clientBurst: 45
 
+tlsMinVersion: ""
+tlsCipherSuites: ""
+
 hubKubeConfigSecret: config-policy-controller-hub-kubeconfig
 
 standaloneHubTemplatingSecret: ""

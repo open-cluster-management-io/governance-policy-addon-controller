@@ -24,6 +24,7 @@ import (
 	addonapiv1beta1 "open-cluster-management.io/api/addon/v1beta1"
 	clusterlistersv1 "open-cluster-management.io/api/client/cluster/listers/cluster/v1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
+	sdktls "open-cluster-management.io/sdk-go/pkg/tls"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -58,6 +59,8 @@ type UserArgs struct {
 	EvaluationConcurrency uint8  `json:"evaluationConcurrency,omitempty"`
 	ClientQPS             uint8  `json:"clientQPS,omitempty"` //nolint:tagliatelle
 	ClientBurst           uint8  `json:"clientBurst,omitempty"`
+	TLSMinVersion         string `json:"tlsMinVersion,omitempty"`
+	TLSCipherSuites       string `json:"tlsCipherSuites,omitempty"`
 }
 
 // GlobalValues contains global values for the addon chart.
@@ -356,6 +359,30 @@ func (cv *CommonValues) SetClientBurst(value string) error {
 	return nil
 }
 
+// SetTLSMinVersion sets the addon's --tls-min-version flag.
+// Invalid values will be rejected with an error, and the flag will be unset.
+func (cv *CommonValues) SetTLSMinVersion(value string) error {
+	if _, err := sdktls.ParseTLSVersion(value); err != nil {
+		return fmt.Errorf("failed to parse TLS min version value '%s' (leaving unset): %w", value, err)
+	}
+
+	cv.TLSMinVersion = value
+
+	return nil
+}
+
+// SetTLSCipherSuites sets the addon's --tls-cipher-suites flag.
+// Invalid values will be rejected with an error, and the flag will be unset.
+func (cv *CommonValues) SetTLSCipherSuites(value string) error {
+	if _, unsupported := sdktls.ParseCipherSuites(value); len(unsupported) > 0 {
+		return fmt.Errorf("unsupported TLS cipher suite(s) in value '%s' (leaving unset): %v", value, unsupported)
+	}
+
+	cv.TLSCipherSuites = value
+
+	return nil
+}
+
 // SetPrometheusEnabled sets the Prometheus metrics enabled boolean for the
 // addon chart, enabling metrics configurations to be deployed.
 func (cv *CommonValues) SetPrometheusEnabled(value string) error {
@@ -424,6 +451,8 @@ func (cv *CommonValues) SetCommonValuesFromCustomizedVariables(
 		"clientQPS":             cv.SetClientQPS,
 		"clientBurst":           cv.SetClientBurst,
 		"prometheusEnabled":     cv.SetPrometheusEnabled,
+		"tlsMinVersion":         cv.SetTLSMinVersion,
+		"tlsCipherSuites":       cv.SetTLSCipherSuites,
 	}
 
 	for _, variable := range config.Spec.CustomizedVariables {

@@ -18,6 +18,9 @@ clientQPS: 30
 clientBurst: 45
 syncPoliciesOnMulticlusterHub: false
 
+tlsMinVersion: ""
+tlsCipherSuites: ""
+
 hubKubeConfigSecret: governance-policy-framework-hub-kubeconfig
 
 affinity: {}

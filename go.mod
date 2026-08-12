@@ -19,6 +19,7 @@ require (
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
 	open-cluster-management.io/addon-framework v1.3.0
 	open-cluster-management.io/api v1.3.0
+	open-cluster-management.io/sdk-go v1.3.0
 	sigs.k8s.io/controller-runtime v0.23.3
 )
 
@@ -139,7 +140,6 @@ require (
 	k8s.io/kms v0.35.7 // indirect
 	k8s.io/kube-aggregator v0.35.7 // indirect
 	k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a // indirect
-	open-cluster-management.io/sdk-go v1.3.0 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.4 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kube-storage-version-migrator v0.0.6-0.20230721195810-5c8923c5ff96 // indirect
