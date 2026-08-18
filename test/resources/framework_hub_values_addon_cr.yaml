@@ -2,7 +2,7 @@ apiVersion: addon.open-cluster-management.io/v1alpha1
 kind: ManagedClusterAddOn
 metadata:
   annotations:
-    addon.open-cluster-management.io/values: '{"onMulticlusterHub":true}'
+    addon.open-cluster-management.io/values: '{"onMulticlusterHub":true,"global":{"imageOverrides":{"governance_policy_framework_addon":"ineffective"}}}'
   name: governance-policy-framework
 spec:
   installNamespace: open-cluster-management-agent-addon
