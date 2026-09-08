@@ -19,3 +19,6 @@ spec:
       value: "VersionTLS12"
     - name: tlsCipherSuites
       value: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+  registries:
+    - mirror: "quay.io:443/open-cluster-management/governance-policy-framework-addon"
+      source: "quay.io/open-cluster-management/governance-policy-framework-addon"

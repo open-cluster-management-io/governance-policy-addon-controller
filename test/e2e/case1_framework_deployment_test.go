@@ -5,6 +5,7 @@ package e2e
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"maps"
 	"time"
@@ -33,6 +34,9 @@ const (
 	case1MWPatch                         string = "../resources/manifestwork_add_patch.json"
 	ocmPolicyNs                          string = "open-cluster-management-policies"
 	deletionOrphanAnnotationKey          string = "addon.open-cluster-management.io/deletion-orphan"
+	imageRegistriesKey                   string = "open-cluster-management.io/image-registries"
+	imageRegistriesAnnotation            string = imageRegistriesKey + "=" +
+		`{"registries":[{"mirror":"quay.io:443/open-cluster-management","source":"quay.io/open-cluster-management"}]}`
 )
 
 var _ = Describe("Test framework deployment", func() {
@@ -278,6 +282,9 @@ var _ = Describe("Test framework deployment", func() {
 
 			checkContainersAndAvailability(ctx, cluster, i)
 
+			By(logPrefix + "verifying the default framework deployment is not using the mirror registry")
+			Eventually(getCase1DeploymentImage(c, cluster), 120, 1).ShouldNot(ContainSubstring("quay.io:443"))
+
 			By(logPrefix + "annotating the managedclusteraddon with the " + loggingLevelAnnotation + " annotation")
 			Kubectl(c, "annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, loggingLevelAnnotation)
 
@@ -291,6 +298,15 @@ var _ = Describe("Test framework deployment", func() {
 			By(logPrefix + "annotating the managedclusteraddon with the " + clientQPSAnnotation + " annotation")
 			Kubectl(c, "annotate", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, clientQPSAnnotation)
 
+			By(logPrefix + "annotating the managedcluster with the " + imageRegistriesAnnotation + " annotation")
+			Kubectl(c, "annotate", "managedcluster", cluster.clusterName, "--overwrite", imageRegistriesAnnotation)
+
+			clusterName := cluster.clusterName
+
+			DeferCleanup(func(ctx context.Context) {
+				Kubectl(ctx, "annotate", "managedcluster", clusterName, imageRegistriesKey+"-")
+			})
+
 			checkArgs(ctx, cluster,
 				"--log-encoder=console",
 				"--log-level=8",
@@ -299,6 +315,9 @@ var _ = Describe("Test framework deployment", func() {
 				"--client-max-qps=50",
 				"--client-burst=111",
 			)
+
+			By(logPrefix + "verifying framework deployment is using the mirror registry")
+			Eventually(getCase1DeploymentImage(c, cluster), 120, 1).Should(ContainSubstring("quay.io:443"))
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
 			Kubectl(c, "delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=180s")
@@ -344,6 +363,9 @@ var _ = Describe("Test framework deployment", func() {
 				ctx, cluster.clusterClient, gvrNamespace, ocmPolicyNs, "", true, 60,
 			)
 			Expect(ns).ShouldNot(BeNil())
+
+			By(logPrefix + "verifying framework deployment is using the mirror registry")
+			Eventually(getCase1DeploymentImage(c, cluster), 120, 1).Should(ContainSubstring("quay.io:443"))
 
 			By(logPrefix + "removing the framework deployment when the ManagedClusterAddOn CR is removed")
 			Kubectl(c, "delete", "-n", cluster.clusterName, "-f", case1ManagedClusterAddOnCR, "--timeout=180s")
@@ -1081,4 +1103,50 @@ func installAddonInHostedMode(
 		ctx, &addon, metav1.CreateOptions{},
 	)
 	Expect(err).ToNot(HaveOccurred())
+}
+
+func getCase1DeploymentImage(ctx context.Context, cluster managedClusterConfig) func() (string, error) {
+	return func() (string, error) {
+		namespace := addonNamespace
+		client := cluster.clusterClient
+
+		if cluster.hostedOnHub {
+			namespace = "klusterlet-" + cluster.clusterName
+			client = managedClusterList[0].clusterClient
+		}
+
+		deploy := GetWithTimeout(ctx, client, gvrDeployment, case1DeploymentName, namespace, true, 60)
+		if deploy == nil {
+			return "", errors.New("Failed to get deployment")
+		}
+
+		conts, found, err := unstructured.NestedSlice(deploy.Object, "spec", "template", "spec", "containers")
+		if err != nil {
+			return "", err
+		}
+
+		if !found {
+			return "", errors.New("spec.template.spec.containers should exist in the deployment")
+		}
+
+		if len(conts) != 1 {
+			return "", errors.New("spec.template.spec.containers should only have 1 item")
+		}
+
+		cont, ok := conts[0].(map[string]any)
+		if !ok {
+			return "", errors.New("spec.template.spec.containers[0] should be a map[string]any")
+		}
+
+		img, found, err := unstructured.NestedString(cont, "image")
+		if err != nil {
+			return "", err
+		}
+
+		if !found {
+			return "", errors.New("spec.template.spec.containers[0].image should exist in the deployment")
+		}
+
+		return img, nil
+	}
 }
