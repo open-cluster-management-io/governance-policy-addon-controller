@@ -207,26 +207,32 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 		Cluster().V1().ManagedClusters()
 	go clusterInformer.Informer().Run(ctx.Done())
 
+	aodcGetter := utils.NewAddOnDeploymentConfigGetter(addonClient)
+
+	valueFuncs := []addonfactory.GetValuesFunc{
+		getValuesFromAnnotations(clusterInformer.Lister(), addonInformer.Lister()),
+		addonfactory.GetValuesFromAddonAnnotation,
+		addonfactory.GetAddOnDeploymentConfigValues(
+			aodcGetter,
+			addonfactory.ToAddOnNodePlacementValues,
+			addonfactory.ToAddOnResourceRequirementsValues,
+			getValuesFromCustomizedVariableValues,
+		),
+		policyaddon.MandateValues,
+	}
+
+	imgFromEnv := os.Getenv("CONFIG_POLICY_CONTROLLER_IMAGE")
+	if imgFromEnv != "" {
+		valueFuncs = append(valueFuncs, addonfactory.GetAgentImageValues(aodcGetter,
+			"global.imageOverrides.config_policy_controller", imgFromEnv))
+	}
+
 	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
 		WithConfigGVRs(utils.AddOnDeploymentConfigGVR).
-		WithGetValuesFuncs(
-			getValuesFromAnnotations(clusterInformer.Lister(), addonInformer.Lister()),
-			addonfactory.GetValuesFromAddonAnnotation,
-			addonfactory.GetAddOnDeploymentConfigValues(
-				utils.NewAddOnDeploymentConfigGetter(addonClient),
-				addonfactory.ToAddOnNodePlacementValues,
-				addonfactory.ToAddOnResourceRequirementsValues,
-				getValuesFromCustomizedVariableValues,
-			),
-			policyaddon.MandateValues,
-			mandateImageFromEnv,
-		).
+		WithGetValuesFuncs(valueFuncs...).
 		WithManagedClusterClient(clusterClient).
 		WithAgentRegistrationOption(registrationOption).
-		WithAgentInstallNamespace(
-			policyaddon.
-				CommonAgentInstallNamespaceFromDeploymentConfigFunc(utils.NewAddOnDeploymentConfigGetter(addonClient)),
-		).
+		WithAgentInstallNamespace(policyaddon.CommonAgentInstallNamespaceFromDeploymentConfigFunc(aodcGetter)).
 		WithScheme(policyaddon.Scheme).
 		WithAgentHostedModeEnabledOption().
 		BuildHelmAgentAddon()
@@ -236,26 +242,4 @@ func GetAndAddAgent(
 	ctx context.Context, mgr addonmanager.AddonManager, controllerContext *controllercmd.ControllerContext,
 ) error {
 	return policyaddon.GetAndAddAgent(ctx, mgr, addonName, controllerContext, GetAgentAddon)
-}
-
-// mandateImageFromEnv ensures that if the environment variable for the image is
-// set to a non-empty value, that value is used in the chart.
-func mandateImageFromEnv(
-	_ *clusterv1.ManagedCluster,
-	_ *addonapiv1beta1.ManagedClusterAddOn,
-) (addonfactory.Values, error) {
-	values := addonfactory.Values{}
-
-	img := os.Getenv("CONFIG_POLICY_CONTROLLER_IMAGE")
-	if img == "" {
-		return values, nil
-	}
-
-	values["global"] = map[string]any{
-		"imageOverrides": map[string]any{
-			"config_policy_controller": img,
-		},
-	}
-
-	return values, nil
 }
