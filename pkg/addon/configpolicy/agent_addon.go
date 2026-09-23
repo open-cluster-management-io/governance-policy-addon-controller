@@ -123,8 +123,8 @@ func getValuesFromAnnotations(
 			userValues.StandaloneHubTemplatingSecret = standaloneTemplatingAddonName + "-hub-kubeconfig"
 		}
 
-		// Configure OperatorPolicy based on the cluster's OpenShift version
-		if cluster.Labels["openshiftVersion-major"] == "4" {
+		// Configure OperatorPolicy for OpenShift
+		if userValues.KubernetesDistribution == "OpenShift" {
 			userValues.OperatorPolicy.DefaultNamespace = "openshift-operators"
 		}
 
