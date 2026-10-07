@@ -49,7 +49,7 @@ jobs:
       - name: Push image
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          DOCKER_USER: ${{ secrets.DOCKER_USER }}`
+          DOCKER_USER: ${{ secrets.DOCKER_USER }}
         run: |
           echo "${DOCKER_PASSWORD}" | docker login quay.io --username "${DOCKER_USER}" --password-stdin
           docker push "${IMAGE_PATH}"
