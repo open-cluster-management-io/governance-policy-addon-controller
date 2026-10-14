@@ -90,6 +90,20 @@ To address this issue, there are some separate annotations that can be applied i
   when the hub is imported by another hub. This is a very advanced use-case and should almost
   never be used. Alternatively, this annotation can be set on the hub's ManagedCluster object.
 
+The `governance-policy-framework` addon enables ManagedCluster UID fencing for Policy status updates
+by default. To disable it, add this customized variable to the `AddOnDeploymentConfig` selected for
+the framework addon:
+
+```yaml
+spec:
+  customizedVariables:
+    - name: disableManagedClusterUIDFence
+      value: "true"
+```
+
+The addon controller then omits `--managed-cluster-uid` from the framework addon Deployment, which
+restores its legacy status-sync behavior. Updating the configuration triggers a Deployment rollout.
+
 ## Getting Started - Development
 
 To set up a local [KinD](https://kind.sigs.k8s.io/) cluster for development, you'll need to install

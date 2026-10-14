@@ -49,6 +49,9 @@ spec:
           - --evaluation-concurrency={{ .Values.evaluationConcurrency }}
           - --client-max-qps={{ .Values.clientQPS }}
           - --client-burst={{ .Values.clientBurst }}
+          {{- if and .Values.managedClusterUID (not .Values.disableManagedClusterUIDFence) }}
+          - --managed-cluster-uid={{ .Values.managedClusterUID }}
+          {{- end }}
           {{- if ne .Values.tlsMinVersion "" }}
           - --tls-min-version={{ .Values.tlsMinVersion }}
           {{- end }}
