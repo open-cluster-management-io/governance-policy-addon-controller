@@ -39,6 +39,7 @@ type policyFrameworkUserValues struct {
 	SyncPoliciesOnMulticlusterHub bool `json:"syncPoliciesOnMulticlusterHub,string,omitempty"`
 	OnMulticlusterHub             bool `json:"onMulticlusterHub,string,omitempty"`
 	OrphanClusterNamespace        bool `json:"orphanClusterNamespace,string,omitempty"`
+	DisableManagedClusterUIDFence bool `json:"disableManagedClusterUIDFence,string,omitempty"` //nolint:tagliatelle
 }
 
 var (
@@ -145,6 +146,16 @@ func getValuesFromCustomizedVariableValues(config addonapiv1beta1.AddOnDeploymen
 
 			return nil
 		},
+		"disableManagedClusterUIDFence": func(value string) error {
+			valBool, err := strconv.ParseBool(value)
+			if err != nil {
+				return err
+			}
+
+			userValues.DisableManagedClusterUIDFence = valBool
+
+			return nil
+		},
 	}
 
 	for key, value := range userValuesMap {
@@ -159,6 +170,16 @@ func getValuesFromCustomizedVariableValues(config addonapiv1beta1.AddOnDeploymen
 	}
 
 	return addonfactory.JsonStructToValues(userValues)
+}
+
+func managedClusterUIDValues(cluster *clusterv1.ManagedCluster, _ *addonapiv1beta1.ManagedClusterAddOn) (
+	addonfactory.Values, error,
+) {
+	return addonfactory.Values{"managedClusterUID": string(cluster.GetUID())}, nil
+}
+
+func managedClusterUIDChanged(oldCluster, newCluster *clusterv1.ManagedCluster) bool {
+	return oldCluster.GetUID() != newCluster.GetUID()
 }
 
 func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.ControllerContext) (agent.AgentAddon, error) {
@@ -194,6 +215,7 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 			addonfactory.ToAddOnResourceRequirementsValues,
 			getValuesFromCustomizedVariableValues,
 		),
+		managedClusterUIDValues,
 		policyaddon.MandateValues,
 	}
 
@@ -206,6 +228,7 @@ func GetAgentAddon(ctx context.Context, controllerContext *controllercmd.Control
 	return addonfactory.NewAgentAddonFactory(addonName, FS, "manifests/managedclusterchart").
 		WithConfigGVRs(utils.AddOnDeploymentConfigGVR).
 		WithGetValuesFuncs(valueFuncs...).
+		WithAgentDeployTriggerClusterFilter(managedClusterUIDChanged).
 		WithManagedClusterClient(clusterClient).
 		WithAgentRegistrationOption(registrationOption).
 		WithAgentInstallNamespace(policyaddon.CommonAgentInstallNamespaceFromDeploymentConfigFunc(aodcGetter)).
