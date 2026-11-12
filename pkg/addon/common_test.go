@@ -56,3 +56,30 @@ func TestSetTLSCipherSuites(t *testing.T) {
 		}
 	})
 }
+
+func TestSetTLSGroups(t *testing.T) {
+	t.Run("valid groups are set", func(t *testing.T) {
+		cv := &CommonValues{}
+
+		value := "X25519,secp256r1"
+		if err := cv.SetTLSGroups(value); err != nil {
+			t.Fatalf("expected no error, got: %v", err)
+		}
+
+		if cv.TLSGroups != value {
+			t.Fatalf("expected TLSGroups to be set, got: %q", cv.TLSGroups)
+		}
+	})
+
+	t.Run("unsupported group is rejected and left unset", func(t *testing.T) {
+		cv := &CommonValues{}
+
+		if err := cv.SetTLSGroups("not-a-real-group"); err == nil {
+			t.Fatal("expected an error for an unsupported TLS group")
+		}
+
+		if cv.TLSGroups != "" {
+			t.Fatalf("expected TLSGroups to be left unset, got: %q", cv.TLSGroups)
+		}
+	})
+}

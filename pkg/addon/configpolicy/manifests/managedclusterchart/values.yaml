@@ -16,6 +16,7 @@ clientBurst: 45
 
 tlsMinVersion: ""
 tlsCipherSuites: ""
+tlsGroups: ""
 
 hubKubeConfigSecret: config-policy-controller-hub-kubeconfig
 

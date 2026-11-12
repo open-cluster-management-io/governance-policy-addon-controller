@@ -362,6 +362,7 @@ var _ = Describe("Test framework deployment", func() {
 				"--client-burst=30",
 				"--tls-min-version=VersionTLS12",
 				"--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+				"--tls-groups=X25519",
 			)
 			checkArgNotPresent(ctx, cluster, "--managed-cluster-uid=")
 

@@ -1,0 +1,27 @@
+# Copyright Contributors to the Open Cluster Management project
+
+# Grants read access to the cluster APIServer TLS profile so the controller can apply its TLS
+# groups and watch for profile changes. Only needed in Hosted mode when the hosting cluster
+# serves that API; non-Hosted mode already has wildcard cluster read access.
+
+{{- if and (eq .Values.installMode "Hosted") (eq .Values.hostingKubernetesDistribution "OpenShift") }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: open-cluster-management:{{ include "controller.tlsapiserverrolename" . }}
+  labels:
+    app: {{ include "controller.fullname" . }}
+    chart: {{ include "controller.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    addon.open-cluster-management.io/hosted-manifest-location: hosting
+rules:
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - apiservers
+  verbs:
+  - get
+  - list
+  - watch
+{{- end }}

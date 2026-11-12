@@ -19,6 +19,8 @@ spec:
       value: "VersionTLS12"
     - name: tlsCipherSuites
       value: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+    - name: tlsGroups
+      value: "X25519"
     - name: disableManagedClusterUIDFence
       value: "true"
   registries:
