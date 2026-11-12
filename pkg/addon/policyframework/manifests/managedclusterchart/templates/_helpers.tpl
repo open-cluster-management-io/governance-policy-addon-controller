@@ -58,3 +58,10 @@ Create role name used in role and binding for watching the ocm-tls-profile Confi
 {{- define "controller.tlsconfigmaprolename" -}}
     {{ template "controller.fullname" . }}-tls-configmap
 {{- end -}}
+
+{{/*
+Create role name used in role and binding for reading the APIServer TLS profile
+*/}}
+{{- define "controller.tlsapiserverrolename" -}}
+    {{ template "controller.fullname" . }}-tls-apiserver
+{{- end -}}

@@ -7,9 +7,12 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/library-go/pkg/assets"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
+	libgocrypto "github.com/openshift/library-go/pkg/crypto"
 	"github.com/openshift/library-go/pkg/operator/events"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	prometheusv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -62,6 +65,7 @@ type UserArgs struct {
 	ClientBurst           uint8  `json:"clientBurst,omitempty"`
 	TLSMinVersion         string `json:"tlsMinVersion,omitempty"`
 	TLSCipherSuites       string `json:"tlsCipherSuites,omitempty"`
+	TLSGroups             string `json:"tlsGroups,omitempty"`
 }
 
 // GlobalValues contains global values for the addon chart.
@@ -413,6 +417,34 @@ func (cv *CommonValues) SetTLSCipherSuites(value string) error {
 	return nil
 }
 
+// SetTLSGroups sets the addon's --tls-groups flag.
+// Invalid values will be rejected with an error, and the flag will be unset.
+func (cv *CommonValues) SetTLSGroups(value string) error {
+	_, unsupported := libgocrypto.TLSGroupsToCurveIDs(splitTLSGroups(value))
+
+	if len(unsupported) > 0 {
+		return fmt.Errorf("unsupported TLS group(s) in value '%s' (leaving unset): %v", value, unsupported)
+	}
+
+	cv.TLSGroups = value
+
+	return nil
+}
+
+// splitTLSGroups splits the comma-separated --tls-groups value into group names.
+func splitTLSGroups(groups string) []configv1.TLSGroup {
+	var parsed []configv1.TLSGroup
+
+	for group := range strings.SplitSeq(groups, ",") {
+		group = strings.TrimSpace(group)
+		if group != "" {
+			parsed = append(parsed, configv1.TLSGroup(group))
+		}
+	}
+
+	return parsed
+}
+
 // SetPrometheusEnabled sets the Prometheus metrics enabled boolean for the
 // addon chart, enabling metrics configurations to be deployed.
 func (cv *CommonValues) SetPrometheusEnabled(value string) error {
@@ -483,6 +515,7 @@ func (cv *CommonValues) SetCommonValuesFromCustomizedVariables(
 		"prometheusEnabled":     cv.SetPrometheusEnabled,
 		"tlsMinVersion":         cv.SetTLSMinVersion,
 		"tlsCipherSuites":       cv.SetTLSCipherSuites,
+		"tlsGroups":             cv.SetTLSGroups,
 	}
 
 	for _, variable := range config.Spec.CustomizedVariables {

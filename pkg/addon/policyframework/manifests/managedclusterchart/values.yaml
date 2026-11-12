@@ -21,6 +21,7 @@ syncPoliciesOnMulticlusterHub: false
 
 tlsMinVersion: ""
 tlsCipherSuites: ""
+tlsGroups: ""
 
 hubKubeConfigSecret: governance-policy-framework-hub-kubeconfig
 
